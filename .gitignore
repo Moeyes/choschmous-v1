@@ -1,0 +1,15 @@
+# Demo credentials — never commit
+final/_rebuild/reskin/demo/CREDENTIALS.md
+
+# Database backups
+*.dump
+*.sql.gz
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+*.swp
