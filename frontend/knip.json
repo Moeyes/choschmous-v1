@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreDependencies": [
+    "shadcn"
+  ],
+  "ignore": [
+    "src/core/auth/**",
+    "src/core/config/routes.ts"
+  ]
+}

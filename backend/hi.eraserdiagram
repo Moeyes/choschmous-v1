@@ -1,0 +1,168 @@
+title V8 - Athletics Management System
+    // System users
+  Users [icon: users, color: orange] {
+    UserID int pk
+    kh_given_name string
+    kh_familyname string
+    en_given_name string
+    en_familyname string
+    username string
+    password string
+    userLevel int
+    photoPath string
+    createdAt timestamp
+  }
+  // Athletics Management System V4
+  // Core entities managed by Super Admin
+  Organization [icon: building, color: blue] {
+    id int pk
+    name string
+    type enum
+    createdAt timestamp
+  }
+  
+  Sports [icon: basketball, color: purple] {
+    id int pk
+    name string
+    createdAt timestamp
+  }
+
+  Sports_event_org [icon: basketball, color: purple] {
+    id int pk
+    events_id int fk
+    sports_id int fk
+    organization_id int fk
+    createdAt timestamp
+  }
+
+  Events [icon: calendar-check, color: yellow] {
+    id int pk
+    name string
+    date date
+    createdAt timestamp
+  }
+  // Central person registry (enrolled people)
+  Enroll [icon: user-plus, color: red] {
+    id int pk
+    kh_given_name string
+    kh_familyname string
+    en_given_name string
+    en_familyname string
+    gender string
+    nationality string
+    dob date
+    idDocType enum
+    phoneNumber int
+    address string
+    photoPath string
+    DocumentsPath string
+    createdAt timestamp
+    userID int fk
+  }
+
+  // Roles
+  Leaders [icon: crown, color: brown] {
+    id int pk
+    enrollID int
+    roles enum
+    createdAt timestamp
+  }
+
+  Athletes [icon: person-running, color: green] {
+    id int pk
+    enrollID int
+    class string
+
+    createdAt timestamp
+  }
+
+
+  // Many-to-Many junctions (fixed with both foreign keys)
+
+  // One Organization can have many Leaders and many Athletes
+  // One Leader/Athlete can belong to many Organizations
+
+  AthleteParticipat [icon: link, color: ] {
+    id int pk
+    athletesID fk
+    eventsID fk
+    sportsID fk
+    categoriesID fk
+    organizationID fk
+    createdAt timestamp
+  }
+
+  LeaderParticipat [icon: link, color: ] {
+      id int pk
+      leadersID fk
+      eventsID fk
+      sportsID fk
+      organizationID fk
+      createdAt timestamp
+  }
+  // Relationships (attribute-level where possible)
+  categories []{
+    id int pk
+    sportsID int fk
+    category string
+    events_id int fk
+    createdAt timestamp
+  }
+  Medals [icon: award, color: gold] {
+    id int pk
+    athletesParticipatID int fk
+    medals_type enum
+    key_performance string
+    createdAt timestamp
+  }
+
+
+  participate_per_sport [] {
+    id int pk
+    Sports_event_org_id int fk
+    female int
+    male int
+  }
+
+
+
+  
+
+  Sports_event_org.id <> participate_per_sport.Sports_event_org_id
+
+
+
+  Enroll.userID > Users.UserID: [color: orange]
+
+  // A person (Enroll) can be exactly one Leader (1:Many)
+  Enroll.id < Leaders.enrollID: [color: red]
+
+  // A person (Enroll) can be exactly one Athlete (1:Many)
+  Enroll.id < Athletes.enrollID: [color: red]
+
+  // Sport and Event of Athlete participate
+  AthleteParticipat.eventsID <> Events.id: [color: yellow]
+  AthleteParticipat.athletesID <> Athletes.id: [color: green]
+  AthleteParticipat.sportsID <> Sports_event_org.sports_id: [color: purple]
+  AthleteParticipat.categoriesID <> categories.id
+  AthleteParticipat.organizationID <> Organization.id: [color: blue]
+
+  // Sport and Event of Leader participate
+  LeaderParticipat.eventsID <> Events.id: [color: yellow]
+  LeaderParticipat.leadersID <> Leaders.id: [color: brown]
+  LeaderParticipat.sportsID <> Sports_event_org.sports_id: [color: purple]
+  LeaderParticipat.organizationID <> Organization.id: [color: blue]
+
+  // medal
+  Medals.athletesParticipatID <> AthleteParticipat.id: [color: red]
+//   Medals.eventsID <> AthleteParticipat.eventsID
+//   Medals.sportsID <> AthleteParticipat.sportsID
+//   Medals.categoriesID <> AthleteParticipat.categoriesID
+//   Medals.organizationID <> AthleteParticipat.organizationID
+  // SuperADMIN
+  categories.events_id <> Events.id: [color: yellow]
+
+  Sports_event_org.sports_id <> categories.sportsID: [color: purple]
+  Sports_event_org.events_id <> Events.id: [color: yellow]
+  Sports.id <> Sports_event_org.sports_id: [color: purple]
+  Sports_event_org.organization_id <> Organization.id: [color: blue]

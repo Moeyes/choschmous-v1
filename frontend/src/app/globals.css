@@ -1,0 +1,380 @@
+/* ============================================================================
+   DESIGN TOKENS — must be defined before Tailwind import
+   ============================================================================ */
+
+:root {
+  /* ═════════════════════════════════════════════════════════════════════════
+     PRIMARY COLOR SCALE  ·  Brand: #1B4B65 · HSL(hue, saturation%, lightness%)
+     ═════════════════════════════════════════════════════════════════════════ */
+  --primary-50: 208 67% 95%;
+  --primary-100: 208 67% 85%;
+  --primary-200: 208 67% 72%;
+  --primary-300: 208 67% 58%;
+  --primary-400: 208 67% 42%;
+  --primary-500: 208 67% 33%;
+  --primary-600: 208 67% 25%;
+  --primary-700: 208 67% 19%;
+  --primary-800: 208 67% 14%;
+  --primary-900: 208 67% 10%;
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     SURFACE COLORS  —  Backgrounds, cards, sidebar, header, borders
+     ═════════════════════════════════════════════════════════════════════════ */
+  --background: 0 0% 97%;
+  --foreground: 201 30% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 201 30% 12%;
+  --card-elevated: 0 0% 100%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 201 15% 35%;
+  --sidebar-accent: 208 67% 25%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --header: 0 0% 100%;
+  --header-foreground: 201 30% 12%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
+  --border: 0 0% 91%;
+  --border-light: 0 0% 94%;
+  --input: 0 0% 91%;
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     BRAND TOKENS  —  Semantic aliases for primary/secondary/accent
+     ═════════════════════════════════════════════════════════════════════════ */
+  --primary: 208 67% 25%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 208 67% 42%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 208 67% 96%;
+  --accent-foreground: 208 67% 25%;
+  --ring: 208 67% 25%;
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     SEMANTIC / STATUS COLORS  —  WCAG AA compliant
+     ═════════════════════════════════════════════════════════════════════════ */
+  --success: 152 55% 30%;
+  --success-foreground: 0 0% 100%;
+  --success-bg: 152 55% 95%;
+  --warning: 35 92% 40%;
+  --warning-foreground: 0 0% 100%;
+  --warning-bg: 35 92% 95%;
+  --danger: 358 65% 40%;
+  --danger-foreground: 0 0% 100%;
+  --danger-bg: 358 65% 95%;
+  --info: 201 70% 40%;
+  --info-foreground: 0 0% 100%;
+  --info-bg: 201 70% 95%;
+  --destructive: 358 65% 40%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     TYPOGRAPHY COLORS
+     ═════════════════════════════════════════════════════════════════════════ */
+  --heading: 201 30% 10%;
+  --body: 201 15% 20%;
+  --muted-text: 0 0% 45%;
+  --disabled: 0 0% 70%;
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     BORDER RADIUS
+     ═════════════════════════════════════════════════════════════════════════ */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     SHADOW SYSTEM  —  Multiple elevation levels
+     ═════════════════════════════════════════════════════════════════════════ */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+  --shadow-elevated: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     SPACING SYSTEM  —  8px grid
+     ═════════════════════════════════════════════════════════════════════════ */
+  --space-0: 0px;
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-7: 1.75rem;  /* 28px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     TRANSITIONS
+     ═════════════════════════════════════════════════════════════════════════ */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     TYPOGRAPHY SCALE
+     ═════════════════════════════════════════════════════════════════════════ */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.15;
+  --line-height-snug: 1.3;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+
+  /* ═════════════════════════════════════════════════════════════════════════
+     Z-INDEX SYSTEM
+     ═════════════════════════════════════════════════════════════════════════ */
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-fixed: 200;
+  --z-drawer: 300;
+  --z-modal: 400;
+  --z-popover: 500;
+  --z-tooltip: 600;
+  --z-toast: 700;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DARK MODE
+   ════════════════════════════════════════════════════════════════════════════ */
+.dark {
+  --primary-50: 208 67% 10%;
+  --primary-100: 208 67% 14%;
+  --primary-200: 208 67% 19%;
+  --primary-300: 208 67% 25%;
+  --primary-400: 208 67% 33%;
+  --primary-500: 208 67% 42%;
+  --primary-600: 208 67% 58%;
+  --primary-700: 208 67% 72%;
+  --primary-800: 208 67% 85%;
+  --primary-900: 208 67% 95%;
+
+  --background: 201 30% 6%;
+  --foreground: 0 0% 92%;
+  --card: 201 25% 10%;
+  --card-foreground: 0 0% 92%;
+  --card-elevated: 201 25% 14%;
+  --sidebar: 201 30% 8%;
+  --sidebar-foreground: 0 0% 60%;
+  --sidebar-accent: 208 67% 45%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --header: 201 25% 10%;
+  --header-foreground: 0 0% 92%;
+  --muted: 201 25% 15%;
+  --muted-foreground: 0 0% 55%;
+  --border: 201 20% 20%;
+  --border-light: 201 20% 15%;
+  --input: 201 20% 20%;
+
+  --primary: 208 67% 50%;
+  --primary-foreground: 0 0% 10%;
+  --secondary: 208 67% 60%;
+  --secondary-foreground: 0 0% 10%;
+  --accent: 201 25% 18%;
+  --accent-foreground: 0 0% 92%;
+  --ring: 208 67% 50%;
+
+  --success: 152 55% 45%;
+  --success-foreground: 0 0% 10%;
+  --success-bg: 152 55% 12%;
+  --warning: 35 92% 50%;
+  --warning-foreground: 0 0% 10%;
+  --warning-bg: 35 92% 12%;
+  --danger: 358 65% 55%;
+  --danger-foreground: 0 0% 100%;
+  --danger-bg: 358 65% 12%;
+  --info: 201 70% 55%;
+  --info-foreground: 0 0% 10%;
+  --info-bg: 201 70% 12%;
+  --destructive: 358 65% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --heading: 0 0% 92%;
+  --body: 0 0% 75%;
+  --muted-text: 0 0% 55%;
+  --disabled: 0 0% 35%;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.2);
+  --shadow-elevated: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+}
+
+/* ============================================================================
+   TAILWIND & ANIMATIONS
+   ============================================================================ */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@config "../../tailwind.config.ts";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+   BASE LAYER
+   ============================================================================ */
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+    outline-color: hsl(var(--ring) / 0.5);
+  }
+
+  html {
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--body));
+    line-height: var(--line-height-relaxed);
+    color-scheme: light dark;
+    font-family: var(--font-kantumruy), var(--font-work-sans), sans-serif;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-size: var(--font-size-sm);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: hsl(var(--heading));
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  h1 { font-size: var(--font-size-3xl); }
+  h2 { font-size: var(--font-size-2xl); }
+  h3 { font-size: var(--font-size-xl); }
+  h4 { font-size: var(--font-size-lg); }
+  h5 { font-size: var(--font-size-base); }
+  h6 { font-size: var(--font-size-sm); }
+
+  p {
+    line-height: var(--line-height-relaxed);
+  }
+
+  input,
+  textarea,
+  select {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--input));
+    border-radius: var(--radius-md);
+    transition: all var(--transition-base);
+    padding: 0.625rem 0.75rem;
+    font-size: var(--font-size-sm);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.15);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground) / 0.6);
+  }
+
+  label {
+    color: hsl(var(--heading));
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+  }
+
+  a {
+    color: hsl(var(--primary));
+    transition: color var(--transition-base);
+  }
+
+  a:hover {
+    color: hsl(var(--primary) / 0.8);
+  }
+
+  button {
+    transition: all var(--transition-base);
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  code {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-xs);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--font-size-xs);
+  }
+
+  pre {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow: auto;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0.375rem;
+    height: 0.375rem;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: var(--radius-full);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground));
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.15);
+    color: hsl(var(--primary));
+  }
+}

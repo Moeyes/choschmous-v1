@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>National Primary School Games 2026 — Card Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;700;900&family=Koulen&family=Khmer+OS+Muol&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: transparent;
+        min-height: 100vh;
+      }
+
+      .layout {
+        display: flex;
+        gap: 0;
+        padding: 0;
+        width: 100%;
+        margin: 0;
+        align-items: flex-start;
+      }
+
+      .preview-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 0;
+      }
+
+      /* ══════════════════════════════
+   CARD — A6 ratio 105:148 ≈ 1:1.41
+   Display: 310 x 437px
+   ══════════════════════════════ */
+      .card-wrapper {
+        position: relative;
+        width: 310px;
+        height: 437px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+        background: #fff;
+      }
+      .card-bg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        pointer-events: none;
+      }
+
+      /* ── HEADER TEXT
+   Logo in SVG: roughly left 0–30%, top 0–21%
+   Text block sits to the right of logo */
+      .card-header {
+        position: absolute;
+        top: 3%;
+        left: 29%;
+        right: 2%;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .hdr-kh {
+        font-family: "Khmer OS Muol", "Noto Sans Khmer", Arial, sans-serif;
+        font-size: 9px;
+        font-weight: 100;
+        color: #2e3192;
+        margin-left: 12px;
+        line-height: 1.3;
+        /* font-stretch: expanded; */
+        letter-spacing: 0.6px;
+      }
+
+      .hdr-date {
+        font-family: "Noto Sans Khmer", Arial, sans-serif;
+        font-size: 8px;
+        color: #555;
+        margin-left: 31px;
+        margin-top: -7px;
+        line-height: 1.3;
+      }
+
+      /* ── PHOTO BOX
+   Based on SVG rect: x=20.31 y=112.69 w=70.16 h=90.2
+   on card 297.67x420.94
+   → left=6.8% top=26.8% w=23.6% h=21.4% */
+      .card-photo {
+        position: absolute;
+        left: 6.8%;
+        top: 26.6%;
+        width: 24%;
+        height: 22%;
+        border: 1.5px solid #2e3192;
+        /* background: #dde4ee; */
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+      .card-photo-ph {
+        font-size: 8px;
+        color: #aaa;
+        text-align: center;
+        font-family: "Noto Sans Khmer", Arial, sans-serif;
+        line-height: 1.5;
+      }
+
+      /* ── NAME BLOCK
+   Right side, vertically aligned with photo top
+   "លោក" prefix + Khmer name + Latin name
+   Sits above the category letter on the right */
+      .card-name-block {
+        position: absolute;
+        left: 60%;
+        top: 24%;
+        right: 0%;
+        transform: translateX(-50%);
+        text-align: center;
+        padding-left: 20px;
+        padding-right: 20px;
+        width: 80%;
+      }
+      .name-kh {
+        font-family: "Koulen", "Noto Sans Khmer", Arial, sans-serif;
+        font-size: 18px;
+        font-weight: 100;
+        color: #2e3192;
+        line-height: 1.3;
+        display: block;
+        margin-top: 8px;
+      }
+
+      /* ── CATEGORY LETTER
+   Large letter, RIGHT-CENTER of card, below the name block
+   Visually: roughly right 55–90%, top 42–58% */
+      .card-cat {
+        position: absolute;
+        left: 58%; /* right-center */
+        top: 35%;
+        font-family: "Arial Black", Arial, sans-serif;
+        font-size: 75px;
+        font-weight: 900;
+        line-height: 1;
+        color: #ed2224; /* default red; JS overrides per role */
+      }
+
+      /* ── SUBTITLE — left side, below photo */
+      .card-subtitle {
+        position: absolute;
+        left: 6%;
+        top: 57%;
+        width: 54%;
+        font-size: 7.5px;
+        color: #2e3192;
+        line-height: 1.75;
+        font-family: "Khmer OS Muol", "Noto Sans Khmer", Arial, sans-serif;
+        font-weight: 700;
+      }
+
+      /* ── QR CODE — bottom left, above banner */
+      .card-qr {
+        position: absolute;
+        left: 5.5%;
+        bottom: 12.5%;
+        background: #fff;
+        padding: 3px;
+        border: 1px solid #bbb;
+        line-height: 0;
+      }
+      .card-qr canvas,
+      .card-qr img {
+        width: 72px !important;
+        height: 72px !important;
+      }
+
+      /* ── SPORT BANNER — bottom blue strip from SVG
+   y=381.99/420.94 = 90.75% from top → height ≈9.25% */
+      .card-sport {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 9.3%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card-sport span {
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        font-family: "Noto Sans Khmer", Arial, sans-serif;
+      }
+
+      .hint {
+        font-size: 11px;
+        color: #999;
+        text-align: center;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+        .preview-area > h2,
+        .hint {
+          display: none;
+        }
+        .layout {
+          padding: 0;
+          justify-content: center;
+        }
+        .card-wrapper {
+          box-shadow: none;
+          width: 297px;
+          height: 420px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <!-- CARD PREVIEW -->
+      <div class="preview-area">
+        <div class="card-wrapper">
+          <!-- Original SVG as background -->
+          <img
+            class="card-bg"
+            src="data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjk3LjY3IDQyMC45NCI+PGRlZnM+PHN0eWxlPi5jbHMtMSwuY2xzLTZ7ZmlsbDpub25lO30uY2xzLTJ7Y2xpcC1wYXRoOnVybCgjY2xpcC1wYXRoKTt9LmNscy0ze29wYWNpdHk6MC43O30uY2xzLTR7b3BhY2l0eTowLjA1O30uY2xzLTV7ZmlsbDojMjMxZjIwO30uY2xzLTZ7c3Ryb2tlOiMyMzFmMjA7c3Ryb2tlLXdpZHRoOjIxLjkycHg7b3BhY2l0eTowLjAzO30uY2xzLTE3LC5jbHMtNntzdHJva2UtbWl0ZXJsaW1pdDoxMDt9LmNscy03e29wYWNpdHk6MC40O30uY2xzLTh7ZmlsbDojZWQyMjI0O30uY2xzLTl7ZmlsbDojM2E1M2E0O30uY2xzLTEwe2ZpbGw6IzJiYWFlMjt9LmNscy0xMXtmaWxsOiNmNTgyMjA7fS5jbHMtMTEsLmNscy0xMiwuY2xzLTE0LC5jbHMtMTV7ZmlsbC1ydWxlOmV2ZW5vZGQ7fS5jbHMtMTIsLmNscy0xNywuY2xzLTIxe2ZpbGw6I2ZmZjt9LmNscy0xM3tmaWxsOiNlZDFjMjQ7fS5jbHMtMTR7ZmlsbDojMjE0MDlhO30uY2xzLTE1e2ZpbGw6I2ZiYjAzYTt9LmNscy0xNntmaWxsOiMyZTM2OTA7fS5jbHMtMTd7c3Ryb2tlOiMyZTMxOTI7c3Ryb2tlLXdpZHRoOjAuNzFweDt9LmNscy0xOHtmaWxsOiNlZDIwMjQ7fS5jbHMtMTl7ZmlsbDojMmUzNjhmO30uY2xzLTIwe2ZpbGw6IzJlMzE5Mjt9PC9zdHlsZT48Y2xpcFBhdGggaWQ9ImNsaXAtcGF0aCI+PHJlY3QgY2xhc3M9ImNscy0xIiB3aWR0aD0iMjk3LjY3IiBoZWlnaHQ9IjQyMC45NSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsYXNzPSJjbHMtMiI+PGcgY2xhc3M9ImNscy0zIj48ZyBjbGFzcz0iY2xzLTQiPjxwYXRoIGNsYXNzPSJjbHMtNSIgZD0iTTI2Ny41NiwyMjdhNTYuNTIsNTYuNTIsMCwwLDAtMjUuMjMsMjYuMTYsNjQsNjQsMCwwLDAtMzEtNy4xM2MtLjg2LDAtMS43MS4wNy0yLjU2LjEzcy0xLjc5LjE0LTIuNjguMjRhNjIuMTIsNjIuMTIsMCwwLDAtNi40NCwxYy0uODcuMTgtMS43My40LTIuNTkuNjJxLTIuNzQuNzItNS40NSwxLjY5LTEuMjUuNDUtMi40OSwxYy0xLjczLjcxLTMuNDUsMS40OC01LjE1LDIuMzZhNjQuMjIsNjQuMjIsMCwwLDAtOC4yOSw1LjEycS0xLjA3Ljc5LTIuMSwxLjYyYy0xLjUsMS4xOS0yLjkyLDIuNDQtNC4yOCwzLjc0cS0xLC45My0xLjg5LDEuODlhNjAuNzEsNjAuNzEsMCwwLDAtNC4yOCw0Ljk1Yy0uNTYuNzEtMS4xLDEuNDQtMS42MywyLjE4cy0xLDEuNS0xLjUzLDIuMjZhNjMuNzcsNjMuNzcsMCwwLDAtOS42NSwyNS44Niw1Ni44Myw1Ni44MywwLDEsMCw0NS4yNiw2OS42Miw2My4yNSw2My4yNSwwLDAsMCw3Ny4zMi00MEE1Ni44MSw1Ni44MSwwLDEsMCwyNjcuNTYsMjI3Wk0xNjEuMzMsMzk2Ljg5YTQ1LjM2LDQ1LjM2LDAsMSwxLTExLjg1LDkwLjc0LDQ1LjM2LDQ1LjM2LDAsMCwxLDExLjg1LTkwLjc0Wk0yNjcuNTYsMzI2Ljc3YTQ1LjM2LDQ1LjM2LDAsMSwxLTExLjg1LDkwLjc0LDQ1LjM2LDQ1LjM2LDAsMCwxLDExLjg1LTkwLjc0WiIvPjwvZz48ZyBjbGFzcz0iY2xzLTciPjxwYXRoIGNsYXNzPSJjbHMtOCIgZD0iTTI3NC43MiwyMTIuNjh2MTIuNzFoLTIxLjkyVjIxMi42OFoiLz48cGF0aCBjbGFzcz0iY2xzLTkiIGQ9Ik0yOTcuNjcsMjEyLjY4djEyLjcxSCwyNzQuNzJWMjEyLjY4WiIvPjxwYXRoIGNsYXNzPSJjbHMtMTAiIGQ9Ik0xOC40LDIxMi42OHYxMi43MUgwVjIxMi42OFoiLz48cGF0aCBjbGFzcz0iY2xzLTExIiBkPSJNNDIuMDgsMjEyLjY4djEyLjcxSDE4LjRWMjEyLjY4WiIvPjwvZz48L2c+PHBhdGggY2xhc3M9ImNscy0xMiIgZD0iTTE4OS40NiwxMi45MmMtMS44OC0yLTIuOTMtLjQ1LTQuMzkuMThhMjkuNDcsMjkuNDcsMCwwLDAtOC4xMywxMS4yLDYwLjgyLDYwLjgyLDAsMCwwLTIuNzksMTcuNjJzLS4zOS0xLjQ3LS4zOS0xLjQ3Yy0uOTItMy40MS0xLjQ0LTcuOTMtMy4yOS0xMC44OVMxNjUuNzYsMjQuNzksMTY1LDMzLjg4YTYxLDYxLDAsMCwwLDIuMTcsMjEuMzhzLS4xNy0uMzQtLjE3LS4zNGMtLjM3LS42Ni0uNzctMS4zLTUuMzgtMTMuNTVhMjYuNzYsMjYuNzYsMCwwLDAtMTAuMzYtMTEuNTljLTcuNzYtMy44Ny03LjkzLS44NS02LjI1LDguMDcsMS40Niw3Ljc0LDEuNDgsMTQuMjIsMS40OCwxNC4yMnMtLjE0LS4xMi0uMTQtLjEyYy0uNzMtLjY1LTMtMi43LTYuOTUtNC40NWE0MS42OSw0MS42OSwwLDAsMC0xMS41LTIuNDdjLTguNjYtLjE1LTguNjYuODItNS4zNCw3Ljc1LDMsNi4zNiw3LDExLjI2LDcsMTEuMjZzLS4yLS4xMy0uMi0uMTNjLS44NC0uNDQtMi4xOC0xLjE4LTYuMDktMS4xOGE0Mi4xNSw0Mi4xNSwwLDAsMC0xNC40MiwzLjk0Yy00Ljg5LDIuMjgtNS41OSwzLjYxLTIuNjksNy43NiwzLjUyLDUsMTIsMTEuMjksMTIsMTEuMjlzLS4yNiwwLS4yNiwwYy0uMzgsMC0uOTIuMTItMS43Ni4zMmE1MS4xNCw1MS4xNCwwLDAsMC03LjU5LDIuNDdjLTUuMjcsMi4xNC01LjY4LDQuNDItMy4yNyw5Ljg5LDIsNC41Miw5LDEwLjUyLDksMTAuNTJzLS4yNSwuMTctLjI1LjE3Yy0uODUsLjY1LTIuODEsMi4xOC01LjA5LDQuM2ExOS40NywxOS40NywwLDAsMC0zLjgyLDQuNDdjLTIsMy40NS0xLjMxLDUuMjIsMS42OCw5LjQxLDIsMy4zOSwxMC44MywxNS4zOCwxMC44MywxNS4zOHMtLjI1LjItLjI1LjJjLS44OS43MS0yLjc3LDIuMjMtNS4wNSw0LjNhMjIuNTcsMjIuNTcsMCwwLDAtMy43OCw0LjQ3Yy0yLDMuNDUtMS4yNyw1LjI1LDEuNzUsOS40MWExNDAuMzIsMTQwLjMyLDAsMCwwLDkuMTYsMTJzLS4yLjMtLjIuM2MtMS4yNSwyLTEuMjUsMi42MiwwLDQuNjgsMS41LDIuNDYsMTAuMzQsMTIsMTAuMzQsMTJzLS4xNS4yNC0uMTUuMjRjLS41Ny45My0uNTcsMS43NSwwLDIuNjguNTcuOTIsMi4zOCwyLjIsMi4zOCwyLjJzLS4wNi4yNC0uMDYuMjRjLS4zOSwxLjI4LS4zOSwyLjM1LDAsMy40MS43NSwyLDEwLjc5LDEwLjA3LDEwLjc5LDEwLjA3czAsLjI0LDAsLjI0Yy4zOCwxLjI4LDAsMi4zNS0uNzYsMy40MWwtOC42Nyw4LjI1Yy0uNjMuNjMtLjYzLDEuNjUsMCwyLjI4LDUuMTIsNS4xMyw3LDYuNDgsOS4yNyw2LjQ4LDMsMCwzLDAsNy43NSwwYTIuMzEsMi4zMSwwLDAsMCwyLjMtMi4zMXYtMTBhNC4yNyw0LjI3LDAsMCwwLTQuMjgtNC4yN0gxNDguN2E0LjI2LDQuMjYsMCwwLDEtNC4yOC00LjI2di02YTIuMTcsMi4xNywwLDAsMSwyLjE3LTIuMTdaIi8+PHBhdGggY2xhc3M9ImNscy0xMyIgZD0iTTE4MS42NywzNi4zNnMtLjMtLjQtLjMtLjRjLS4zNy0uNjYtLjc3LTEuMy01LjM4LTEzLjU1YTI2LjM2LDI2LjM2LDAsMCwwLTYuODctOC45MmwtLjIzLjI0YzIuMTMsMi4zNCw0LjA4LDUuNDksNS4xMyw5LjEyLDMuMzksMTEuNzMsMy42NCwxMy41MSw0LjA2LDE0LjU0YzIsNS4zNywyLjQ4LDExLjI0LDIsMTcsMCwwLDEuOTItMy40NCwzLjY4LTkuNDNTMTgxLjY3LDM2LjM2LDE4MS42NywzNi4zNloiLz48cGF0aCBjbGFzcz0iY2xzLTExIiBkPSJNMTcxLjIsMTguMjhzLS4yLS4xMy0uMi0uMTNjLS44NC0uNDQtMi4xOC0xLjE4LTYuMDktMS4xOGE0Mi4xNSw0Mi4xNSwwLDAsMC0xNC40MiwzLjk0Yy00Ljg5LDIuMjgtNS41OSwzLjYxLTIuNjksNy43NiwzLjUyLDUsMTIsMTEuMjksMTIsMTEuMjlzMC0yLjc0LS4xOS02LjQxYy0uNC03LjUyLTItMTUuMzQsNS41Ny0xNS4zNVMxNzEuMiwxOC4yOCwxNzEuMiwxOC4yOFoiLz48cGF0aCBjbGFzcz0iY2xzLTE0IiBkPSJNMTYwLjIsMTIuOTJzLS4yNiwwLS4yNiwwYy0uMzgsMC0uOTIuMTItMS43Ni4zMmE1MS4xNCw1MS4xNCwwLDAsMC03LjU5LDIuNDdjLTUuMjcsMi4xNC01LjY4LDQuNDItMy4yNyw5Ljg5LDIsNC41Miw5LDEwLjUyLDksMTAuNTJzMC0uODgtLjE0LTUuNTRjLS4yNi04LjU1LTEuNTQtMTcuNjUsNS43MS0xNy42NVMxNjAuMiwxMi45MiwxNjAuMiwxMi45MloiLz48cGF0aCBjbGFzcz0iY2xzLTE1IiBkPSJNMTQ5LjU3LDEyLjkycy0uMjUsLjE3LS4yNS4xN2MtLjg1LjY1LTIuODEsMi4xOC01LjA5LDQuM2ExOS40NywxOS40NywwLDAsMC0zLjgyLDQuNDdjLTIsMy40NS0xLjMxLDUuMjIsMS42OCw5LjQxLDIsMy4zOSwxMC44MywxNS4zOCwxMC44MywxNS4zOHMtLjY5LTMuOTItMS4wNi04Ljg1Yy0uNjEtOC4xOS0xLjc5LTE2Ljg5LDQuODUtMTYuODlTMTQ5LjU3LDEyLjkyLDE0OS41NywxMi45MloiLz48cGF0aCBjbGFzcz0iY2xzLTE2IiBkPSJNMTQwLjIyLDIzczAtLjY1LDAtLjY1YTIuMzEsMi4zMSwwLDAsMC0yLjMtMi4zMUgxMTQuNjdhMi4zMSwyLjMxLDAsMCwwLTIuMywyLjMxVjIzYTIuMzEsMi4zMSwwLDAsMCwyLjMsMi4zMUgxMzcuOWEyLjMxLDIuMzEsMCwwLDAsMi4zLTIuMzFaIi8+PHJlY3QgY2xhc3M9ImNscy0xNyIgeD0iMjAuMzEiIHk9IjExMi42OSIgd2lkdGg9IjcwLjE2IiBoZWlnaHQ9IjkwLjIiLz48cGF0aCBjbGFzcz0iY2xzLTE4IiBkPSJNMCwzODEuOTloMjk3LjY3di0yOS43MUgwWiIvPjxwYXRoIGNsYXNzPSJjbHMtMTkiIGQ9Ik0wLDQyMC45NGgyOTcuNjdWMzgxLjk5SDBaIi8+PHBhdGggY2xhc3M9ImNscy0yMCIgZD0iTTE2Ny4yOSw4MS4yNGMtMS4yOS0uMzctMS40NC0xLS43Ny0yLjE4Ljc1LTEuMjgsMy0yLjU0LDQtMy42NiwxLjY2LDEuODUsNC4zLDEuODQsNC4zLDEuODRzLTEuNjguMTEtMi43Ni40MWMtMS4wOS4zLTEuNSwxLS44NywyLjE5cy42NywxLjU3LS44NiwyLjA5LTEuMzUtLjMyLTIuMDQtLjY5WiIvPjxwYXRoIGNsYXNzPSJjbHMtMjAiIGQ9Ik0xNDkuNzIsODguODdjLS4xMi0uNDctLjMtMS4yOS0uODgtMi4xOS0uNzUtMS4yOC0yLjQxLTIuNjgtMy42Ny0zLjgyYTIuMjYsMi4yNiwwLDAsMSwuNzgtMy4xOWMxLjEzLTEuNTIsMy4yOS0yLjcyLDUuMS0zLjA3YTIuNTUsMi41NSwwLDAsMSwyLjgyLDEuNDUsMi42MiwyLjYyLDAsMCwxLS41OCwzLjE3Yy0xLjI0LDEuMTktMi44NywyLjE5LTMuMTMsMi44NHMtLjE0LDEuMDkuNDksMi4xOEEyLjg0LDIuODQsMCwwLDAsMTUwLDkyLjljLTEuMi0uNTctMS4xOS0yLjMzLTEuMjgtMy4xMVptMy4zNy0xNS43OWEuODguODgsMCwwLDAtMS4yMy0uMTIsNC43MSw0LjcxLDAsMCwwLTEuMTQsMS4zNS44OC44OCwwLDEsMCwxLjQ5LjkzLDIuOTQsMi45NCwwLDAsMSwuNzYtLjkzLjg3Ljg3LDAsMCwwLS0uMTItMS4yM1ptMTcuNTYsMTcuNjFjLS4zOS0uMzEtLjc2LS44My0xLjEzLTEuNThzLS43NS0xLjU3LS43NS0xLjU3YTIuMzIsMi4zMiwwLDAsMSwwLTMuMjZjMS4yLTEuNDksMy4zNy0yLjcxLDUuMTUtMi43MmExLjUyLDEuNTIsMCwwLDEsMS41OSwxYy4yMS40OC4wOCwxLjEzLS42NSwxLjg5cy0xLjc4LDEuNjYtMi4xNiwyLjMxLS40NiwxLjQ3LjI3LDIuNThhMi44NCwyLjg0LDAsMCwwLDIuMzIsMS43OWMtMS4zNCwwLTIuNDQtMS4xNy0zLjY0LTIuMTRabS0uMjUtMTIuMzRhLjg4Ljg4LDAsMSwwLDEuNDQtMWMtLjM3LS41My0uNzgtMS4xMS0xLjI0LTEuNTZhLjg4Ljg4LDAsMSwwLTEuMjQsMS4yNWMuNDIuNDIsLjc4Ljk0LDEuMDQsMS4zMVoiLz48cGF0aCBjbGFzcz0iY2xzLTIxIiBkPSJNMTQ3Ljc4LDk5LjVhMi4zMSwyLjMxLDAsMCwwLTIuMywyLjMxdjguMzRhMi4zMSwyLjMxLDAsMCwwLDIuMywyLjMxSDE1Ni4xYTIuMzEsMi4zMSwwLDAsMCwyLjMtMi4zMXYtOC4zNGEyLjMxLDIuMzEsMCwwLDAtMi4zLTIuMzFabTExLjQ0LDBhMi4zMSwyLjMxLDAsMCwwLTIuMywyLjMxdjguMzRhMi4zMSwyLjMxLDAsMCwwLDIuMywyLjMxSDE2Ny41YTIuMzEsMi4zMSwwLDAsMCwyLjMtMi4zMXYtOC4zNGEyLjMxLDIuMzEsMCwwLDAtMi4zLTIuMzFabTExLjU4LDBhMi4zMSwyLjMxLDAsMCwwLTIuMywyLjMxdjguMzRhMi4zMSwyLjMxLDAsMCwwLDIuMywyLjMxSDE3OWEyLjMxLDIuMzEsMCwwLDAsMi4zLTIuMzF2LTguMzRhMi4zMSwyLjMxLDAsMCwwLTIuMy0yLjMxWiIvPjwvZz48L3N2Zz4="
+            alt="Card background"
+          />
+
+          <!-- HEADER TEXT -->
+          <div class="card-header">
+            <br />
+            <span class="hdr-kh">កីឡាសិស្យបឋមសិក្សាថ្នាក់ជាតិ ឆ្នាំ២០២៦</span>
+
+            <br />
+            <span class="hdr-date" id="card-date"></span>
+          </div>
+
+          <!-- PHOTO BOX -->
+          <div class="card-photo">
+            <img id="photo-img" src="" alt="Athlete" />
+            <div class="card-photo-ph" id="photo-ph">រូបថត<br />Photo</div>
+          </div>
+
+          <!-- NAME BLOCK (right side, above category letter) -->
+          <div class="card-name-block">
+            <span class="name-kh" id="card-kh"></span>
+          </div>
+
+          <!-- CATEGORY LETTER (right-center, below name) -->
+          <div class="card-cat" id="card-cat"></div>
+
+          <!-- SUBTITLE (left, below photo) -->
+          <div class="card-subtitle"></div>
+
+          <!-- QR CODE -->
+          <div class="card-qr" id="card-qr"></div>
+
+          <!-- SPORT BANNER -->
+          <div class="card-sport">
+            <span id="card-sport"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function generateQR(uuid) {
+        const box = document.getElementById("card-qr");
+        box.innerHTML = "";
+        try {
+          new QRCode(box, {
+            text: "https://yourapp.com/card/" + uuid,
+            width: 72,
+            height: 72,
+            colorDark: "#000",
+            colorLight: "#fff",
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+        } catch (e) {}
+      }
+
+      window.addEventListener('message', function(e) {
+        if (!e.data || e.data.type !== 'CARD_UPDATE') return;
+        const d = e.data;
+        document.getElementById('card-date').textContent = d.eventDateLine || '';
+        document.getElementById('card-kh').textContent = (d.prefix || '') + ' ' + (d.participantName || '');
+        document.getElementById('card-sport').textContent = d.sportName || '';
+        const catEl = document.getElementById('card-cat');
+        catEl.textContent = d.categoryLetter || 'F';
+        const colors = { A:'#2e3192', B:'#2e3192', D:'#2e3192', Fo:'#ed2224', F:'#ed2224', V:'#f58220' };
+        catEl.style.color = colors[d.categoryLetter] || '#2e3192';
+        const img = document.getElementById('photo-img');
+        const ph = document.getElementById('photo-ph');
+        if (d.photoUrl) {
+          img.src = d.photoUrl;
+          img.style.display = 'block';
+          ph.style.display = 'none';
+          img.onerror = () => { img.style.display = 'none'; ph.style.display = 'block'; };
+        } else {
+          img.style.display = 'none';
+          ph.style.display = 'block';
+        }
+        if (d.cardUuid) {
+          clearTimeout(window._qrTimer);
+          window._qrTimer = setTimeout(() => generateQR(d.cardUuid), 300);
+        }
+        if (d.subtitleKh) {
+          const sub = document.querySelector('.card-subtitle');
+          if (sub) sub.innerHTML = d.subtitleKh;
+        }
+      });
+      window.parent.postMessage({ type: 'CARD_READY' }, '*');
+    </script>
+  </body>
+</html>

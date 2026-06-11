@@ -1,0 +1,16 @@
+# .gitignore - common Python + FastAPI ignores
+__pycache__/
+*.pyc
+.env
+venv
+.venv
+.ipynb_checkpoints/
+.github
+concepts/
+frontend/
+package-lock.json
+*.__pycache__/
+makefile
+
+# Local-only bootstrap utility — must never carry plaintext credentials in the repo
+create_superadmin.py

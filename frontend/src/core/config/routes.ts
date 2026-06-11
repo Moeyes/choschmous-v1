@@ -1,0 +1,25 @@
+export const routes = {
+  home:               '/',
+  login:              '/login',
+  unauthorized:       '/unauthorized',
+  survey:             '/survey',
+  dashboard:          '/dashboard',
+  events:             '/events',
+  eventDetail:        (id: number) => `/events/${id}`,
+  sports:             '/sports',
+  sportDetail:        (id: number) => `/sports/${id}`,
+  users:              '/users',
+  organizations:      '/organizations',
+  participation:      '/participation',
+  cards:              '/cards',
+  reports:            '/reports',
+  register:           '/register',
+  leaderRegistration: '/leader-registration',
+  registrations:      '/registrations',
+  registrationDetail: (id: number) => `/registrations/${id}`,
+  byNumber:           '/by-number',
+  byCategory:         '/by-category',
+  bySport:            '/by-sport',
+} as const;
+
+
