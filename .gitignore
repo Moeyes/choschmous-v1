@@ -13,3 +13,6 @@ final/_rebuild/reskin/demo/CREDENTIALS.md
 # OS / editor
 .DS_Store
 *.swp
+
+# Claude Code local config / memory
+.claude/
