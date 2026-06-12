@@ -23,6 +23,8 @@ dependencies = [
     "sentry-sdk==2.54.0",
     "sqlalchemy==2.0.48",
     "uvicorn[standard]==0.41.0",
+    "openpyxl==3.1.5",
+    "weasyprint==63.1",
 ]
 
 [dependency-groups]

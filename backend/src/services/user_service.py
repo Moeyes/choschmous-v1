@@ -5,7 +5,7 @@ from typing import Optional, List
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import hash_password
+from core.security import hash_password, validate_password_strength
 from src.database.base_repository import BaseRepository
 from src.models.user import User
 from src.schemas.user import UserCreate, UserUpdate
@@ -30,6 +30,11 @@ class UserService:
 
     async def create_user(self, payload: UserCreate) -> User:
 
+        try:
+            validate_password_strength(payload.password)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+
         data = payload.model_dump()
         data["hashed_password"] = hash_password(payload.password)
         data.pop("password")
@@ -44,9 +49,11 @@ class UserService:
 
         if "password" in data:
             pw = data.pop("password")
-            if pw is not None and len(pw) < 8:
-                raise HTTPException(status_code=422, detail="password must be at least 8 characters")
             if pw is not None:
+                try:
+                    validate_password_strength(pw)
+                except ValueError as e:
+                    raise HTTPException(status_code=422, detail=str(e))
                 data["hashed_password"] = hash_password(pw)
                 data["token_valid_from"] = datetime.now(timezone.utc)
             else:

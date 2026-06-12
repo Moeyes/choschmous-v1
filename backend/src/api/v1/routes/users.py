@@ -27,6 +27,7 @@ async def list_users(
     username: str | None = Query(None),
     email: str | None = Query(None),
     db_service: UserService = Depends(get_user_service),
+    _: User = Depends(require_superadmin),
 ):
     """
     **List all system users with filters.**
@@ -59,7 +60,9 @@ async def list_users(
 
 @router.get("/{user_id}", response_model=user_schema.UserPublic)
 async def get_user(
-    user_id: uuid.UUID, db_service: UserService = Depends(get_user_service)
+    user_id: uuid.UUID,
+    db_service: UserService = Depends(get_user_service),
+    _: User = Depends(require_superadmin),
 ):
     """
     **Get specific user details.**

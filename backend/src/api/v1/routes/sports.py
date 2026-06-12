@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.ratelimit import create_sport_limiter, create_category_limiter
-from src.database.deps import get_db
+from src.database.deps import get_db, require_admin
+from src.models.user import User
 from src.schemas.category import CategoryPublic
 from src.schemas.sport import SportCreate, SportUpdate
 from src.schemas import sport as sport_schema
@@ -71,7 +72,8 @@ async def get_categories_for_sport(sport_id: int, service: SportService = Depend
 async def create_sport(
     request: Request,
     response: Response,
-    payload: SportCreate, service: SportService = Depends(get_sport_service)
+    payload: SportCreate, service: SportService = Depends(get_sport_service),
+    _: User = Depends(require_admin),
 ):
     """
     **Register a new Sport (e.g., Football, Basketball, Karate).**
@@ -142,6 +144,7 @@ async def add_sport_category(
     response: Response,
     body: AddCategoryBody,
     service: SportService = Depends(get_sport_service),
+    _: User = Depends(require_admin),
 ):
     """
     **Create a Sub-Category for a specific Sport in an Event.**
@@ -173,6 +176,7 @@ class DeleteCategoryBody(BaseModel):
 async def delete_category(
     body: DeleteCategoryBody,
     service: SportService = Depends(get_sport_service),
+    _: User = Depends(require_admin),
 ):
     """
     **Permanently delete a Sport Category.**
@@ -215,6 +219,7 @@ class UpdateCategoryBody(BaseModel):
 async def update_category(
     body: UpdateCategoryBody,
     service: SportService = Depends(get_sport_service),
+    _: User = Depends(require_admin),
 ):
     """
     Update the descriptive fields of an existing category.
@@ -232,6 +237,7 @@ async def update_sport(
     sport_id: int,
     payload: SportUpdate,
     service: SportService = Depends(get_sport_service),
+    _: User = Depends(require_admin),
 ):
     """
     **Update an existing Sport** (Khmer name and/or sport type).
@@ -249,6 +255,7 @@ async def update_sport(
 async def delete_sport(
     sport_id: int,
     service: SportService = Depends(get_sport_service),
+    _: User = Depends(require_admin),
 ):
     """
     **Permanently delete a Sport.**

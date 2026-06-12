@@ -10,6 +10,7 @@ class FullRegistrationRequest(BaseModel):
     organizationId: int
     sportId: int
     categoryId: Optional[int] = None
+    teamId: Optional[int] = None
     userId: Optional[uuid.UUID] = None
 
     kh_family_name: str = Field(..., alias="lastNameKhmer")
@@ -31,6 +32,9 @@ class FullRegistrationRequest(BaseModel):
 
     role: str
     leaderRole: Optional[LeaderRole] = None
+
+    # Set true to override the soft-duplicate (name + DoB) warning and register anyway.
+    force: bool = False
 
     model_config = ConfigDict(populate_by_name=True)
 

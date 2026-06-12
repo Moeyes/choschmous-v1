@@ -6,26 +6,34 @@ from core.ratelimit import create_event_limiter
 from src.database.deps import (
     get_db,
     get_current_user,
+    get_effective_org_id,
     enforce_org_access,
     require_staff,
     require_admin,
 )
 from src.models.user import User
 from src.schemas.category import CategoryPublic
-from pydantic import BaseModel
 from src.schemas.event import (
+    DeleteEventBody,
+    DeleteEventSportOrgLinkBody,
     EventCreate,
     EventPublic,
-    EventUpdate,
+    EventSportOrgLink,
     EventsPublic,
+    EventUpdate,
     PhaseUpdate,
+    RemoveOrgCompletelyFromEventBody,
 )
-from src.schemas.sports_event import SportsEventCreate, SportsEventPublic
+from src.schemas.sports_event import (
+    SportsEventPublic,
+    EligibleSportPublic,
+)
 from src.schemas.sports_event_org import (
     EventOrgNamesPublic,
     SportEventOrgOnly,
     SportsEventOrgPublic,
 )
+from src.schemas.report import SurveyStatusResponse
 from src.services.events_service import EventService
 
 router = APIRouter()
@@ -185,52 +193,17 @@ async def update_event_phase(
     return event
 
 
-class DeleteEventBody(BaseModel):
-    event_id: int
-
-
 @router.delete("/delete", status_code=status.HTTP_200_OK)
 async def delete_event(
     body: DeleteEventBody = Body(...),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_staff),
 ):
-    """
-    **Permanently delete an entire Event.**
-
-    **Scenario:**
-    Used for a total tournament cancellation.
-    **Warning**: This action is extremely destructive. It will remove all sports and registrations associated with this Event ID.
-
-    **Success Response:**
-    - `204 No Content`: Event record successfully destroyed.
-
-    **Error Cases:**
-    - `404 Not Found`: Event ID does not exist in the database.
-    """
     service = EventService(db)
     success = await service.delete_event(body.event_id)
     if not success:
         raise HTTPException(status_code=404, detail="Event not found")
     return {"message": "Event deleted"}
-
-
-# TODO: This duplicates sports_events.py POST / — verify both routes are called before removing
-@router.post(
-    "/add-sport",
-    response_model=SportsEventPublic,
-    status_code=status.HTTP_201_CREATED,
-)
-async def add_sport_to_event(
-    payload: SportsEventCreate,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_staff),
-):
-    """
-    **Associate a Sport with an Event.**
-    """
-    service = EventService(db)
-    return await service.add_sport_to_event(payload.events_id, payload.sports_id)
 
 
 @router.get("/{event_id}/sports", response_model=List[SportsEventPublic])
@@ -256,32 +229,30 @@ async def list_event_sports(event_id: int, db: AsyncSession = Depends(get_db)):
     return await service.get_event_sports(event_id)
 
 
-class RemoveSportFromEventBody(BaseModel):
-    association_id: int
-
-
-# TODO: This duplicates sports_events.py DELETE /{id} — verify both routes are called before removing
-@router.delete("/remove-sport-from-event", status_code=status.HTTP_200_OK)
-async def remove_sport_from_event(
-    body: RemoveSportFromEventBody = Body(...),
+@router.get(
+    "/{event_id}/my-eligible-sports", response_model=list[EligibleSportPublic]
+)
+async def list_my_eligible_sports(
+    event_id: int,
+    organization_id: int | None = Query(
+        None, description="Org filter (ignored for org-role users — derived from token)"
+    ),
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_staff),
+    current_user: User = Depends(get_current_user),
 ):
     """
-    **Remove a Sport from an Event.**
+    **Sports the caller's organization may register for in this event.**
+
+    Returns the sports the org selected in survey ② (``sports_event_org``) with
+    each sport's per-sport config (mode / team size / quotas) and the org's
+    current athlete count attached for the quota meter. Org-scoped: ORGANIZATION
+    users are forced to their own org.
     """
+    effective_org_id = get_effective_org_id(current_user, organization_id)
+    if effective_org_id is None:
+        raise HTTPException(status_code=400, detail="organization_id is required")
     service = EventService(db)
-    success = await service.remove_sport_from_event(body.association_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Association not found")
-    return {"message": "Sport deleted from event"}
-
-
-# Schema for org-to-event-sport association
-class EventSportOrgLink(BaseModel):
-    events_id: int
-    sports_id: int
-    org_id: int
+    return await service.get_my_eligible_sports(event_id, effective_org_id)
 
 
 @router.post(
@@ -339,6 +310,14 @@ async def list_event_sport_orgs(
     return await service.get_event_sport_orgs(event_id, sport_id)
 
 
+@router.get("/{event_id}/org-sports/{org_id}")
+async def list_org_event_sports(
+    event_id: int, org_id: int, db: AsyncSession = Depends(get_db)
+):
+    service = EventService(db)
+    return await service.get_org_event_sports(event_id, org_id)
+
+
 @router.get(
     "/{event_id}/sports/{sport_id}/categories", response_model=list[CategoryPublic]
 )
@@ -361,11 +340,6 @@ async def list_event_sport_categories(
 
     service = SportService(db)
     return await service.get_sport_categories(event_id, sport_id)
-
-
-class DeleteEventSportOrgLinkBody(BaseModel):
-    association_id: int
-    org_id: int
 
 
 @router.delete("/delete-event-sport-org-link", status_code=status.HTTP_200_OK)
@@ -416,11 +390,6 @@ async def list_unique_orgs_in_event(event_id: int, db: AsyncSession = Depends(ge
     return await service.get_organizations_in_event(event_id)
 
 
-class RemoveOrgCompletelyFromEventBody(BaseModel):
-    event_id: int
-    org_id: int
-
-
 @router.delete(
     "/remove-org-completely-from-event", status_code=status.HTTP_200_OK
 )
@@ -452,3 +421,13 @@ async def remove_org_completely_from_event(
             status_code=404, detail="Organization was not found in this event."
         )
     return {"message": "Organization deleted from event"}
+
+
+@router.get("/{event_id}/survey-status", response_model=SurveyStatusResponse)
+async def get_event_survey_status(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    service = EventService(db)
+    return await service.get_event_survey_status(event_id)

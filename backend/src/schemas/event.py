@@ -149,3 +149,30 @@ class PhaseUpdate(BaseModel):
         if self.phase not in PHASES:
             raise ValueError(f"phase must be one of {list(PHASES)}.")
         return self
+
+
+# ── Inline request bodies formerly defined in routes/events.py ──────────────
+
+
+class DeleteEventBody(BaseModel):
+    event_id: int
+
+
+class RemoveSportFromEventBody(BaseModel):
+    association_id: int
+
+
+class EventSportOrgLink(BaseModel):
+    events_id: int
+    sports_id: int
+    org_id: int
+
+
+class DeleteEventSportOrgLinkBody(BaseModel):
+    association_id: int
+    org_id: int
+
+
+class RemoveOrgCompletelyFromEventBody(BaseModel):
+    event_id: int
+    org_id: int

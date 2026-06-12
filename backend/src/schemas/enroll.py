@@ -22,6 +22,7 @@ class FullRegistrationRequest(BaseModel):
     organizationId: int = Field(..., alias="organizationId")
     sportId: int
     categoryId: Optional[int] = None
+    teamId: Optional[int] = None
 
     kh_family_name: str = Field(..., alias="lastNameKhmer")
     kh_given_name: str = Field(..., alias="firstNameKhmer")
@@ -35,6 +36,9 @@ class FullRegistrationRequest(BaseModel):
 
     role: str
     leaderRole: Optional[LeaderRole] = None
+
+    # Set true to override the soft-duplicate (name + DoB) warning and register anyway.
+    force: bool = False
 
     # Address
     address: Optional[str] = None
@@ -113,6 +117,8 @@ class ParticipantFilterParams(BaseModel):
     event_id: Optional[int] = None
     sport_id: Optional[int] = None
     organization_id: Optional[int] = None
+    category_id: Optional[int] = None
+    gender: Optional[str] = None
     search: Optional[str] = None  # Search by name or phone
     leader_roles: Optional[list[LeaderRole]] = None
     limit: int = 20

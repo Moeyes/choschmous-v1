@@ -63,6 +63,9 @@ class Events(Base):
     age_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
     age_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # Optional event-wide cap on total participants (Phase 2 — column only).
+    participant_cap: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     # --- Phase: survey by category -------------------------------------
     survey_category_status: Mapped[PhaseStatus] = mapped_column(
         _phase_status_enum, nullable=False, server_default="AUTO"

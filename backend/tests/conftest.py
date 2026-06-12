@@ -22,7 +22,6 @@ with whatever role / sport / org they need, so no JWT minting is required.
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -49,20 +48,19 @@ async def test_engine():
 
 @pytest_asyncio.fixture(loop_scope="session")
 async def db_session(test_engine) -> AsyncSession:
+    # An outer transaction that is always rolled back. ``join_transaction_mode=
+    # "create_savepoint"`` makes the app's own session.commit()/rollback() act on
+    # SAVEPOINTs inside this outer transaction, so each test is isolated even
+    # across multiple commits/rollbacks — without the fragile after-commit event
+    # hook (which broke with asyncpg under repeated commits).
     async with test_engine.connect() as conn:
         await conn.begin()
-        await conn.begin_nested()
-        session = AsyncSession(bind=conn, expire_on_commit=False, autoflush=False)
-
-        @event.listens_for(session.sync_session, "after_transaction_end")
-        def _restart_savepoint(sess, trans):  # noqa: ANN001
-            # When a service commit ends the active SAVEPOINT, immediately open a
-            # fresh one so the outer transaction is never actually committed.
-            if conn.closed:
-                return
-            if not conn.in_nested_transaction():
-                conn.sync_connection.begin_nested()
-
+        session = AsyncSession(
+            bind=conn,
+            expire_on_commit=False,
+            autoflush=False,
+            join_transaction_mode="create_savepoint",
+        )
         try:
             yield session
         finally:
@@ -85,6 +83,16 @@ async def client(db_session: AsyncSession) -> AsyncClient:
     ) as ac:
         yield ac
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def _disable_rate_limits(monkeypatch):
+    """Neutralize all rate limiters in tests — they are Redis-backed and shared
+    across tests, so real limits would cause flaky cross-test 429s."""
+    async def _noop(self, *args, **kwargs):
+        return None
+
+    monkeypatch.setattr("core.ratelimit.RateLimiter.check", _noop, raising=True)
 
 
 @pytest.fixture

@@ -137,6 +137,12 @@ async def list_participants(
     organization_id: Optional[int] = Query(
         None, description="Filter by organization ID (ignored for org-role users — derived from token)"
     ),
+    category_id: Optional[int] = Query(
+        None, description="Filter by category ID (athlete only)"
+    ),
+    gender: Optional[str] = Query(
+        None, description="Filter by gender (MALE/FEMALE/OTHER)"
+    ),
     leader_roles: Optional[list[LeaderRole]] = Query(
         None, description="Filter by one or more leader roles (coach, manager, etc.)"
     ),
@@ -164,6 +170,8 @@ async def list_participants(
         event_id=event_id,
         sport_id=sport_id,
         organization_id=effective_org_id,
+        category_id=category_id,
+        gender=gender,
         leader_roles=leader_roles,
         search=search,
         limit=limit,
@@ -195,6 +203,8 @@ async def search_participants(
         event_id=body.event_id,
         sport_id=body.sport_id,
         organization_id=effective_org_id,
+        category_id=body.category_id,
+        gender=body.gender,
         leader_roles=body.leader_roles,
         search=body.search,
         limit=body.limit,

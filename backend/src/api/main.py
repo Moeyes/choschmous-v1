@@ -9,8 +9,6 @@ from .v1.routes import events as v1_events
 from .v1.routes import organization as v1_organization
 from .v1.routes import participant as v1_reregister
 from .v1.routes import auth as v1_auth
-
-
 from .v1.routes import dashboard as v1_dashboard
 from .v1.routes import maintenance as v1_maintenance
 from .v1.routes import cloudinary as v1_cloudinary
@@ -22,10 +20,12 @@ from .v1.routes import public_events as v1_public_events
 from .v1.routes import public_sports as v1_public_sports
 from .v1.routes import sports_events as v1_sports_events
 from .v1.routes import category_survey as v1_category_survey
+from .v1.routes import teams as v1_teams
+from .v1.routes import organizers as v1_organizers
+from .v1.routes import reports as v1_reports
 
 
 V1 = settings.API_V1_STR
-V2 = settings.API_V2_STR
 
 # Auth mechanism: all protected routes use HttpOnly cookie "access_token" set by POST /api/auth/login.
 # get_current_user reads that cookie, validates the JWT, and returns the User.
@@ -77,6 +77,21 @@ api_router.include_router(
     dependencies=_auth,
 )
 
+# Teams
+api_router.include_router(
+    v1_teams.router, prefix=V1 + "/teams", tags=["teams"], dependencies=_auth
+)
+
+# Organizers
+api_router.include_router(
+    v1_organizers.router, prefix=V1, tags=["organizers"], dependencies=_auth
+)
+
+# Reports
+api_router.include_router(
+    v1_reports.router, prefix=V1, tags=["reports"], dependencies=_auth
+)
+
 # Cloudinary Presign
 api_router.include_router(
     v1_cloudinary.router, prefix=V1 + "/cloudinary", tags=["cloudinary"], dependencies=_auth
@@ -97,4 +112,4 @@ if settings.ENVIRONMENT == "local":
     )
 
 
-api_router.include_router(v1_root.router, prefix=V2 + "/root", tags=["root"])
+

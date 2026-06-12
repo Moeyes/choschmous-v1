@@ -3,11 +3,13 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.ratelimit import sports_event_write_limiter
-from src.database.deps import get_db
+from src.database.deps import get_db, require_staff
 from src.models.sports_event import sports_event
+from src.models.user import User
 from src.schemas.sports_event import (
     SportsEventCreate,
     SportsEventPublic,
+    SportsEventConfigUpdate,
     SportsEventOrgPublicList,
 )
 from src.services.events_service import EventService
@@ -67,6 +69,25 @@ async def create_sports_event(
         return await service.add_sport_to_event(payload.events_id, payload.sports_id)
     except IntegrityError:
         raise HTTPException(status_code=404, detail="Event or sport not found.")
+
+
+@router.patch(
+    "/{id}/config",
+    response_model=SportsEventPublic,
+    summary="Set per-sport competition config (mode / team size / quotas)",
+)
+async def update_sports_event_config(
+    id: int,
+    payload: SportsEventConfigUpdate,
+    service: EventService = Depends(get_event_service),
+    _: User = Depends(require_staff),
+):
+    """
+    **Configure a sport within an event** — mode (individual / team / both),
+    team size bounds, and per-org quotas. Staff only. Only the fields present in
+    the body are updated.
+    """
+    return await service.update_sport_event_config(id, payload)
 
 
 @router.delete(

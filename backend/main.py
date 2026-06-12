@@ -1,7 +1,11 @@
 import contextlib
+import logging
+import uuid
 
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
@@ -16,6 +20,8 @@ from core.cache_control import CacheControlMiddleware
 from core.dashboard_invalidation import DashboardCacheMiddleware
 from core.redis_client import close_redis
 from src.api.main import api_router
+
+logger = logging.getLogger(__name__)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -38,6 +44,37 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
     lifespan=lifespan,
 )
+
+
+@app.get("/health", tags=["health"], include_in_schema=False)
+async def health() -> dict[str, str]:
+    """Liveness probe used by the container HEALTHCHECK and load balancers."""
+    return {"status": "ok"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_id = uuid.uuid4()
+    logger.exception("Unhandled exception %s: %s", error_id, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal error occurred", "error_id": str(error_id)},
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 403:
+        logger.warning(
+            "Access denied [%s] %s: %s",
+            request.method, request.url.path, exc.detail,
+        )
+    if exc.status_code >= 500:
+        logger.exception("Server error %s: %s", exc.status_code, exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
 
 
 app.add_middleware(LoggingMiddleware)

@@ -18,7 +18,6 @@ class Settings(BaseSettings):
 	"""
 	PROJECT_NAME: str = "Backend"
 	API_V1_STR: str = "/api"
-	API_V2_STR: str = "/api"
 	SENTRY_DSN: str | None = None
 	ENVIRONMENT: str = "local"
 	# Store raw origins as a plain string to avoid dotenv/json decoding issues.

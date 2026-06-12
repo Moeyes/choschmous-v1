@@ -15,6 +15,9 @@ from .sports_event import sports_event
 from .sports_event_org import sports_event_org
 from .medal import Medal
 from .uploaded_file import UploadedFile
+from .team import team
+from .organizer_role import OrganizerRole
+from .organizer_participation import OrganizerParticipation
 
 __all__ = [
     "User",
@@ -34,4 +37,7 @@ __all__ = [
     "sports_event_org",
     "Medal",
     "UploadedFile",
+    "team",
+    "OrganizerRole",
+    "OrganizerParticipation",
 ]

@@ -29,7 +29,12 @@ from src.models.sport import Sport
 from src.models.events import Events
 from src.models.organization import Organization
 from src.models.category import category as CategoryModel
+from src.models.sports_event import sports_event as SportsEvent
+from src.models.sports_event_org import sports_event_org as SportsEventOrg
 from src.models.enum.user import LeaderRole
+from src.models.enum.event import AgeMode
+
+from datetime import date
 
 from src.schemas.enroll import ParticipantFilterParams, ParticipantUpdateRequest
 from src.schemas.registration import FullRegistrationRequest
@@ -39,8 +44,226 @@ class ParticipantService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    # ── Registration validation (Phase 2) ───────────────────────────────
+
+    @staticmethod
+    def _raise(status_code: int, code: str, message: str, **params):
+        """Raise an HTTPException with a structured detail the UI can localize."""
+        detail = {"code": code, "message": message}
+        if params:
+            detail["params"] = params
+        raise HTTPException(status_code=status_code, detail=detail)
+
+    @staticmethod
+    def _age_on(dob: date, on_date: date) -> int:
+        return on_date.year - dob.year - (
+            (on_date.month, on_date.day) < (dob.month, dob.day)
+        )
+
+    async def _validate_registration(self, data: FullRegistrationRequest):
+        role = data.role.lower()
+
+        event = await self.db.get(Events, data.eventId)
+        if not event:
+            self._raise(404, "EVENT_NOT_FOUND", "Event not found.")
+
+        # Rule 1 — registration phase must be open.
+        if not event.registration_is_open:
+            self._raise(403, "REGISTRATION_CLOSED",
+                        "Registration is not open for this event.")
+
+        # Rule 0 — event-wide participant cap.
+        if event.participant_cap is not None:
+            used_total = (
+                await self.db.execute(
+                    select(func.count()).select_from(
+                        select(AthleteParticipation.c.id).where(
+                            AthleteParticipation.c.events_id == data.eventId,
+                        ).union_all(
+                            select(LeaderParticipation.c.id).where(
+                                LeaderParticipation.c.events_id == data.eventId,
+                            )
+                        ).subquery()
+                    )
+                )
+            ).scalar() or 0
+            if used_total >= event.participant_cap:
+                self._raise(409, "PARTICIPANT_CAP_REACHED",
+                            "The event has reached its maximum participant "
+                            "capacity.",
+                            used=used_total, cap=event.participant_cap)
+
+        # Rule 6a — sport eligibility: the org must have selected this sport in
+        # survey ② (sports_event_org).
+        elig = await self.db.execute(
+            select(SportsEventOrg.id).where(
+                SportsEventOrg.events_id == data.eventId,
+                SportsEventOrg.sports_id == data.sportId,
+                SportsEventOrg.organization_id == data.organizationId,
+            )
+        )
+        if elig.scalar_one_or_none() is None:
+            self._raise(403, "SPORT_NOT_ELIGIBLE",
+                        "This sport is not in your organization's survey "
+                        "selections for this event.")
+
+        config = (
+            await self.db.execute(
+                select(SportsEvent).where(
+                    SportsEvent.events_id == data.eventId,
+                    SportsEvent.sports_id == data.sportId,
+                )
+            )
+        ).scalar_one_or_none()
+
+        # Athlete-only rules: category, age window, quota.
+        if role == "athlete":
+            # Rule 6b — category must exist for (event, sport).
+            if data.categoryId is None:
+                self._raise(422, "CATEGORY_INVALID",
+                            "An athlete must be assigned a category.")
+            cat = await self.db.execute(
+                select(CategoryModel.id).where(
+                    CategoryModel.id == data.categoryId,
+                    CategoryModel.events_id == data.eventId,
+                    CategoryModel.sports_id == data.sportId,
+                )
+            )
+            if cat.scalar_one_or_none() is None:
+                self._raise(422, "CATEGORY_INVALID",
+                            "The selected category does not exist for this "
+                            "sport in this event.")
+
+            # Rule 2 — age window.
+            self._validate_age(event, data.date_of_birth)
+
+            # Rule 4 — per-org athlete quota.
+            if config is not None and config.quota_athletes_per_org is not None:
+                used = (
+                    await self.db.execute(
+                        select(func.count())
+                        .select_from(AthleteParticipation)
+                        .where(
+                            AthleteParticipation.events_id == data.eventId,
+                            AthleteParticipation.sports_id == data.sportId,
+                            AthleteParticipation.organization_id == data.organizationId,
+                        )
+                    )
+                ).scalar() or 0
+                if used >= config.quota_athletes_per_org:
+                    self._raise(409, "QUOTA_FULL",
+                                "The athlete quota for this sport is full.",
+                                used=used, quota=config.quota_athletes_per_org)
+
+            # Team mode validation if teamId is provided
+            if data.teamId is not None and role == "athlete":
+                if config and config.mode == "individual":
+                    self._raise(422, "TEAM_MODE_DISALLOWED",
+                                "This sport does not allow team registration.")
+                from src.models.team import team as TeamModel
+                team = await self.db.get(TeamModel, data.teamId)
+                if not team:
+                    self._raise(404, "TEAM_NOT_FOUND", "Team not found.")
+                if team.event_id != data.eventId or team.sport_id != data.sportId:
+                    self._raise(422, "TEAM_MISMATCH",
+                                "Team does not match the event/sport.")
+                if team.org_id != data.organizationId:
+                    self._raise(422, "TEAM_ORG_MISMATCH",
+                                "Team does not belong to your organization.")
+                if config and config.team_size_max is not None:
+                    used_team = (
+                        await self.db.execute(
+                            select(func.count()).select_from(AthleteParticipation).where(
+                                AthleteParticipation.team_id == data.teamId,
+                            )
+                        )
+                    ).scalar() or 0
+                    if used_team >= config.team_size_max:
+                        self._raise(409, "TEAM_FULL",
+                                    "The team has reached its maximum size.",
+                                    max=config.team_size_max)
+
+        # Rule 3 — document requirement (all participants).
+        self._validate_documents(event, data)
+
+        # Rule 5 — soft duplicate (all participants), overridable with force.
+        if not data.force:
+            await self._check_duplicate(data)
+
+    def _validate_age(self, event: Events, dob: date):
+        if event.age_mode is None or event.age_min is None or event.age_max is None:
+            return
+        if event.age_mode == AgeMode.BIRTH_YEAR:
+            birth_year = dob.year
+            if not (event.age_min <= birth_year <= event.age_max):
+                self._raise(422, "AGE_OUT_OF_RANGE",
+                            "Birth year is outside the allowed range.",
+                            mode="BIRTH_YEAR", min=event.age_min,
+                            max=event.age_max, value=birth_year)
+        else:  # EXACT_AGE
+            if event.start_date is None:
+                return
+            age = self._age_on(dob, event.start_date)
+            if not (event.age_min <= age <= event.age_max):
+                self._raise(422, "AGE_OUT_OF_RANGE",
+                            "Age at the event start date is outside the "
+                            "allowed range.",
+                            mode="EXACT_AGE", min=event.age_min,
+                            max=event.age_max, value=age)
+
+    def _validate_documents(self, event: Events, data: FullRegistrationRequest):
+        basis = event.start_date or date.today()
+        age = self._age_on(data.date_of_birth, basis)
+        if age < 18:
+            if not data.birthCertificateUrl:
+                self._raise(422, "DOCUMENT_REQUIRED",
+                            "A birth certificate is required for participants "
+                            "under 18.",
+                            requires="birth_certificate", age=age)
+        else:
+            if not (data.nationalIdUrl or data.passportUrl):
+                self._raise(422, "DOCUMENT_REQUIRED",
+                            "A national ID or passport is required for "
+                            "participants 18 and older.",
+                            requires="national_id_or_passport", age=age)
+
+    async def _check_duplicate(self, data: FullRegistrationRequest):
+        name_dob = (
+            (Enroll.kh_family_name == data.kh_family_name)
+            & (Enroll.kh_given_name == data.kh_given_name)
+            & (Enroll.date_of_birth == data.date_of_birth)
+        )
+        athlete_dup = (
+            select(Enroll.id)
+            .join(Athlete, Athlete.enroll_id == Enroll.id)
+            .join(AthleteParticipation, AthleteParticipation.athletes_id == Athlete.id)
+            .where(AthleteParticipation.events_id == data.eventId, name_dob)
+            .limit(1)
+        )
+        leader_dup = (
+            select(Enroll.id)
+            .join(Leader, Leader.enroll_id == Enroll.id)
+            .join(LeaderParticipation, LeaderParticipation.leaders_id == Leader.id)
+            .where(LeaderParticipation.events_id == data.eventId, name_dob)
+            .limit(1)
+        )
+        for query in (athlete_dup, leader_dup):
+            found = (await self.db.execute(query)).scalar_one_or_none()
+            if found is not None:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "DUPLICATE_SUSPECT",
+                        "message": "A participant with the same name and date of "
+                                   "birth is already registered for this event.",
+                        "duplicate_suspect": True,
+                    },
+                )
+
     async def register_participant(self, data: FullRegistrationRequest):
         try:
+            await self._validate_registration(data)
+
             new_enroll = Enroll(
                 user_id=data.userId,
                 kh_family_name=data.kh_family_name,
@@ -95,6 +318,7 @@ class ParticipantService:
             sports_id=data.sportId,
             category_id=data.categoryId,
             organization_id=data.organizationId,
+            team_id=data.teamId,
         )
         self.db.add(participation)
 
@@ -138,6 +362,17 @@ class ParticipantService:
         if params.organization_id is not None:
             query = query.filter(
                 participation_model.organization_id == params.organization_id
+            )
+
+        if params.category_id is not None:
+            if hasattr(participation_model, 'category_id'):
+                query = query.filter(
+                    participation_model.category_id == params.category_id
+                )
+
+        if params.gender is not None:
+            query = query.filter(
+                func.lower(cast(Enroll.gender, Text)) == params.gender.lower()
             )
 
         if params.search:
@@ -206,6 +441,12 @@ class ParticipantService:
                 q = q.filter(participation_model.sports_id == params.sport_id)
             if params.organization_id is not None:
                 q = q.filter(participation_model.organization_id == params.organization_id)
+            if params.category_id is not None:
+                q = q.filter(participation_model.category_id == params.category_id)
+            if params.gender is not None:
+                q = q.filter(
+                    func.lower(cast(Enroll.gender, Text)) == params.gender.lower()
+                )
             if params.search:
                 term = f"%{params.search}%"
                 q = q.filter(Enroll.search_text.ilike(term))

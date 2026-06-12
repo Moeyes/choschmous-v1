@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.models.athletes import athletes
+    from src.models.team import team
 from src.models.sport import Sport
 from src.models.category import category
 from src.models.organization import Organization
@@ -40,6 +41,10 @@ class athlete_participation(Base):
         Integer, ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True
     )
 
+    team_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), nullable=False
     )
@@ -53,3 +58,5 @@ class athlete_participation(Base):
     category: Mapped["category"] = relationship("category")
 
     organization: Mapped["Organization"] = relationship("Organization")
+
+    team: Mapped["team | None"] = relationship("team", backref="members")

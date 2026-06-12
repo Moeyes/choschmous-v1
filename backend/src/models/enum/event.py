@@ -24,3 +24,10 @@ class PhaseStatus(PyEnum):
     AUTO = "AUTO"
     OPEN = "OPEN"
     CLOSED = "CLOSED"
+
+
+class SportMode(PyEnum):
+    """How a sport is contested within an event (per sports_event config)."""
+    INDIVIDUAL = "individual"
+    TEAM = "team"
+    BOTH = "both"
