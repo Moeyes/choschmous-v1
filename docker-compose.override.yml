@@ -7,8 +7,8 @@ services:
       - /app/.venv
     environment:
       - ENVIRONMENT=development
-      - JWT_SECRET_KEY=98bc1394597c84a27a3f23f443347386d67ce2a3d0d9cfa5407a0b62024e3abd
-      - JWT_REFRESH_SECRET_KEY=91ce94423fd380476d4d04efba6321d420b193b9683737fab349d59daaa3cec3
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-secret-change-me-in-production}
+      - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY:-dev-refresh-secret-change-me-in-production}
 
   frontend:
     build:

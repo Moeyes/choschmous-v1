@@ -12,6 +12,11 @@ CMD ["pnpm", "dev"]
 
 # ── Builder (production assets) ──────────────────
 FROM base AS builder
+# Next.js evaluates next.config rewrites() at BUILD time and bakes the proxy
+# destination into the route manifest, so the API target must be present now —
+# setting it only at runtime is ignored.
+ARG API_PROXY_TARGET=http://backend:8000
+ENV API_PROXY_TARGET=$API_PROXY_TARGET
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
@@ -26,6 +31,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 USER nextjs
 EXPOSE 3000
 ENV NODE_ENV=production PORT=3000 HOSTNAME="0.0.0.0"
+# Use 127.0.0.1 (not localhost): the Next.js standalone server binds IPv4
+# 0.0.0.0 only, so "localhost" resolving to IPv6 ::1 would be refused.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
 CMD ["node", "server.js"]

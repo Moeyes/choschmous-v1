@@ -1,4 +1,15 @@
 FROM python:3.14-slim AS base
+# Native libraries required by WeasyPrint (PDF reports): pango/cairo pull in
+# glib/gobject, harfbuzz, fontconfig and freetype. Without these the
+# `weasyprint` import fails at boot with "cannot load library libgobject-2.0-0".
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpango-1.0-0 \
+        libpangoft2-1.0-0 \
+        libharfbuzz-subset0 \
+        libgdk-pixbuf-2.0-0 \
+        libffi8 \
+        fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir uv
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
