@@ -10,3 +10,4 @@ export { useUpdateRegistration } from './useUpdateRegistration';
 export { useRevealParticipantPhone } from './useRevealParticipantPhone';
 export { useCascadingData } from './useCascadingData';
 export { useCategories } from './useCategories';
+export { useEligibleSports } from './useEligibleSports';

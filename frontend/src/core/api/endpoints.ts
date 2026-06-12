@@ -6,15 +6,20 @@ export const API = {
         sports: (eventId: number) => `/api/events/${eventId}/sports`,
         sportOrgs: (eventId: number, sportId: number) => `/api/events/${eventId}/sports/${sportId}/orgs`,
         sportCategories: (eventId: number, sportId: number) => `/api/events/${eventId}/sports/${sportId}/categories`,
+        myEligibleSports: (eventId: number) => `/api/events/${eventId}/my-eligible-sports`,
         organizations: (eventId: number) => `/api/events/${eventId}/organizations`,
-        addSport: '/api/events/add-sport',
-        removeSport: '/api/events/remove-sport-from-event',
         addOrgToSport: '/api/events/add-org-to-sport',
         deleteOrgLink: '/api/events/delete-event-sport-org-link',
         removeOrgCompletely: '/api/events/remove-org-completely-from-event',
         list: '/api/events?skip=0&limit=100',
         phase: (id: number) => `/api/events/${id}/phase`,
         delete: '/api/events/delete',
+        surveyStatus: (id: number) => `/api/events/${id}/survey-status`,
+    },
+    sportsEvents: {
+        base: '/api/sports-events',
+        byId: (id: number) => `/api/sports-events/${id}`,
+        config: (id: number) => `/api/sports-events/${id}/config`,
     },
     sports: {
         base: '/api/sports',
@@ -55,6 +60,7 @@ export const API = {
         sports: '/api/sports?skip=0&limit=200',
         organizations: '/api/organization?skip=0&limit=100',
         eventSports: (eventId: number) => `/api/events/${eventId}/sports`,
+        orgSports: (eventId: number, orgId: number) => `/api/events/${eventId}/org-sports/${orgId}`,
         addOrgToSport: '/api/events/add-org-to-sport',
     },
     bynumber: {
@@ -70,15 +76,20 @@ export const API = {
         data: '/api/dashboard',
     },
     reports: {
-        orgSport: '/api/excel/org-sport',
-        orgSportParticipant: '/api/excel/org-sport-participant',
+        generate: (key: string) => `/api/reports/${key}`,
     },
+
     cards: {
         byId: (pId: string, orgId: string, eventId: string) => `/api/card/${pId}/${orgId}/${eventId}`,
         list: (orgId: string, eventId: string) => `/api/cards/${orgId}/${eventId}`,
     },
     participant: {
         base: '/api/participant',
+    },
+    organizer: {
+        register: '/api/registration/organizer',
+        roles: '/api/organizer-roles',
+        roleById: (id: number) => `/api/organizer-roles/${id}`,
     },
     bycategory: {
         eligibleEvents: '/api/events?survey_category_open=true&skip=0&limit=100',

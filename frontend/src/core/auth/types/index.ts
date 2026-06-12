@@ -82,7 +82,9 @@ export type FeatureKey =
     | 'registrations'
     | 'participation'
     | 'reports'
-    | 'cards';
+    | 'cards'
+    | 'organizerregistration'
+    | 'organizerroles';
 
 const { SUPER_ADMIN, ADMIN, ORGANIZATION, FEDERATION } = UserRole;
 
@@ -109,5 +111,7 @@ export const FEATURE_ACCESS: Record<FeatureKey, UserRole[]> = {
     participation:      [SUPER_ADMIN, ADMIN, ORGANIZATION],
     reports:            [SUPER_ADMIN, ADMIN, ORGANIZATION],
     cards:              [SUPER_ADMIN, ADMIN, ORGANIZATION],
+    organizerregistration: [SUPER_ADMIN, ADMIN, ORGANIZATION],
+    organizerroles:     [SUPER_ADMIN, ADMIN],
 };
 

@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRegistrations } from '../hooks';
 import { useAuth, usePermissions, CAPABILITIES } from '@/core/auth';
-import { Search, Filter, User, Trash2, Edit2, Award, Calendar } from 'lucide-react';
+import { Search, Filter, User, Trash2, Edit2, Award, Calendar, X } from 'lucide-react';
 import { Button, Badge, ListPage } from '@/shared';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+
+const GENDERS = ['MALE', 'FEMALE', 'OTHER'] as const;
 
 export function ParticipantList() {
   const router = useRouter();
@@ -15,14 +17,23 @@ export function ParticipantList() {
   const { can } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [genderFilter, setGenderFilter] = useState('');
   const PAGE_SIZE = 10;
   const isAdmin = can(CAPABILITIES.CROSS_ORG_ADMIN);
   const organization_id = isAdmin ? undefined : (user?.org_id || undefined);
   const t = useTranslations('registration.list');
   const tCommon = useTranslations('common');
+  const tReg = useTranslations('registration');
 
   const { data: registrationsResponse, isLoading, error, deleteRegistration, isDeleting } = useRegistrations({
-    search: searchTerm || undefined, organization_id, skip: currentPage * PAGE_SIZE, limit: PAGE_SIZE,
+    search: searchTerm || undefined,
+    organization_id,
+    category_id: categoryFilter ? Number(categoryFilter) : undefined,
+    gender: genderFilter || undefined,
+    skip: currentPage * PAGE_SIZE,
+    limit: PAGE_SIZE,
   });
 
   const registrations = registrationsResponse?.data || [];
@@ -31,6 +42,14 @@ export function ParticipantList() {
 
   const handleDelete = (id: number) => { if (window.confirm(t('deleteConfirm'))) deleteRegistration(id); };
   const openDetail = (id: number, role: string) => router.push(`/registrations/${id}?role=${role}`);
+
+  const clearFilters = () => {
+    setCategoryFilter('');
+    setGenderFilter('');
+    setCurrentPage(0);
+  };
+
+  const hasActiveFilters = categoryFilter || genderFilter;
 
   return (
     <ListPage
@@ -92,7 +111,7 @@ export function ParticipantList() {
             <div>
               <Badge variant={p.role === 'athlete' ? 'primary' : 'warning'} size="sm">
                 <Award className="w-3 h-3" />
-                {p.role}
+                {p.role === 'athlete' ? tCommon('athlete') : tCommon('leader')}
               </Badge>
               {p.leader_role && (
                 <p className="text-[10px] text-muted-text mt-0.5">{p.leader_role}</p>
@@ -136,21 +155,67 @@ export function ParticipantList() {
         },
       ]}
     >
-      <div className="flex flex-col sm:flex-row gap-4 rounded-lg border border-border bg-card p-4 shadow-sm">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-text" />
-          <input
-            type="text"
-            placeholder={t('searchPlaceholder')}
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(0); }}
-            className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-body placeholder-muted-text focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none"
-          />
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4 rounded-lg border border-border bg-card p-4 shadow-sm">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-text" />
+            <input
+              type="text"
+              placeholder={t('searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(0); }}
+              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-body placeholder-muted-text focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none"
+            />
+          </div>
+          <Button
+            variant={showFilters || hasActiveFilters ? 'default' : 'outline'}
+            className="gap-2 shrink-0"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="w-4 h-4" />
+            {tCommon('filters')}
+            {hasActiveFilters && <Badge variant="success" size="sm" className="ml-1">!</Badge>}
+          </Button>
         </div>
-        <Button variant="outline" className="gap-2 shrink-0">
-          <Filter className="w-4 h-4" />
-          {tCommon('filters')}
-        </Button>
+
+        {showFilters && (
+          <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-foreground">{tCommon('filters')}</span>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={clearFilters}>
+                  <X className="w-3 h-3" /> {tCommon('clear')}
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">{tReg('fields.gender')}</label>
+                <select
+                  value={genderFilter}
+                  onChange={(e) => { setGenderFilter(e.target.value); setCurrentPage(0); }}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">{tCommon('all')}</option>
+                  {GENDERS.map((g) => (
+                    <option key={g} value={g}>{g.charAt(0) + g.slice(1).toLowerCase()}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">{tReg('fields.category')}</label>
+                <input
+                  type="number"
+                  placeholder="Category ID"
+                  value={categoryFilter}
+                  onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(0); }}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring"
+                  min="1"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </ListPage>
   );

@@ -5,7 +5,7 @@ import type { EventCreate, EventUpdate } from '../types';
 import type {
     AddSportToEventPayload, AddOrgToEventSportPayload,
     DeleteEventSportOrgLinkPayload, RemoveOrgCompletelyFromEventPayload,
-    PhaseUpdatePayload,
+    PhaseUpdatePayload, SportConfigPayload,
 } from '../types';
 
 export interface IEventRepository {
@@ -21,6 +21,7 @@ export interface IEventRepository {
     getSports(eventId: number): Promise<EventSportPublic[]>;
     addSportToEvent(payload: AddSportToEventPayload): Promise<void>;
     removeSportFromEvent(associationId: number): Promise<void>;
+    updateSportConfig(id: number, config: SportConfigPayload): Promise<void>;
 
     getSportOrgs(eventId: number, sportId: number): Promise<EventSportOrgPublic[]>;
     addOrgToEventSport(payload: AddOrgToEventSportPayload): Promise<void>;

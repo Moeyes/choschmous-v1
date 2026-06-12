@@ -3,7 +3,21 @@ import { queryKeys } from '@/core/api/queryKeys';
 import { useTranslations } from 'next-intl';
 import axios from 'axios';
 import { eventsRepository } from '../adapters';
-import type { AddSportToEventPayload, AddOrgToEventSportPayload, DeleteEventSportOrgLinkPayload } from '../types';
+import type { AddSportToEventPayload, AddOrgToEventSportPayload, DeleteEventSportOrgLinkPayload, SportConfigPayload } from '../types';
+
+export function useUpdateSportConfig(eventId: number) {
+    const queryClient = useQueryClient();
+    const t = useTranslations('common.toast');
+
+    return useMutation({
+        meta: { successMessage: t('updated') },
+        mutationFn: ({ id, config }: { id: number; config: SportConfigPayload }) =>
+            eventsRepository.updateSportConfig(id, config),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.events.sports(eventId) });
+        },
+    });
+}
 
 export function useAddSportToEvent() {
     const queryClient = useQueryClient();

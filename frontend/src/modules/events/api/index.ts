@@ -2,7 +2,7 @@ import apiClient from '@/core/api/client';
 import { API } from '@/core/api/endpoints';
 import type {
     AddSportToEventPayload, AddOrgToEventSportPayload,
-    RemoveOrgCompletelyFromEventPayload,
+    RemoveOrgCompletelyFromEventPayload, SportConfigPayload,
 } from '../types';
 
 export async function apiGetEvents(params?: Record<string, unknown>) {
@@ -50,10 +50,11 @@ export async function apiUpdateEventPhase(id: number, payload: Record<string, un
 }
 
 export async function apiAddSportToEvent(payload: AddSportToEventPayload) {
-    await apiClient.post(API.events.addSport, {
+    const { data } = await apiClient.post(API.sportsEvents.base, {
         events_id: payload.event_id,
         sports_id: payload.sport_id,
     });
+    return data;
 }
 
 export async function apiGetEventSports(eventId: number) {
@@ -61,10 +62,12 @@ export async function apiGetEventSports(eventId: number) {
     return data;
 }
 
+export async function apiUpdateSportConfig(id: number, config: SportConfigPayload) {
+    await apiClient.patch(API.sportsEvents.config(id), config);
+}
+
 export async function apiRemoveSportFromEvent(associationId: number): Promise<void> {
-    await apiClient.delete(API.events.removeSport, {
-        data: { association_id: associationId },
-    });
+    await apiClient.delete(API.sportsEvents.byId(associationId));
 }
 
 export async function apiGetEventSportOrgs(eventId: number, sportId: number): Promise<unknown> {

@@ -9,3 +9,4 @@ export * from './EventTypeBadge';
 export * from './EventFilters';
 export * from './EventDetailPanels';
 export * from './EventPhasesFields';
+export * from './SurveyStatusBoard';

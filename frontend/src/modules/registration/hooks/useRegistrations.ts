@@ -8,6 +8,8 @@ interface RegistrationsFilter {
     organization_id?: number;
     event_id?: number;
     sport_id?: number;
+    category_id?: number;
+    gender?: string;
     search?: string;
     skip?: number;
     limit?: number;

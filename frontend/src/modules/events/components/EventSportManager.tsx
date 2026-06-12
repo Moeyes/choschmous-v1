@@ -5,8 +5,10 @@ import { useEventSports, useAddSportToEvent, useRemoveSportFromEvent, useAllSpor
 import { Button } from '@/shared/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { useAuth, UserRole } from '@/core/auth';
-import { Plus, Trash2, Trophy, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Trophy, Loader2, Settings2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { EventSportConfigDialog } from './EventSportConfigDialog';
+import type { EventSportPublic } from '../schema/events.schema';
 
 interface EventSportManagerProps {
     eventId: number;

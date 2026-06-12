@@ -5,6 +5,7 @@ import { RegisterFormData, RegisterFormInput } from "../schema/registration.sche
 import {
   type CascadingDataLoaded,
   type CategoryReference as Category,
+  type EligibleSport,
 } from "@/core/api/referenceData";
 import { useAuth, UserRole } from "@/core/auth";
 import { RegisterEventStep } from "./RegisterEventStep";
@@ -19,6 +20,7 @@ interface RegisterFormFieldsProps {
   form: UseFormReturn<RegisterFormInput, unknown, RegisterFormData>;
   cascadingData: CascadingDataLoaded | null;
   categories: Category[];
+  eligibleSports?: EligibleSport[];
   step: FormStep;
   mode?: "athlete" | "leader";
   consent: boolean;
@@ -29,6 +31,7 @@ export function RegisterFormFields({
   form,
   cascadingData,
   categories,
+  eligibleSports,
   step,
   mode = "athlete",
   consent,
@@ -39,7 +42,14 @@ export function RegisterFormFields({
     user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
   if (step === "event")
-    return <RegisterEventStep form={form} cascadingData={cascadingData} isAdmin={isAdmin} />;
+    return (
+      <RegisterEventStep
+        form={form}
+        cascadingData={cascadingData}
+        eligibleSports={eligibleSports}
+        isAdmin={isAdmin}
+      />
+    );
   if (step === "category")
     return <RegisterCategoryStep form={form} categories={categories} />;
   if (step === "personal")

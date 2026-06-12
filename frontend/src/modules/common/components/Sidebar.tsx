@@ -16,6 +16,8 @@ import {
   Trophy,
   Users,
   UserCheck,
+  UserCog,
+  UsersRound,
 } from "lucide-react";
 import { useAuth, FEATURE_ACCESS, type FeatureKey } from "@/core/auth";
 import { cn } from "@/shared/utils/cn";
@@ -49,6 +51,8 @@ const MENU_SECTIONS: MenuSections = [
     { labelKey: "leaderRegistration", href: "/leader-registration", icon: ClipboardCheck, feature: "leaderregistration" },
   ],
   [
+    { labelKey: "organizerRegistration", href: "/organizer-registration", icon: UsersRound, feature: "organizerregistration" },
+    { labelKey: "organizerRoles", href: "/organizer-roles", icon: UserCog, feature: "organizerroles" },
     { labelKey: "registrations", href: "/registrations", icon: ListChecks, feature: "registrations" },
     { labelKey: "submissions", href: "/participation", icon: UserCheck, feature: "participation" },
     { labelKey: "reports", href: "/reports", icon: FilePieChart, feature: "reports" },

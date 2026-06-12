@@ -114,6 +114,17 @@ export interface Category {
   gender?: string;
 }
 
+export type SportMode = 'individual' | 'team' | 'both';
+
+/** PATCH /sports-events/{id}/config body — every field optional. */
+export interface SportConfigPayload {
+  mode?: SportMode;
+  team_size_min?: number | null;
+  team_size_max?: number | null;
+  quota_athletes_per_org?: number | null;
+  quota_teams_per_org?: number | null;
+}
+
 export interface AddSportToEventPayload {
   event_id: number;
   sport_id: number;

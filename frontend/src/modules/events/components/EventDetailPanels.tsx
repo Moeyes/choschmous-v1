@@ -7,6 +7,7 @@ import { Event } from "../types";
 import { EventSportManager } from "./EventSportManager";
 import { EventSportOrgManager } from "./EventSportOrgManager";
 import { EventPhaseControl } from "./EventPhases";
+import { SurveyStatusBoard } from "./SurveyStatusBoard";
 import { useTranslations } from "next-intl";
 
 interface EventDetailPanelsProps {
@@ -73,6 +74,7 @@ export function EventDetailPanels({
           description={t("sports.noSportsAssigned")}
         />
       )}
+      {canManage && <SurveyStatusBoard eventId={eventId} />}
     </div>
   );
 }

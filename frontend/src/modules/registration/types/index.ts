@@ -25,6 +25,7 @@ export interface RegisterPayload {
     organizationId: number;
     sportId: number;
     categoryId?: number | null;
+    teamId?: number | null;
 
     // Personal info — using backend aliases
     lastNameKhmer: string;
@@ -41,6 +42,9 @@ export interface RegisterPayload {
     // Role
     role: string;
     leaderRole?: string | null;
+
+    // Override the soft-duplicate (name + DoB) warning.
+    force?: boolean;
 
     // Document URLs
     photoUrl?: string | null;
@@ -112,7 +116,7 @@ export interface ParticipantUpdateData {
 // ─── API Error ────────────────────────────────────────────────────────────────
 
 export interface ApiErrorResponse {
-    detail?: string | FieldError[];
+    detail?: string | FieldError[] | CodedErrorDetail;
 }
 
 interface FieldError {
@@ -121,6 +125,15 @@ interface FieldError {
     type: string;
 }
 
+/** Structured error detail emitted by the Phase-2 registration validation rules. */
+export interface CodedErrorDetail {
+    code?: string;
+    message?: string;
+    params?: Record<string, unknown>;
+    duplicate_suspect?: boolean;
+}
+
 // ─── Payload Transformer ──────────────────────────────────────────────────────
 
 export { formDataToPayload, parseApiError } from '../mappers/registration.mapper';
+export type { ParsedError } from '../mappers/registration.mapper';

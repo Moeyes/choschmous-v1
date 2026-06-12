@@ -181,6 +181,7 @@ export const registerSchema = z.object({
     organizationId: z.string().min(1, 'Organization is required').nullable(),
     sportId: z.number().min(1, 'Sport is required').nullable(),
     categoryId: z.number().min(1, 'Category is required').nullable(),
+    teamId: z.number().int().nullable().optional(),
 
     // Personal information
     khFamilyName: z.string().trim().min(1, 'Khmer family name is required'),
@@ -225,6 +226,10 @@ export const registerSchema = z.object({
     _uploadId: z.boolean().optional(),
     _uploadBirth: z.boolean().optional(),
     _uploadPassport: z.boolean().optional(),
+
+    // Override the soft-duplicate (name + DoB) warning. Set by the duplicate
+    // confirmation dialog, then sent as `force` to the backend.
+    force: z.boolean().optional(),
 }).refine(
     (data) => data.eventType !== null && data.eventType !== undefined && data.eventType !== '',
     {

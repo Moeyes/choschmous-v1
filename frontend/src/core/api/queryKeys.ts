@@ -55,6 +55,14 @@ export const queryKeys = {
     all: ['dashboard'] as const,
     scoped: (role: string | null | undefined, orgId: number | null | undefined) => ['dashboard', role, orgId] as const,
   },
+  organizerRoles: {
+    all: ['organizer-roles'] as const,
+    list: (activeOnly?: boolean) => ['organizer-roles', 'list', activeOnly] as const,
+  },
+  surveyStatus: {
+    all: ['survey-status'] as const,
+    byEvent: (eventId: number) => ['survey-status', eventId] as const,
+  },
   bycategory: {
     eligibleEvents: ['bycategory', 'eligible-events'] as const,
     categories: (eventId: number, sportId: number) => ['bycategory', 'categories', eventId, sportId] as const,

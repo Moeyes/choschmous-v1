@@ -91,6 +91,11 @@ const rawEventSportSchema = z.object({
     event_name: z.string().optional(),
     sport_name: z.string().optional(),
     created_at: z.string().optional(),
+    mode: z.enum(['individual', 'team', 'both']).nullable().optional(),
+    team_size_min: z.number().int().nullable().optional(),
+    team_size_max: z.number().int().nullable().optional(),
+    quota_athletes_per_org: z.number().int().nullable().optional(),
+    quota_teams_per_org: z.number().int().nullable().optional(),
 }).strict();
 
 export type RawEventSport = z.infer<typeof rawEventSportSchema>;
@@ -100,6 +105,11 @@ export const eventSportPublicSchema = z.object({
     sports_id: z.number().int(),
     name_kh:   z.string(),
     name_en:   z.string(),
+    mode: z.enum(['individual', 'team', 'both']).nullable().optional(),
+    team_size_min: z.number().int().nullable().optional(),
+    team_size_max: z.number().int().nullable().optional(),
+    quota_athletes_per_org: z.number().int().nullable().optional(),
+    quota_teams_per_org: z.number().int().nullable().optional(),
 });
 
 export type EventSportPublic = z.infer<typeof eventSportPublicSchema>;

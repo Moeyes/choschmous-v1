@@ -20,6 +20,7 @@ interface SurveyFormFieldsProps {
   selectedEventType?: string | null;
   onSelectEventType?: (id: string) => void;
   hideOrganization?: boolean;
+  lastSubmitted?: string | null;
 }
 
 function emptyState(message: string) {
@@ -41,6 +42,7 @@ export function SurveyFormFields({
   selectedEventType,
   onSelectEventType,
   hideOrganization = false,
+  lastSubmitted,
 }: SurveyFormFieldsProps) {
   const { watch, setValue, trigger } = form;
   const t = useTranslations("survey");
@@ -158,6 +160,7 @@ export function SurveyFormFields({
         selectedOrgId={selectedOrgId}
         selectedSportIds={selectedSportIds}
         hideOrganization={hideOrganization}
+        lastSubmitted={lastSubmitted}
       />
     );
   }

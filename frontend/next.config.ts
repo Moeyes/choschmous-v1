@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
     const isDev = process.env.NODE_ENV === 'development';
     const scriptSrc = isDev
       ? "'self' 'unsafe-eval' 'unsafe-inline'"
-      : "'self' 'unsafe-inline'";
+      : "'self' 'unsafe-inline' 'strict-dynamic'";
     return [
       {
         source: '/(.*)',

@@ -9,6 +9,7 @@ interface RegisterFormNavButtonsProps {
   isReviewStep: boolean;
   isPending: boolean;
   registerWindowError: string | null;
+  canProceed?: boolean;
   onBack: () => void;
   onNext: () => void;
   onSubmit: () => void;
@@ -19,6 +20,7 @@ export function RegisterFormNavButtons({
   isReviewStep,
   isPending,
   registerWindowError,
+  canProceed = true,
   onBack,
   onNext,
   onSubmit,
@@ -57,7 +59,7 @@ export function RegisterFormNavButtons({
           variant="default"
           size="lg"
           onClick={onNext}
-          disabled={!!registerWindowError}
+          disabled={!!registerWindowError || !canProceed}
         >
           {tCommon('next')}
           <ArrowRight className="size-4" />

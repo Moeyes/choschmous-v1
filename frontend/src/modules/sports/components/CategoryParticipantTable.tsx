@@ -55,6 +55,7 @@ interface CategoryParticipantTableProps {
 
 export function CategoryParticipantTable({ rows, isLoading, eventName }: CategoryParticipantTableProps) {
   const t = useTranslations('sports.participants');
+  const tCommon = useTranslations('common');
 
   if (isLoading) {
     return (
@@ -102,7 +103,13 @@ export function CategoryParticipantTable({ rows, isLoading, eventName }: Categor
                 </td>
                 <td className="p-3">
                   <Badge variant={p.role === 'athlete' ? 'info' : 'secondary'}>
-                    {t(`types.${p.role}`)}
+                    {p.role === 'athlete'
+                      ? p.gender === 'MALE' || p.gender === 'male'
+                        ? tCommon('athleteMale')
+                        : p.gender === 'FEMALE' || p.gender === 'female'
+                          ? tCommon('athleteFemale')
+                          : tCommon('athlete')
+                      : tCommon('leader')}
                   </Badge>
                 </td>
                 <td className="p-3 text-sm text-foreground">{age ?? '—'}</td>

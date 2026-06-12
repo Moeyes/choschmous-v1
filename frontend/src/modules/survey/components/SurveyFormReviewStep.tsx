@@ -14,6 +14,7 @@ interface SurveyFormReviewStepProps {
   selectedOrgId?: number;
   selectedSportIds: number[];
   hideOrganization?: boolean;
+  lastSubmitted?: string | null;
 }
 
 export function SurveyFormReviewStep({
@@ -24,6 +25,7 @@ export function SurveyFormReviewStep({
   selectedOrgId,
   selectedSportIds,
   hideOrganization = false,
+  lastSubmitted,
 }: SurveyFormReviewStepProps) {
   const t = useTranslations("survey");
 
@@ -86,6 +88,16 @@ export function SurveyFormReviewStep({
             </div>
           </Card>
         </div>
+
+        {lastSubmitted && (
+          <div className="mt-4 rounded-lg border border-primary/20 bg-primary-50/30 px-4 py-3 text-sm">
+            <p className="text-muted-foreground">
+              {t('history.lastSubmitted', {
+                date: new Date(lastSubmitted).toLocaleString(),
+              })}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

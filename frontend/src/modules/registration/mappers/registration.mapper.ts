@@ -8,6 +8,8 @@ export function formDataToPayload(data: RegisterFormData, userId: string): Regis
         organizationId: Number(data.organizationId),
         sportId: data.sportId as number,
         categoryId: data.categoryId ?? null,
+        teamId: data.teamId ?? null,
+        force: data.force ?? false,
 
         lastNameKhmer: data.khFamilyName,
         firstNameKhmer: data.khGivenName,
@@ -31,21 +33,46 @@ export function formDataToPayload(data: RegisterFormData, userId: string): Regis
     };
 }
 
-export function parseApiError(error: ApiErrorResponse): string | Map<string, string> {
+/** Normalized view of a registration error, whatever shape the backend used:
+ * a plain string, a FastAPI validation array, or a structured
+ * `{code, message, params, duplicate_suspect}` from the Phase-2 rules. */
+export interface ParsedError {
+    code?: string;
+    message: string;
+    params?: Record<string, unknown>;
+    duplicateSuspect?: boolean;
+    fields?: Map<string, string>;
+}
+
+export function parseApiError(error: ApiErrorResponse): ParsedError {
     const detail = error?.detail;
 
     if (typeof detail === 'string') {
-        return detail;
+        return { message: detail };
     }
 
     if (Array.isArray(detail)) {
-        const map = new Map<string, string>();
+        const fields = new Map<string, string>();
         detail.forEach((err) => {
-            const field = err.loc[err.loc.length - 1];
-            map.set(field, err.msg);
+            fields.set(err.loc[err.loc.length - 1], err.msg);
         });
-        return map;
+        return { message: detail[0]?.msg ?? 'Validation error', fields };
     }
 
-    return 'An unexpected error occurred. Please try again.';
+    if (detail && typeof detail === 'object') {
+        const d = detail as {
+            code?: string;
+            message?: string;
+            params?: Record<string, unknown>;
+            duplicate_suspect?: boolean;
+        };
+        return {
+            code: d.code,
+            message: d.message ?? 'An unexpected error occurred. Please try again.',
+            params: d.params,
+            duplicateSuspect: d.duplicate_suspect === true,
+        };
+    }
+
+    return { message: 'An unexpected error occurred. Please try again.' };
 }

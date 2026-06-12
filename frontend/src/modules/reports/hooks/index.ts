@@ -1,1 +1,1 @@
-export { useReportMutations } from './useReportMutations';
+export { useReportDownload, useSurveyStatus } from './useReportMutations';

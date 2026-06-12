@@ -47,6 +47,13 @@ export function ParticipantDetail({ enrollId, role }: ParticipantDetailProps) {
     const nameKhmer = p.name_kh || `${p.kh_family_name} ${p.kh_given_name}`;
     const isLeader = p.role === 'leader';
     const dash = '—';
+    const roleDisplay = isLeader
+        ? tCommon('leader')
+        : p.gender === 'MALE'
+            ? tCommon('athleteMale')
+            : p.gender === 'FEMALE'
+                ? tCommon('athleteFemale')
+                : tCommon('athlete');
 
     const documents = [
         { label: t('documents.photo'), url: p.photoUrl ?? p.photo_url },
@@ -61,14 +68,14 @@ export function ParticipantDetail({ enrollId, role }: ParticipantDetailProps) {
             <DetailHeader
                 backHref="/registrations"
                 backLabel={t('backToList')}
-                eyebrow={isLeader ? tCommon('leader') : tCommon('athlete')}
+                eyebrow={roleDisplay}
                 eyebrowIcon={isLeader ? Shield : Trophy}
                 title={nameLatin}
                 description={nameKhmer}
                 meta={
                     <>
                         <Badge variant={isLeader ? 'warning' : 'default'} size="sm">
-                            {p.role}
+                            {roleDisplay}
                         </Badge>
                         {isLeader && p.leader_role && (
                             <Badge variant="outline" size="sm">{p.leader_role}</Badge>
@@ -141,7 +148,7 @@ export function ParticipantDetail({ enrollId, role }: ParticipantDetailProps) {
                                 )}
                             </dd>
                         </div>
-                        <Field icon={Shield} label={t('fields.role')} value={p.role || dash} />
+                        <Field icon={Shield} label={t('fields.role')} value={roleDisplay} />
                     </dl>
                 </ContentPanel>
 

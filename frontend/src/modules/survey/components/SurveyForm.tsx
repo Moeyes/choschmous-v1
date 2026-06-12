@@ -40,6 +40,7 @@ export function SurveyForm({ showHeader = true }: SurveyFormProps = {}) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [eventSports, setEventSports] = useState<Sport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastSubmitted, setLastSubmitted] = useState<string | null>(null);
 
   const { form, onSubmit, isPending, serverError } = useSurveyForm(() => {
     setIsSuccess(true);
@@ -94,7 +95,10 @@ export function SurveyForm({ showHeader = true }: SurveyFormProps = {}) {
     const load = async () => {
       if (!watchedEventId) {
         await Promise.resolve();
-        if (isMounted) setEventSports((prev) => (prev.length > 0 ? [] : prev));
+        if (isMounted) {
+          setEventSports((prev) => (prev.length > 0 ? [] : prev));
+          setLastSubmitted(null);
+        }
         return;
       }
       try {
@@ -102,6 +106,34 @@ export function SurveyForm({ showHeader = true }: SurveyFormProps = {}) {
         if (isMounted) setEventSports(sports);
       } catch {
         // Sports failed to load
+      }
+
+      const orgId = form.watch('organizationId');
+      if (orgId) {
+        try {
+          const existing = await surveyRepository.fetchExistingOrgSports(
+            watchedEventId, orgId,
+          );
+          if (!isMounted) return;
+          if (existing.length > 0) {
+            const current = form.watch('sportIds') || [];
+            const existingIds = existing.map((e) => e.sport_id);
+            const merged = [...new Set([...current, ...existingIds])];
+            if (merged.length > current.length) {
+              form.setValue('sportIds', merged);
+            }
+            const timestamps = existing
+              .map((e) => e.created_at)
+              .filter(Boolean)
+              .sort()
+              .reverse();
+            if (timestamps.length > 0) {
+              setLastSubmitted(timestamps[0]);
+            }
+          }
+        } catch {
+          // Existing selections unavailable; form stays blank
+        }
       }
     };
     load();
@@ -203,6 +235,7 @@ export function SurveyForm({ showHeader = true }: SurveyFormProps = {}) {
             selectedEventType={selectedEventType}
             onSelectEventType={setSelectedEventType}
             hideOrganization={!isAdmin}
+            lastSubmitted={lastSubmitted}
           />
 
           <SurveyFormNavButtons

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Building2, CheckCircle2, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Calendar, Building2, CheckCircle2, Download, FileSpreadsheet, FileText, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Modal } from '@/shared/ui/Modal';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
@@ -16,12 +16,13 @@ interface RefItem {
 interface ReportGenerateModalProps {
     isOpen: boolean;
     onClose: () => void;
+    reportKey: string;
     reportTitle: string;
+    supportsSource?: boolean;
     events: RefItem[];
     organizations: RefItem[];
     isAdmin: boolean;
-    /** Calls the existing download mutation. Logic lives in useReportMutations. */
-    onGenerate: (params: { event_id: number; organization_id?: number }) => void;
+    onGenerate: (params: { event_id: number; org_id?: number; source?: 'planned' | 'actual'; format: 'xlsx' | 'pdf' }) => void;
     isGenerating: boolean;
     isDone: boolean;
     onReset: () => void;
@@ -30,7 +31,9 @@ interface ReportGenerateModalProps {
 export function ReportGenerateModal({
     isOpen,
     onClose,
+    reportKey,
     reportTitle,
+    supportsSource,
     events,
     organizations,
     isAdmin,
@@ -43,22 +46,26 @@ export function ReportGenerateModal({
     const tCommon = useTranslations('common');
     const [eventId, setEventId] = useState('');
     const [orgId, setOrgId] = useState('');
+    const [format, setFormat] = useState<'xlsx' | 'pdf'>('xlsx');
+    const [source, setSource] = useState<'planned' | 'actual'>('planned');
 
     const handleClose = () => {
         onReset();
         setEventId('');
         setOrgId('');
+        setFormat('xlsx');
+        setSource('planned');
         onClose();
     };
 
-    const buildParams = () => ({
-        event_id: Number(eventId),
-        organization_id: isAdmin && orgId ? Number(orgId) : undefined,
-    });
-
     const handleGenerate = () => {
         if (!eventId) return;
-        onGenerate(buildParams());
+        onGenerate({
+            event_id: Number(eventId),
+            ...(isAdmin && orgId ? { org_id: Number(orgId) } : {}),
+            ...(supportsSource ? { source } : {}),
+            format,
+        });
     };
 
     return (
@@ -123,20 +130,68 @@ export function ReportGenerateModal({
                     <div className="space-y-1.5">
                         <span className="block text-sm font-medium text-foreground">{t('selectFormat')}</span>
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="flex items-center gap-2 rounded-md border border-primary bg-accent px-3 py-2.5">
-                                <FileSpreadsheet className="h-4 w-4 text-primary" />
-                                <span className="text-sm font-medium leading-relaxed text-primary">{t('formatExcel')}</span>
-                            </div>
-                            <div
-                                className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-2.5 opacity-60"
-                                title={t('pdfComingSoon')}
+                            <button
+                                type="button"
+                                onClick={() => setFormat('xlsx')}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-md border px-3 py-2.5 text-sm font-medium leading-relaxed transition-colors',
+                                    format === 'xlsx'
+                                        ? 'border-primary bg-accent text-primary'
+                                        : 'border-border text-muted-foreground hover:bg-accent',
+                                )}
                             >
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm leading-relaxed text-muted-foreground">{t('formatPdf')}</span>
+                                <FileSpreadsheet className="h-4 w-4" />
+                                {t('formatExcel')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setFormat('pdf')}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-md border px-3 py-2.5 text-sm font-medium leading-relaxed transition-colors',
+                                    format === 'pdf'
+                                        ? 'border-primary bg-accent text-primary'
+                                        : 'border-border text-muted-foreground hover:bg-accent',
+                                )}
+                            >
+                                <FileText className="h-4 w-4" />
+                                {t('formatPdf')}
+                            </button>
+                        </div>
+                    </div>
+
+                    {supportsSource && (
+                        <div className="space-y-1.5">
+                            <span className="block text-sm font-medium text-foreground">{t('selectSource')}</span>
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setSource('planned')}
+                                    className={cn(
+                                        'flex items-center gap-2 rounded-md border px-3 py-2.5 text-sm font-medium leading-relaxed transition-colors',
+                                        source === 'planned'
+                                            ? 'border-primary bg-accent text-primary'
+                                            : 'border-border text-muted-foreground hover:bg-accent',
+                                    )}
+                                >
+                                    {source === 'planned' ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                                    {t('sourcePlanned')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSource('actual')}
+                                    className={cn(
+                                        'flex items-center gap-2 rounded-md border px-3 py-2.5 text-sm font-medium leading-relaxed transition-colors',
+                                        source === 'actual'
+                                            ? 'border-primary bg-accent text-primary'
+                                            : 'border-border text-muted-foreground hover:bg-accent',
+                                    )}
+                                >
+                                    {source === 'actual' ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                                    {t('sourceActual')}
+                                </button>
                             </div>
                         </div>
-                        <p className="text-xs leading-relaxed text-muted-foreground">{t('pdfComingSoon')}</p>
-                    </div>
+                    )}
 
                     <div className="flex gap-3 border-t border-border pt-4">
                         <Button variant="outline" className="flex-1" onClick={handleClose}>

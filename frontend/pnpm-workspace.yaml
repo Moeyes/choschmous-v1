@@ -1,3 +1,4 @@
+confirmModulesPurge: false
 overrides:
   '@napi-rs/wasm-runtime': 1.1.4
 allowBuilds:
@@ -7,3 +8,9 @@ allowBuilds:
   msw: false
   sharp: true
   unrs-resolver: true
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+  - esbuild
+  - sharp
+  - unrs-resolver

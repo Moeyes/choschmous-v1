@@ -8,13 +8,16 @@ import { useAuth, UserRole } from "@/core/auth";
 import { RegisterFormData } from "../schema/registration.schema";
 import { eventsRepository } from "@/modules/events/adapters";
 import { useTranslations } from "next-intl";
-import { Loader2, Sparkles, AlertCircle } from "lucide-react";
-import { useCascadingData, useCategories } from "../hooks";
+import { Loader2, Sparkles, AlertCircle, Users } from "lucide-react";
+import { useCascadingData, useCategories, useEligibleSports } from "../hooks";
 import { RegisterFormNavButtons } from "./RegisterFormNavButtons";
-import { StepIndicator, Badge } from "@/shared";
+import { StepIndicator, Badge, useConfirm } from "@/shared";
+import { TeamModeStep } from "./TeamModeStep";
+import { TeamCreateOrPickStep } from "./TeamCreateOrPickStep";
+import { TeamRosterStep } from "./TeamRosterStep";
+import type { TeamItem } from "../types/team";
 
-const ALL_STEPS = ["event", "category", "personal", "documents", "review"] as const;
-type Step = (typeof ALL_STEPS)[number];
+type BaseStep = "event" | "category" | "team" | "personal" | "documents" | "review";
 
 interface RegisterFormProps {
   mode?: "athlete" | "leader";
@@ -25,24 +28,44 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
   const { user } = useAuth();
   const t = useTranslations("registration");
 
-  const FORM_STEPS = useMemo<readonly Step[]>(
-    () => (isLeader ? ["event", "personal", "documents", "review"] : ALL_STEPS),
+  const BASE_STEPS: readonly BaseStep[] = useMemo(
+    () => (isLeader ? ["event", "personal", "documents", "review"] as const : ["event", "category", "personal", "documents", "review"] as const),
     [isLeader],
   );
 
-  const [currentStep, setCurrentStep] = useState<Step>("event");
+  const [currentStep, setCurrentStep] = useState<BaseStep>("event");
   const [maxReached, setMaxReached] = useState(0);
   const [consent, setConsent] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [refNo, setRefNo] = useState("");
   const [registerWindowError, setRegisterWindowError] = useState<string | null>(null);
+  const [duplicatePending, setDuplicatePending] = useState(false);
 
+  const [teamMode, setTeamMode] = useState<"individual" | "team" | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<TeamItem | null>(null);
+  const [memberRegistered, setMemberRegistered] = useState(false);
+  const [rosterValid, setRosterValid] = useState(true);
+
+  const confirm = useConfirm();
   const { data: cascadingData, isLoading: cascadingLoading } = useCascadingData();
-  const { form, onSubmit, isPending, serverError } = useRegisterForm((enrollId) => {
-    setRefNo(`REG-${String(enrollId).padStart(6, "0")}`);
-    setIsSuccess(true);
-    scrollTop();
-  });
+
+  const handleRegistrationSuccess = useCallback((enrollId: number) => {
+    if (selectedTeam) {
+      setRefNo(`REG-${String(enrollId).padStart(6, "0")}`);
+      setMemberRegistered(true);
+      setCurrentStep("team");
+      scrollTop();
+    } else {
+      setRefNo(`REG-${String(enrollId).padStart(6, "0")}`);
+      setIsSuccess(true);
+      scrollTop();
+    }
+  }, [selectedTeam]);
+
+  const { form, onSubmit, isPending, serverError } = useRegisterForm(
+    handleRegistrationSuccess,
+    () => setDuplicatePending(true),
+  );
 
   const sportId = form.watch("sportId");
   const eventId = form.watch("eventId");
@@ -50,12 +73,59 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     eventId ? Number(eventId) : undefined,
     sportId ? Number(sportId) : undefined,
   );
+  const { data: eligibleSports = [] } = useEligibleSports(
+    !isLeader && eventId ? Number(eventId) : undefined,
+  );
+
+  // Determine the sport's mode and compute the effective step list.
+  const selectedSport = eligibleSports.find((s) => s.sports_id === Number(sportId));
+  const sportMode = selectedSport?.mode;
+  const quota =
+    selectedSport && selectedSport.quota_athletes_per_org != null
+      ? { used: selectedSport.athletes_used, max: selectedSport.quota_athletes_per_org }
+      : null;
+
+  const FORM_STEPS = useMemo<readonly BaseStep[]>(() => {
+    if (isLeader) return BASE_STEPS;
+    if (!sportMode || sportMode === "individual") return BASE_STEPS;
+    if (sportMode === "team" || teamMode === "team") {
+      return ["event", "category", "team", "personal", "documents", "review"] as const;
+    }
+    return BASE_STEPS;
+  }, [isLeader, BASE_STEPS, sportMode, teamMode]);
 
   const stepIndex = FORM_STEPS.indexOf(currentStep);
+
+  // Soft-duplicate override
+  useEffect(() => {
+    if (!duplicatePending) return;
+    let active = true;
+    (async () => {
+      const ok = await confirm({
+        variant: "default",
+        title: t("duplicate.title"),
+        message: t("duplicate.message"),
+        confirmText: t("duplicate.confirm"),
+        cancelText: t("duplicate.cancel"),
+      });
+      if (!active) return;
+      setDuplicatePending(false);
+      if (ok) {
+        form.setValue("force", true);
+        await form.handleSubmit(onSubmit)();
+      } else {
+        form.setValue("force", false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [duplicatePending, confirm, form, onSubmit, t]);
+
   const isInitialized = useRef(false);
 
   const stepLabels = useMemo(
-    () => FORM_STEPS.map((s) => t(`steps.${s}`)),
+    () => FORM_STEPS.map((s) => t(`steps.${s}` as Parameters<typeof t>[0])),
     [FORM_STEPS, t],
   );
 
@@ -96,6 +166,15 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     };
   }, [eventId, t]);
 
+  // Sync teamId on form when selectedTeam changes
+  useEffect(() => {
+    if (selectedTeam) {
+      form.setValue("teamId", selectedTeam.id);
+    } else {
+      form.setValue("teamId", null);
+    }
+  }, [selectedTeam, form]);
+
   const goToStep = useCallback(
     (idx: number) => {
       setCurrentStep(FORM_STEPS[idx]);
@@ -109,8 +188,22 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     let fieldsToValidate: Array<keyof RegisterFormData> = [];
     if (currentStep === "event")
       fieldsToValidate = ["eventType", "eventId", "organizationId", "sportId"];
-    else if (currentStep === "category") fieldsToValidate = ["categoryId"];
-    else if (currentStep === "personal") {
+    else if (currentStep === "category") {
+      if (sportMode === "team") {
+        // No category validation in pure team mode — category is on the team
+      } else {
+        fieldsToValidate = ["categoryId"];
+      }
+    } else if (currentStep === "team") {
+      if (!selectedTeam) {
+        form.setError("root", { message: t("team.required") });
+        return;
+      }
+      if (!rosterValid) {
+        form.setError("root", { message: t("team.minNotReached", { min: selectedSport?.team_size_min ?? 0 }) });
+        return;
+      }
+    } else if (currentStep === "personal") {
       fieldsToValidate = [
         "khFamilyName", "khGivenName", "enFamilyName", "enGivenName",
         "gender", "dateOfBirth", "phone", "idDocumentType", "role", "nationality",
@@ -126,14 +219,19 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
         form.setError("photoPath", { type: "required", message: "required" });
         isValid = false;
       }
-      if (!form.getValues("nationalIdPath")) {
+      if (isUnder18(form.getValues("dateOfBirth"))) {
+        if (!form.getValues("birthCertificatePath")) {
+          form.setError("birthCertificatePath", { type: "required", message: "required" });
+          isValid = false;
+        }
+      } else if (!form.getValues("nationalIdPath") && !form.getValues("passportPath")) {
         form.setError("nationalIdPath", { type: "required", message: "required" });
         isValid = false;
       }
     }
 
     if (isValid && stepIndex < FORM_STEPS.length - 1) goToStep(stepIndex + 1);
-  }, [currentStep, form, FORM_STEPS, stepIndex, goToStep]);
+  }, [currentStep, form, FORM_STEPS, stepIndex, goToStep, sportMode, selectedTeam, t]);
 
   const handleBack = useCallback(() => {
     if (stepIndex > 0) goToStep(stepIndex - 1);
@@ -149,6 +247,11 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     [maxReached, FORM_STEPS],
   );
 
+  const handleEditMember = useCallback((enrollId: number) => {
+    setMemberRegistered(false);
+    setCurrentStep("personal");
+  }, []);
+
   const handleRegisterAnother = useCallback(() => {
     const eventValues = {
       eventType: form.getValues("eventType"),
@@ -157,6 +260,7 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
       sportId: form.getValues("sportId"),
       categoryId: form.getValues("categoryId"),
       role: form.getValues("role"),
+      teamId: selectedTeam?.id ?? null,
     };
     form.reset(eventValues as RegisterFormData);
     setConsent(false);
@@ -164,7 +268,7 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     setCurrentStep("personal");
     setMaxReached(FORM_STEPS.indexOf("personal"));
     scrollTop();
-  }, [form, FORM_STEPS]);
+  }, [form, FORM_STEPS, selectedTeam]);
 
   const isReview = currentStep === "review";
 
@@ -206,6 +310,15 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
         <p className="mt-1 text-sm text-muted-foreground">
           {isLeader ? t("leaderSubtitle") : t("subtitle")}
         </p>
+        {quota && (
+          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground">
+            <Users className="size-3.5 text-muted-foreground" />
+            <span>{t("quota.label")}</span>
+            <span className={quota.used >= quota.max ? "text-destructive" : "text-primary"}>
+              {quota.used}/{quota.max}
+            </span>
+          </div>
+        )}
       </div>
 
       <StepIndicator steps={stepLabels} currentIndex={stepIndex} onStepClick={handleStepClick} />
@@ -217,27 +330,143 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
         </div>
       )}
 
-      <RegisterFormFields
-        form={form}
-        cascadingData={cascadingData ?? null}
-        categories={categories}
-        step={currentStep}
-        mode={mode}
-        consent={consent}
-        setConsent={setConsent}
-      />
+      {/* Step content */}
+      {currentStep === "event" && (
+        <RegisterFormFields
+          form={form}
+          cascadingData={cascadingData ?? null}
+          categories={categories}
+          eligibleSports={eligibleSports}
+          step="event"
+          mode={mode}
+          consent={consent}
+          setConsent={setConsent}
+        />
+      )}
+
+      {currentStep === "category" && (
+        <RegisterFormFields
+          form={form}
+          cascadingData={cascadingData ?? null}
+          categories={categories}
+          eligibleSports={eligibleSports}
+          step="category"
+          mode={mode}
+          consent={consent}
+          setConsent={setConsent}
+        />
+      )}
+
+      {currentStep === "team" && (
+        <div className="space-y-4">
+          {sportMode === "both" && (
+            <TeamModeStep
+              value={teamMode}
+              availableModes={["individual", "team"]}
+              onChange={(m) => {
+                setTeamMode(m);
+                if (m === "individual") {
+                  setSelectedTeam(null);
+                  form.setValue("teamId", null);
+                }
+              }}
+            />
+          )}
+          {(sportMode === "team" || teamMode === "team") && (
+            <>
+              <TeamCreateOrPickStep
+                eventId={Number(eventId)}
+                sportId={Number(sportId)}
+                orgId={Number(form.getValues("organizationId"))}
+                categoryId={form.getValues("categoryId") ? Number(form.getValues("categoryId")) : null}
+                value={selectedTeam}
+                onChange={(team) => setSelectedTeam(team)}
+              />
+              {selectedTeam && (
+                <TeamRosterStep
+                  teamId={selectedTeam.id}
+                  teamSizeMin={selectedSport?.team_size_min}
+                  teamSizeMax={selectedSport?.team_size_max}
+                  onAddMember={() => {
+                    setMemberRegistered(false);
+                    const idx = FORM_STEPS.indexOf("personal");
+                    if (idx >= 0) goToStep(idx);
+                  }}
+                  onEditMember={handleEditMember}
+                  onValidationChange={setRosterValid}
+                />
+              )}
+              {memberRegistered && selectedTeam && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center text-sm text-primary">
+                  {t("team.memberAdded")}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {currentStep === "personal" && (
+        <RegisterFormFields
+          form={form}
+          cascadingData={cascadingData ?? null}
+          categories={categories}
+          eligibleSports={eligibleSports}
+          step="personal"
+          mode={mode}
+          consent={consent}
+          setConsent={setConsent}
+        />
+      )}
+
+      {currentStep === "documents" && (
+        <RegisterFormFields
+          form={form}
+          cascadingData={cascadingData ?? null}
+          categories={categories}
+          eligibleSports={eligibleSports}
+          step="documents"
+          mode={mode}
+          consent={consent}
+          setConsent={setConsent}
+        />
+      )}
+
+      {currentStep === "review" && (
+        <RegisterFormFields
+          form={form}
+          cascadingData={cascadingData ?? null}
+          categories={categories}
+          eligibleSports={eligibleSports}
+          step="review"
+          mode={mode}
+          consent={consent}
+          setConsent={setConsent}
+        />
+      )}
 
       <RegisterFormNavButtons
         isFirstStep={stepIndex === 0}
         isReviewStep={isReview}
         isPending={isPending}
         registerWindowError={registerWindowError}
+        canProceed={currentStep !== "team" || rosterValid}
         onBack={handleBack}
         onNext={handleNext}
         onSubmit={form.handleSubmit(onSubmit)}
       />
     </div>
   );
+}
+
+function isUnder18(dateOfBirth: string | null | undefined): boolean {
+  if (!dateOfBirth) return false;
+  const dob = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  return age < 18;
 }
 
 function scrollTop() {

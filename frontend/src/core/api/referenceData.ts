@@ -81,6 +81,30 @@ export async function fetchCategories(
     }
 }
 
+export interface EligibleSport {
+    sports_event_id: number;
+    sports_id: number;
+    name_kh: string;
+    name_en?: string | null;
+    mode: 'individual' | 'team' | 'both';
+    team_size_min?: number | null;
+    team_size_max?: number | null;
+    quota_athletes_per_org?: number | null;
+    quota_teams_per_org?: number | null;
+    athletes_used: number;
+}
+
+/** Sports the caller's org may register for in an event (survey-② selections +
+ * per-sport config + the org's current athlete count). Org-scoped server-side. */
+export async function fetchEligibleSports(eventId: number): Promise<EligibleSport[]> {
+    try {
+        const response = await apiClient.get(`/api/events/${eventId}/my-eligible-sports`);
+        return Array.isArray(response.data) ? response.data : [];
+    } catch {
+        return [];
+    }
+}
+
 function getUniqueEventTypes(events: EventReference[]): string[] {
     const types = new Set<string>();
     events.forEach((event) => {

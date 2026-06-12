@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useReportMutations } from '../hooks/useReportMutations';
+import { useReportDownload } from '../hooks/useReportMutations';
 import { usePermissions, CAPABILITIES } from '@/core/auth';
 import { useCascadingData } from '@/modules/registration/hooks/useCascadingData';
 import {
@@ -22,37 +22,32 @@ import { cn } from '@/shared/utils/cn';
 import { useTranslations } from 'next-intl';
 import { ReportGenerateModal } from './ReportGenerateModal';
 
-// Report key maps an available card to the existing download mutation.
-type ReportKey = 'orgSport' | 'participant';
-
 interface ReportCard {
     id: string;
+    key: string;
     titleKh: string;
     descEn: string;
     icon: LucideIcon;
-    reportKey: ReportKey | null; // null = coming soon
+    supportsSource?: boolean;
 }
 
-// Titles are official Khmer report names (REPORTS_SPEC); descriptions are short English.
 const REPORT_CARDS: ReportCard[] = [
-    { id: 'RPT-1', titleKh: 'ចុះប្រភេទកីឡា', descEn: 'Sport registration list', icon: ClipboardList, reportKey: null },
-    { id: 'RPT-2', titleKh: 'ចំនួនរួម', descEn: 'Total counts matrix', icon: LayoutGrid, reportKey: null },
-    { id: 'RPT-3', titleKh: 'ចុះចំនួន', descEn: 'Number per organization', icon: ListOrdered, reportKey: 'orgSport' },
-    { id: 'RPT-4', titleKh: 'អាល់ប៊ុម', descEn: 'Photo album', icon: ImageIcon, reportKey: null },
-    { id: 'RPT-5', titleKh: 'រាយនាមរួម', descEn: 'Combined roster', icon: Users, reportKey: 'participant' },
-    { id: 'RPT-6', titleKh: 'ថ្នាក់ដឹកនាំគ្រប់ប្រភេទកីឡា', descEn: 'Leadership all sports', icon: Award, reportKey: null },
-    { id: 'RPT-7', titleKh: 'គ្រូបង្វឹក អត្តពលិក', descEn: 'Coaches and athletes', icon: Dumbbell, reportKey: null },
-    { id: 'RPT-8', titleKh: 'ប្រតិភូ អ្នកដឹកនាំ', descEn: 'Delegates and leaders', icon: UserCog, reportKey: null },
+    { id: 'RPT-1', key: 'sport-list', titleKh: '\u1785\u17CB\u1794\u17D2\u179A\u17B6\u1794\u17C1\u1791\u17B6\u1780\u17D2\u179F\u17B6', descEn: 'Sport registration list', icon: ClipboardList },
+    { id: 'RPT-2', key: 'totals', titleKh: '\u1785\u17D2\u1793\u17C8\u1793\u17D2\u1781\u17BC\u1798', descEn: 'Total counts matrix', icon: LayoutGrid, supportsSource: true },
+    { id: 'RPT-3', key: 'counts', titleKh: '\u1785\u17CB\u1785\u17D2\u1793\u17C8\u1793', descEn: 'Number per organization', icon: ListOrdered },
+    { id: 'RPT-4', key: 'album', titleKh: '\u17A2\u17B6\u179B\u17CB\u1794\u17BB\u1798', descEn: 'Photo album with full details', icon: ImageIcon },
+    { id: 'RPT-5', key: 'name-list', titleKh: '\u179A\u17B6\u1799\u1793\u17B6\u1798\u17BC\u1798', descEn: 'Combined roster', icon: Users },
+    { id: 'RPT-6', key: 'leaders', titleKh: '\u1790\u17D2\u1793\u17B6\u1780\u17CA\u178A\u17D2\u1780\u1793\u17B6\u17C6\u1780\u17D2\u179A\u17C1\u1794\u17C0\u1794\u17D2\u179A\u17B6\u1794\u17C1\u1791\u17B6\u1780\u17D2\u179F\u17B6', descEn: 'Leadership all sports', icon: Award },
+    { id: 'RPT-7', key: 'coach-athlete', titleKh: '\u1782\u17D2\u179A\u17BC\u1794\u1780\u17D2\u1793\u17C0\u1780 \u17A2\u178F\u17D2\u178F\u1796\u179B\u17B7\u1780', descEn: 'Coaches and athletes', icon: Dumbbell },
+    { id: 'RPT-8', key: 'delegation', titleKh: '\u1794\u17D2\u179A\u17B6\u178F\u17D2\u1797\u17BC \u17A2\u17D2\u1793\u17B6\u1794\u1780\u17D2\u178F\u17D2\u1793\u17B6\u17C6', descEn: 'Delegates and leaders', icon: UserCog },
 ];
 
 export function ReportList() {
     const { can } = usePermissions();
     const t = useTranslations('reports');
-    const reports = useReportMutations();
-
+    const download = useReportDownload();
     const { data: cascadingData, isLoading } = useCascadingData();
-    const [activeReport, setActiveReport] = useState<ReportKey | null>(null);
-
+    const [activeCard, setActiveCard] = useState<ReportCard | null>(null);
     const isAdmin = can(CAPABILITIES.CROSS_ORG_ADMIN);
 
     if (isLoading) {
@@ -63,85 +58,46 @@ export function ReportList() {
         );
     }
 
-    // Per-report mutation wiring (download logic unchanged — these are existing mutations).
-    const mutationFor = (key: ReportKey) =>
-        key === 'orgSport'
-            ? {
-                  onGenerate: reports.downloadOrgSport,
-                  isGenerating: reports.isDownloadingOrgSport,
-                  isDone: reports.isOrgSportDone,
-                  onReset: reports.resetOrgSport,
-              }
-            : {
-                  onGenerate: reports.downloadParticipant,
-                  isGenerating: reports.isDownloadingParticipant,
-                  isDone: reports.isParticipantDone,
-                  onReset: reports.resetParticipant,
-              };
-
-    const active = activeReport ? mutationFor(activeReport) : null;
-    const activeCard = REPORT_CARDS.find((c) => c.reportKey === activeReport);
-
     return (
         <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {REPORT_CARDS.map((card) => {
-                    const available = card.reportKey !== null;
                     const Icon = card.icon;
                     return (
                         <div
                             key={card.id}
-                            className={cn(
-                                'flex flex-col rounded-lg border border-border bg-card p-6 shadow-sm transition-shadow',
-                                available && 'hover:shadow-md',
-                            )}
+                            className="flex flex-col rounded-lg border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
                         >
                             <div className="mb-4 flex items-start justify-between">
-                                <div
-                                    className={cn(
-                                        'flex h-11 w-11 items-center justify-center rounded-lg',
-                                        available ? 'bg-accent text-primary' : 'bg-muted text-muted-foreground',
-                                    )}
-                                >
+                                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-accent text-primary">
                                     <Icon className="h-5 w-5" />
                                 </div>
-                                <Badge variant={available ? 'success' : 'secondary'} size="sm">
-                                    {available ? t('statusAvailable') : t('statusComingSoon')}
-                                </Badge>
+                                <Badge variant="success" size="sm">{t('statusAvailable')}</Badge>
                             </div>
-
                             <h3 className="text-base font-semibold leading-relaxed text-foreground">{card.titleKh}</h3>
                             <p className="mt-1 mb-6 flex-1 text-sm leading-relaxed text-muted-foreground">{card.descEn}</p>
-
-                            {available ? (
-                                <Button
-                                    onClick={() => setActiveReport(card.reportKey)}
-                                    className="w-full"
-                                >
-                                    {t('generate')}
-                                </Button>
-                            ) : (
-                                <Button variant="outline" className="w-full" disabled>
-                                    {t('generate')}
-                                </Button>
-                            )}
+                            <Button onClick={() => setActiveCard(card)} className="w-full">
+                                {t('generate')}
+                            </Button>
                         </div>
                     );
                 })}
             </div>
 
-            {active && activeCard && (
+            {activeCard && (
                 <ReportGenerateModal
-                    isOpen={activeReport !== null}
-                    onClose={() => setActiveReport(null)}
+                    isOpen={!!activeCard}
+                    onClose={() => { setActiveCard(null); download.reset(); }}
+                    reportKey={activeCard.key}
                     reportTitle={activeCard.titleKh}
+                    supportsSource={activeCard.supportsSource}
                     events={cascadingData?.events ?? []}
                     organizations={cascadingData?.organizations ?? []}
                     isAdmin={isAdmin}
-                    onGenerate={active.onGenerate}
-                    isGenerating={active.isGenerating}
-                    isDone={active.isDone}
-                    onReset={active.onReset}
+                    onGenerate={(params) => download.mutate({ key: activeCard.key, ...params })}
+                    isGenerating={download.isPending}
+                    isDone={download.isSuccess}
+                    onReset={() => download.reset()}
                 />
             )}
         </>

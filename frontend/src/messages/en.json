@@ -68,6 +68,8 @@
     "optional": "Optional",
     "required": "Required",
     "notProvided": "Not provided",
+    "all": "All",
+    "clear": "Clear",
     "noData": "No data available",
     "error": "Error",
     "success": "Success",
@@ -108,7 +110,9 @@
     "exportAll": "Export All",
     "pdf": "PDF",
     "athlete": "Athlete",
-    "leader": "Leader"
+    "leader": "Leader",
+    "athleteMale": "Male Athlete",
+    "athleteFemale": "Female Athlete"
   },
   "nav": {
     "main": "Overview",
@@ -132,6 +136,8 @@
     "registrations": "Registrations",
     "athleteRegistration": "Athlete Registration",
     "leaderRegistration": "Leader Registration",
+    "organizerRegistration": "Organizer Registration",
+    "organizerRoles": "Organizer Roles",
     "portalVersion": "Portal v1.0"
   },
   "auth": {
@@ -435,6 +441,7 @@
     "steps": {
       "event": "Event & Sport",
       "category": "Category",
+      "team": "Team",
       "personal": "Personal Info",
       "documents": "Photo Upload",
       "review": "Review"
@@ -442,6 +449,7 @@
     "stepSubtitles": {
       "event": "Choose the event and sport you want to participate in",
       "category": "Select the age group or competition level",
+      "team": "Select or create a team for this event",
       "personal": "Fill in accurately, matching official documents",
       "documents": "Upload a clear photo and identity documents",
       "review": "Please check your information once more before submitting"
@@ -449,6 +457,23 @@
     "registrationOpensOn": "Registration opens on {date}",
     "registrationClosedOn": "Registration closed on {date}",
     "registrationClosed": "Registration is currently closed",
+    "errors": {
+      "REGISTRATION_CLOSED": "Registration is not open for this event.",
+      "SPORT_NOT_ELIGIBLE": "This sport is not in your organization's survey selections for this event.",
+      "CATEGORY_INVALID": "The selected category is not valid for this sport in this event.",
+      "AGE_OUT_OF_RANGE": "{mode, select, BIRTH_YEAR {Birth year must be between {min} and {max}.} other {Age at the event start must be between {min} and {max}.}}",
+      "DOCUMENT_REQUIRED": "{requires, select, birth_certificate {A birth certificate is required for participants under 18.} other {A national ID or passport is required for participants 18 and older.}}",
+      "QUOTA_FULL": "The athlete quota for this sport is full ({used}/{quota})."
+    },
+    "duplicate": {
+      "title": "Possibly already registered",
+      "message": "Someone with the same name and date of birth is already registered for this event. Register anyway?",
+      "confirm": "Register anyway",
+      "cancel": "Cancel"
+    },
+    "quota": {
+      "label": "Places used"
+    },
     "fields": {
       "eventType": "Event Type",
       "event": "Event",
@@ -535,7 +560,36 @@
         "participation": "Participation",
         "documents": "Documents"
       },
-      "fields": {
+    "team": {
+      "modeTitle": "Registration Mode",
+      "modeSubtitle": "Choose how you want to register athletes for this sport",
+      "individual": "Individual",
+      "individualDesc": "Register athletes one at a time",
+      "team": "Team",
+      "teamDesc": "Register athletes as a team",
+      "selectTitle": "Team",
+      "selectSubtitle": "Select or create a team to manage members",
+      "namePlaceholder": "Enter team name",
+      "create": "Create Team",
+      "createNew": "+ Create New Team",
+      "existing": "Existing teams",
+      "noTeams": "No teams found for this sport. Create one above.",
+      "members": "members",
+      "min": "min",
+      "max": "max",
+      "rosterTitle": "Team Roster",
+      "rosterSubtitle": "Manage your team members",
+      "noMembers": "No members yet. Add members to your team.",
+      "addMember": "Add Member",
+      "memberAdded": "Member registered successfully! You can add another member.",
+      "minNotReached": "You need at least {min} members before submitting.",
+      "required": "Please select or create a team first.",
+      "status": {
+        "complete": "Complete",
+        "incomplete": "Incomplete"
+      }
+    },
+    "fields": {
         "gender": "Gender",
         "dateOfBirth": "Date of birth",
         "phone": "Phone",
@@ -643,24 +697,14 @@
     "page": "Page {page} of {total}"
   },
   "reports": {
-    "title": "Excel Reports",
-    "description": "Export registration data and summaries to Excel files",
+    "title": "Reports",
+    "description": "Export registration reports — Excel and PDF formats",
     "filters": "Report Filters",
     "selectEvent": "Select Event",
     "selectOrganization": "Select Organization",
     "chooseEvent": "-- Choose Event --",
     "allOrganizations": "-- All Organizations (Admin) --",
     "pleaseSelectEvent": "Please select an event",
-    "orgSportReport": {
-      "title": "Organization Sport Report",
-      "description": "Summary of registrations grouped by organization and sport. Includes total counts and gender distribution.",
-      "download": "Download Excel"
-    },
-    "participantReport": {
-      "title": "Participant Details Report",
-      "description": "Exhaustive list of all registered participants including personal details, roles, and document status.",
-      "download": "Download Excel"
-    },
     "statusAvailable": "Available",
     "statusComingSoon": "Coming soon",
     "generate": "Generate",
@@ -671,10 +715,30 @@
     "selectFormat": "Format",
     "formatExcel": "Excel",
     "formatPdf": "PDF",
-    "pdfComingSoon": "PDF coming soon",
+    "selectSource": "Data Source",
+    "sourcePlanned": "Planned",
+    "sourceActual": "Actual (Registered)",
     "generateModalTitle": "Generate Report",
     "generatedDesc": "Your report has been downloaded",
     "comingSoonNote": "This report is not available yet"
+  },
+  "surveyStatus": {
+    "title": "Survey Completion Status",
+    "description": "Survey ② (sport selection) and ③ (participant counts) completion per organization",
+    "organizationTable": "Organization Status",
+    "organizationTableDesc": "Survey progress per organization for this event",
+    "federationTable": "Federation Sports",
+    "federationTableDesc": "Federation sports with category survey ④ counts",
+    "orgName": "Organization",
+    "surveySport": "Survey ② Sport",
+    "surveyNumber": "Survey ③ Counts",
+    "sport": "Sport",
+    "categories": "Categories",
+    "submitted": "Submitted",
+    "notSubmitted": "Not submitted",
+    "pending": "Pending",
+    "done": "Done",
+    "failedToLoad": "Failed to load survey status"
   },
   "bycategory": {
     "title": "Survey by Category",
@@ -766,6 +830,9 @@
       "event": "Event",
       "organization": "Organization",
       "sports": "Selected Sports"
+    },
+    "history": {
+      "lastSubmitted": "Last submitted: {date}"
     }
   },
   "bynumber": {
@@ -812,5 +879,29 @@
       "athletes": "Athletes",
       "leaders": "Leaders"
     }
+  },
+  "organizer": {
+    "title": "Organizer Registration",
+    "subtitle": "Register yourself as an event organizer",
+    "step": {
+      "event": "Event",
+      "personal": "Personal Information",
+      "role": "Organizer Role",
+      "review": "Review"
+    },
+    "selectEvent": "Select an event",
+    "selectOrg": "Select an organization",
+    "organizerRole": "Organizer Role",
+    "event": "Event",
+    "noRoles": "No organizer roles available",
+    "registerSuccess": "Registration Successful!",
+    "registerSuccessDesc": "The organizer has been registered successfully.",
+    "registerAnother": "Register Another Person",
+    "manageRoles": "Manage Organizer Roles",
+    "addRole": "Add Role",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "actions": "Actions"
   }
 }

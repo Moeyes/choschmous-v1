@@ -104,6 +104,28 @@ export const surveyHttpAdapter: ISurveyRepository = {
         }
     },
 
+    async fetchExistingOrgSports(eventId: number, orgId: number) {
+        const cacheKey = `org-sports-${orgId}-${eventId}`;
+        const cached = getCached<{ sport_id: number; created_at: string }[]>(cacheKey);
+        if (cached) return cached;
+        try {
+            const { default: apiClient } = await import('@/core/api/client');
+            const { API } = await import('@/core/api/endpoints');
+            const response = await apiClient.get(API.survey.orgSports(eventId, orgId));
+            const rows = response.data as Array<{
+                sports_id: number; created_at: string;
+            }>;
+            const result = rows.map((r) => ({
+                sport_id: r.sports_id,
+                created_at: r.created_at,
+            }));
+            setCached(cacheKey, result);
+            return result;
+        } catch {
+            return [];
+        }
+    },
+
     async submitSurvey(payload: SurveySubmissionPayload) {
         const { organization_id, event_id, sport_ids } = payload;
         const linkPromises = sport_ids.map(async (sport_id) => {

@@ -4,7 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Trophy, CalendarDays, Building2, Medal, LayoutGrid, AlertCircle } from "lucide-react";
 import { RegisterFormData, RegisterFormInput } from "../schema/registration.schema";
-import type { CascadingDataLoaded } from "@/core/api/referenceData";
+import type { CascadingDataLoaded, EligibleSport } from "@/core/api/referenceData";
 import {
   Card, CardHeader, CardTitle, CardContent,
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
@@ -15,10 +15,11 @@ import type { SelectableGridOption } from "@/shared";
 interface RegisterEventStepProps {
   form: UseFormReturn<RegisterFormInput, unknown, RegisterFormData>;
   cascadingData: CascadingDataLoaded | null;
+  eligibleSports?: EligibleSport[];
   isAdmin: boolean;
 }
 
-export function RegisterEventStep({ form, cascadingData, isAdmin }: RegisterEventStepProps) {
+export function RegisterEventStep({ form, cascadingData, eligibleSports, isAdmin }: RegisterEventStepProps) {
   const t = useTranslations('registration');
   const tCommon = useTranslations('common');
   const { setValue, watch, formState } = form;
@@ -34,15 +35,23 @@ export function RegisterEventStep({ form, cascadingData, isAdmin }: RegisterEven
     ? (cascadingData?.events ?? []).filter((e) => e.type === eventType)
     : [];
   const orgs = cascadingData?.organizations ?? [];
-  const sports = cascadingData?.sports ?? [];
+  const allSports = cascadingData?.sports ?? [];
 
   const selectedEvent = events.find((e) => e.id === eventId);
   const selectedOrg = orgs.find((o) => o.id === Number(organizationId));
 
-  const sportOptions: SelectableGridOption[] = sports.map((s) => ({
-    value: String(s.id),
-    label: s.name_kh || s.name_en || "Sport",
-  }));
+  // Prefer the org's survey-② eligible sports (with config); fall back to the
+  // full sport list (e.g. for admins, where eligibility is org-dependent).
+  const sportOptions: SelectableGridOption[] =
+    eligibleSports && eligibleSports.length > 0
+      ? eligibleSports.map((s) => ({
+          value: String(s.sports_id),
+          label: s.name_kh || s.name_en || "Sport",
+        }))
+      : allSports.map((s) => ({
+          value: String(s.id),
+          label: s.name_kh || s.name_en || "Sport",
+        }));
 
   return (
     <Card>

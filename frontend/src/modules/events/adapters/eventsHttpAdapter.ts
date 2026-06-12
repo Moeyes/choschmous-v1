@@ -10,7 +10,7 @@ import {
 import {
     apiGetEvents, apiGetEventById, apiGetPublicEventById, apiCreateEvent, apiUpdateEvent, apiDeleteEvent,
     apiUpdateEventPhase,
-    apiGetEventSports, apiAddSportToEvent, apiRemoveSportFromEvent,
+    apiGetEventSports, apiAddSportToEvent, apiRemoveSportFromEvent, apiUpdateSportConfig,
     apiGetEventSportOrgs, apiAddOrgToEventSport, apiDeleteEventSportOrgLink,
     apiGetEventOrganizations, apiRemoveOrgCompletelyFromEvent,
     apiGetEventSportCategories,
@@ -19,6 +19,7 @@ import type {
     EventCreate, EventUpdate, PhaseUpdatePayload,
     AddSportToEventPayload, AddOrgToEventSportPayload,
     DeleteEventSportOrgLinkPayload, RemoveOrgCompletelyFromEventPayload,
+    SportConfigPayload,
 } from '../types';
 
 const PHASE_KEYS = [
@@ -141,12 +142,21 @@ export const eventsHttpAdapter: IEventRepository = {
                 sports_id: s.sports_id ?? s.id,
                 name_kh: s.sport_name ?? 'Unnamed Sport',
                 name_en: s.sport_name ?? 'Unnamed Sport',
+                mode: s.mode ?? null,
+                team_size_min: s.team_size_min ?? null,
+                team_size_max: s.team_size_max ?? null,
+                quota_athletes_per_org: s.quota_athletes_per_org ?? null,
+                quota_teams_per_org: s.quota_teams_per_org ?? null,
             }));
         return sportList.map(s => eventSportPublicSchema.parse(s));
     },
 
     addSportToEvent: async (payload: AddSportToEventPayload) => {
         await apiAddSportToEvent(payload);
+    },
+
+    updateSportConfig: async (id: number, config: SportConfigPayload) => {
+        await apiUpdateSportConfig(id, config);
     },
 
     removeSportFromEvent: async (associationId: number) => {

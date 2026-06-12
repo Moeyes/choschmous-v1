@@ -54,6 +54,7 @@ export function RegisterReviewStep({
 }: RegisterReviewStepProps) {
   const isLeader = mode === "leader";
   const t = useTranslations("registration");
+  const tCommon = useTranslations("common");
   const f = form.getValues();
 
   const event = cascadingData?.events.find((e) => String(e.id) === String(f.eventId));
@@ -65,8 +66,12 @@ export function RegisterReviewStep({
   const nameEn = [f.enFamilyName, f.enGivenName].filter(Boolean).join(" ").toUpperCase();
 
   const roleLabel = isLeader || f.role === "leader"
-    ? `${f.role === "leader" ? "Leader" : "Athlete"} · ${f.leaderRole || ""}`
-    : "Athlete";
+    ? `${tCommon('leader')} · ${f.leaderRole || ""}`
+    : f.gender === "MALE"
+      ? tCommon('athleteMale')
+      : f.gender === "FEMALE"
+        ? tCommon('athleteFemale')
+        : tCommon('athlete');
 
   const docs = [
     { ok: !!f.photoPath, label: t("fields.profilePhoto") },
