@@ -35,6 +35,49 @@ REPORT_COLUMNS: dict[str, tuple[list[str], list[str], set[int]]] = {
         [],
         set(),
     ),
+    # \u17E3 \u1785\u17BB\u17C7\u1785\u17C6\u1793\u17BD\u1793 \u2014 counts per sport
+    "counts": (
+        ["\u179B.\u179A", "\u1794\u17D2\u179A\u1797\u17C1\u1791\u1780\u17B8", "\u1794\u17D2\u179A\u178F\u17B7\u1797\u17BC", "\u178A\u17B9\u1780\u1793\u17B6\u17C6", "\u1782\u17D2\u179A\u17BC\u1794\u1784\u17D2\u179C\u17B9\u1780", "\u17A2\u178F\u17D2\u178F\u1796\u179B\u17B7\u1780", "\u179F\u179A\u17BB\u1794"],
+        ["no", "sport_name_kh", "delegates", "leaders", "coaches", "athletes", "total"],
+        {2, 3, 4, 5, 6},
+    ),
+    # \u17E4 \u17A2\u17B6\u179B\u17CB\u1794\u17CA\u17BB\u1798 \u2014 full enroll album per org
+    "album": (
+        ["\u1782\u17C4\u178F\u17D2\u178F\u1793\u17B6\u1798", "\u1793\u17B6\u1798", "\u1797\u17C1\u1791", "\u179F\u1789\u17D2\u1787\u17B6\u178F\u17B7", "\u1782\u17C4\u178F\u17D2\u178F\u1793\u17B6\u1798\u17A1\u17B6\u178F\u17B6\u17C6\u1784", "\u1793\u17B6\u1798\u17A1\u17B6\u178F\u17B6\u17C6\u1784",
+         "\u1790\u17D2\u1784\u17C3\u1781\u17C2\u1786\u17D2\u1793\u17B6\u17C6\u1780\u17C6\u178E\u17BE\u178F", "\u178F\u17BD\u1793\u17B6\u1791\u17B8", "\u17A2\u17B6\u179F\u1799\u178A\u17D2\u178B\u17B6\u1793", "\u179B\u17C1\u1781\u1791\u17BC\u179A\u179F\u17D0\u1796\u17D2\u1791"],
+        ["kh_family_name", "kh_given_name", "gender", "nationality", "en_family_name",
+         "en_given_name", "date_of_birth", "role", "address", "phonenumber"],
+        set(),
+    ),
+    # \u17E5 \u179A\u17B6\u1799\u1793\u17B6\u1798\u179A\u17BD\u1798 \u2014 combined name list
+    "name-list": (
+        ["\u179B.\u179A", "\u1782\u17C4\u178F\u17D2\u178F\u1793\u17B6\u1798", "\u1793\u17B6\u1798", "\u1797\u17C1\u1791", "\u1790\u17D2\u1784\u17C3\u1781\u17C2\u1786\u17D2\u1793\u17B6\u17C6\u1780\u17C6\u178E\u17BE\u178F", "\u179F\u1789\u17D2\u1787\u17B6\u178F\u17B7",
+         "\u178F\u17BD\u1793\u17B6\u1791\u17B8", "\u1794\u17D2\u179A\u1797\u17C1\u1791\u1780\u17B8", "\u17A2\u1784\u17D2\u1782\u1797\u17B6\u1796"],
+        ["no", "kh_family_name", "kh_given_name", "gender", "date_of_birth",
+         "nationality", "role", "category_sport", "org_name_kh"],
+        {0},
+    ),
+    # \u17E6 \u1790\u17D2\u1793\u17B6\u1780\u17CB\u178A\u17B9\u1780\u1793\u17B6\u17C6 \u2014 leaders / special roles
+    "leaders": (
+        ["\u1782\u17C4\u178F\u17D2\u178F\u1793\u17B6\u1798", "\u1793\u17B6\u1798", "\u1797\u17C1\u1791", "\u1790\u17D2\u1784\u17C3\u1781\u17C2\u1786\u17D2\u1793\u17B6\u17C6\u1780\u17C6\u178E\u17BE\u178F", "\u179F\u1789\u17D2\u1787\u17B6\u178F\u17B7", "\u178F\u17BD\u1793\u17B6\u1791\u17B8", "\u17A2\u1784\u17D2\u1782\u1797\u17B6\u1796"],
+        ["kh_family_name", "kh_given_name", "gender", "date_of_birth", "nationality",
+         "role", "org_name_kh"],
+        set(),
+    ),
+    # \u17E7 \u1782\u17D2\u179A\u17BC\u1794\u1784\u17D2\u179C\u17B9\u1780 \u17A2\u178F\u17D2\u178F\u1796\u179B\u17B7\u1780 \u2014 coaches + athletes per sport
+    "coach-athlete": (
+        ["\u1782\u17C4\u178F\u17D2\u178F\u1793\u17B6\u1798", "\u1793\u17B6\u1798", "\u1797\u17C1\u1791", "\u1790\u17D2\u1784\u17C3\u1781\u17C2\u1786\u17D2\u1793\u17B6\u17C6\u1780\u17C6\u178E\u17BE\u178F", "\u1794\u17D2\u179A\u1797\u17C1\u1791\u1780\u17B8", "\u178F\u17BD\u1793\u17B6\u1791\u17B8", "\u17A2\u1784\u17D2\u1782\u1797\u17B6\u1796"],
+        ["kh_family_name", "kh_given_name", "gender", "date_of_birth", "sport_name_kh",
+         "role_label", "org_name_kh"],
+        set(),
+    ),
+    # \u17E8 \u1794\u17D2\u179A\u178F\u17B7\u1797\u17BC \u17A2\u17D2\u1793\u1780\u178A\u17B9\u1780\u1793\u17B6\u17C6 \u2014 delegation leadership
+    "delegation": (
+        ["\u1782\u17C4\u178F\u17D2\u178F\u1793\u17B6\u1798", "\u1793\u17B6\u1798", "\u1797\u17C1\u1791", "\u179B\u17C1\u1781\u1791\u17BC\u179A\u179F\u17D0\u1796\u17D2\u1791", "\u178F\u17BD\u1793\u17B6\u1791\u17B8", "\u17A2\u1784\u17D2\u1782\u1797\u17B6\u1796", "\u1794\u17D2\u179A\u1797\u17C1\u1791\u1780\u17B8"],
+        ["kh_family_name", "kh_given_name", "gender", "phonenumber", "role_name_kh",
+         "org_name_kh", "sport_name_kh"],
+        set(),
+    ),
 }
 
 # For totals, columns are dynamic per event (one column per sport)
@@ -101,7 +144,7 @@ def _make_xlsx(
     key: str, columns: list[tuple[str, int]], col_keys: list[str], rows: list[dict]
 ) -> bytes:
     """Build XLSX bytes."""
-    return render_xlsx(columns, [{k: r.get(k, "") for k in col_keys} for r in rows])
+    return render_xlsx(columns, rows, col_keys)
 
 
 def _make_pdf(
@@ -155,7 +198,7 @@ async def generate_report(
     xlsx_cols = [(h, 15) for h in display_headers]
 
     if format == "xlsx":
-        content = render_xlsx(xlsx_cols, [{k: r.get(k, "") for k in col_keys} for r in rows])
+        content = render_xlsx(xlsx_cols, rows, col_keys)
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         filename = f"{key}_{event_id}.xlsx"
     else:

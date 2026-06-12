@@ -57,8 +57,18 @@ class OrganizerService:
         except ValueError:
             self._raise(422, "INVALID_GENDER", f"Invalid gender: {data.gender}")
 
+        # Map the frontend's document labels to enum values, matching the
+        # athlete/leader path (src/schemas/enroll.py:fit_to_id_doc_enum) so the
+        # same UI value ("IDCard") works for organizers too.
+        _id_doc_map = {
+            "IDCard": "CAM_NID",
+            "Passport": "CAM_PASSPORT",
+            "BirthCertificate": "CAM_BIRTH_CERT",
+            "FamilyBook": "CAM_FAMILY_BOOK",
+        }
+        raw_doc = _id_doc_map.get(data.idDocType, data.idDocType)
         try:
-            id_doc_val = IdDocumentType(data.idDocType)
+            id_doc_val = IdDocumentType(raw_doc)
         except ValueError:
             self._raise(422, "INVALID_ID_DOC_TYPE", f"Invalid ID doc type: {data.idDocType}")
 

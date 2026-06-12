@@ -27,11 +27,22 @@ BODY_FONT = Font(name="Kantumruy Pro", size=10)
 TOTAL_FILL = PatternFill(start_color="D9E2F3", end_color="D9E2F3", fill_type="solid")
 
 
-def render_xlsx(columns: list[tuple[str, int]], rows: Sequence[dict]) -> bytes:
-    """Render rows to XLSX. columns = [(header_text, width_chars), ...]"""
+def render_xlsx(
+    columns: list[tuple[str, int]],
+    rows: Sequence[dict],
+    col_keys: list[str] | None = None,
+) -> bytes:
+    """Render rows to XLSX. columns = [(header_text, width_chars), ...].
+
+    ``col_keys`` are the dict keys to pull each column's value from; they run
+    parallel to ``columns``. When omitted, the header text itself is used as the
+    key (back-compat for callers whose rows are keyed by header).
+    """
     wb = Workbook()
     ws = wb.active
     ws.title = "Report"
+
+    keys = col_keys if col_keys is not None else [h for h, _ in columns]
 
     for col_idx, (header, width) in enumerate(columns, 1):
         cell = ws.cell(row=1, column=col_idx, value=header)
@@ -42,8 +53,8 @@ def render_xlsx(columns: list[tuple[str, int]], rows: Sequence[dict]) -> bytes:
         ws.column_dimensions[get_column_letter(col_idx)].width = width
 
     for row_idx, row_data in enumerate(rows, 2):
-        for col_idx, (header, _) in enumerate(columns, 1):
-            val = row_data.get(header)
+        for col_idx, key in enumerate(keys, 1):
+            val = row_data.get(key)
             if val is None:
                 val = ""
             cell = ws.cell(row=row_idx, column=col_idx, value=val)
@@ -51,7 +62,9 @@ def render_xlsx(columns: list[tuple[str, int]], rows: Sequence[dict]) -> bytes:
             cell.border = THIN_BORDER
             cell.alignment = Alignment(vertical="center", wrap_text=True)
 
-        is_total = row_data.get("no") is None
+        # Only the explicit grand-total row (carries no="no" key set to None)
+        # gets total styling; reports without a "no" column never match.
+        is_total = "no" in row_data and row_data.get("no") is None
         if is_total:
             for col_idx in range(1, len(columns) + 1):
                 ws.cell(row=row_idx, column=col_idx).fill = TOTAL_FILL
