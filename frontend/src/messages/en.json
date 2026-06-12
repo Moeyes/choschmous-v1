@@ -677,10 +677,54 @@
     "comingSoonNote": "This report is not available yet"
   },
   "bycategory": {
-    "title": "By Category",
-    "description": "View and search registrations organized by category",
-    "comingSoon": "Coming soon...",
-    "comingSoonDesc": "Category-based registration tools will live here."
+    "title": "Survey by Category",
+    "subtitle": "Define sport categories for federation events",
+    "description": "Set up categories for your sport in an event",
+    "loading": "Loading...",
+    "noEvents": "No events with open category survey phase",
+    "genders": {
+      "male": "Male",
+      "female": "Female",
+      "mixed": "Mixed"
+    },
+    "steps": {
+      "event": {
+        "title": "Event",
+        "subtitle": "Choose an event with open category survey"
+      },
+      "sport": {
+        "title": "Sport",
+        "subtitle": "Your sport is automatically assigned",
+        "lockedLabel": "Your sport",
+        "locked": "Assigned"
+      },
+      "categories": {
+        "title": "Categories",
+        "subtitle": "Add the competition categories for your sport",
+        "namePlaceholder": "Category name (e.g. Men's Singles)",
+        "genderPlaceholder": "Gender",
+        "addRow": "Add Category",
+        "empty": "No categories added yet. Click \"Add Category\" to start.",
+        "copyFromPrevious": "Copy from Previous"
+      }
+    },
+    "review": {
+      "event": "Event",
+      "sport": "Sport",
+      "categories": "Categories",
+      "noCategories": "No categories defined"
+    },
+    "success": {
+      "title": "Categories Submitted",
+      "description": "Your sport categories have been saved for this event.",
+      "another": "Submit for Another Event"
+    },
+    "nav": {
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit",
+      "submitting": "Submitting..."
+    }
   },
   "unauthorized": {
     "title": "Access Denied",

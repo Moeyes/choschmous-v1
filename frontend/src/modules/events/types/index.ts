@@ -65,6 +65,18 @@ export interface EventCreate {
   age_mode: AgeMode;
   age_min: number;
   age_max: number;
+  survey_category_status?: PhaseStatus;
+  survey_category_open_date?: string | null;
+  survey_category_close_date?: string | null;
+  survey_sport_status?: PhaseStatus;
+  survey_sport_open_date?: string | null;
+  survey_sport_close_date?: string | null;
+  survey_number_status?: PhaseStatus;
+  survey_number_open_date?: string | null;
+  survey_number_close_date?: string | null;
+  registration_status?: PhaseStatus;
+  registration_open_date?: string | null;
+  registration_close_date?: string | null;
 }
 
 export interface EventUpdate extends Partial<EventCreate> {

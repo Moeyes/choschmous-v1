@@ -5,11 +5,12 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*',
+        destination: `${process.env.API_PROXY_TARGET || 'http://localhost:8000'}/api/:path*`,
       },
     ];
   },

@@ -13,6 +13,8 @@ const envSafe = envSchema.safeParse({
 });
 
 if (!envSafe.success) {
+  // Surfaced at startup before the app can run — intentional console output.
+  // eslint-disable-next-line no-console
   console.error('❌ Invalid environment variables:', envSafe.error.flatten().fieldErrors);
   throw new Error('Invalid environment variables');
 }

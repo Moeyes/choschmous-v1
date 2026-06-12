@@ -185,4 +185,4 @@ const eventFormSchema = z
         }
     });
 
-type EventFormValues = z.infer<typeof eventFormSchema>;
+export type EventFormValues = z.infer<typeof eventFormSchema>;

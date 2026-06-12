@@ -1,0 +1,14 @@
+services:
+  backend:
+    build:
+      target: production
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+
+  frontend:
+    build:
+      target: production
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production

@@ -55,4 +55,8 @@ export const queryKeys = {
     all: ['dashboard'] as const,
     scoped: (role: string | null | undefined, orgId: number | null | undefined) => ['dashboard', role, orgId] as const,
   },
+  bycategory: {
+    eligibleEvents: ['bycategory', 'eligible-events'] as const,
+    categories: (eventId: number, sportId: number) => ['bycategory', 'categories', eventId, sportId] as const,
+  },
 } as const;

@@ -80,4 +80,10 @@ export const API = {
     participant: {
         base: '/api/participant',
     },
+    bycategory: {
+        eligibleEvents: '/api/events?survey_category_open=true&skip=0&limit=100',
+        categories: (eventId: number, sportId: number) =>
+            `/api/surveys/category?event_id=${eventId}&sport_id=${sportId}`,
+        upsert: '/api/surveys/category',
+    },
 } as const;

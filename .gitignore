@@ -7,6 +7,8 @@ final/_rebuild/reskin/demo/CREDENTIALS.md
 
 # Local env / secrets
 .env
+.env.local
+.env.production
 .env.*
 !.env.example
 
@@ -21,3 +23,6 @@ final/_rebuild/reskin/demo/CREDENTIALS.md
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# pnpm local content-addressable store (multi-hundred-MB cache, never commit)
+.pnpm-store/

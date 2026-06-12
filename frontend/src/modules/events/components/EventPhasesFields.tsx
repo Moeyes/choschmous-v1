@@ -1,18 +1,17 @@
 "use client";
 
-import type { Control, FieldErrors } from "react-hook-form";
+import { useController, useFormContext } from "react-hook-form";
 import { EVENT_PHASES, PhaseStatus } from "../types";
 import { SelectField, TextInputField } from "@/shared/form";
 import { useTranslations } from "next-intl";
 
-interface EventPhasesFieldsProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  control: Control<any>;
-  errors: FieldErrors;
-}
-
-export function EventPhasesFields({ control, errors }: EventPhasesFieldsProps) {
+/**
+ * Renders phase-gate fields for all four event lifecycle phases.
+ * Reads form control from useFormContext instead of prop-drilling Control<T>.
+ */
+export function EventPhasesFields() {
   const t = useTranslations("events");
+  const { control, formState: { errors } } = useFormContext();
 
   const statusOptions = [
     { value: PhaseStatus.AUTO, label: t("phaseStatus.AUTO") },
@@ -36,21 +35,21 @@ export function EventPhasesFields({ control, errors }: EventPhasesFieldsProps) {
               name={`${phase}_status`}
               label={t("phases.status")}
               options={statusOptions}
-              error={errors[`${phase}_status`]?.message?.toString()}
+              error={(errors as Record<string, { message?: string } | undefined>)[`${phase}_status`]?.message}
             />
             <TextInputField
               control={control}
               name={`${phase}_open_date`}
               label={t("phases.openDate")}
               type="date"
-              error={errors[`${phase}_open_date`]?.message?.toString()}
+              error={(errors as Record<string, { message?: string } | undefined>)[`${phase}_open_date`]?.message}
             />
             <TextInputField
               control={control}
               name={`${phase}_close_date`}
               label={t("phases.closeDate")}
               type="date"
-              error={errors[`${phase}_close_date`]?.message?.toString()}
+              error={(errors as Record<string, { message?: string } | undefined>)[`${phase}_close_date`]?.message}
             />
           </div>
         </div>

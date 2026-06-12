@@ -21,6 +21,7 @@ class IdDocumentType(PyEnum):
 class genderEnum(PyEnum):
     MALE = "MALE"
     FEMALE = "FEMALE"
+    MIXED = "MIXED"
 
 
 class medal_typeEnum(PyEnum):

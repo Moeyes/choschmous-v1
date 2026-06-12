@@ -1,13 +1,15 @@
 'use client';
 
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { surveySchema } from '../schema/survey.schema';
 import type { SurveyFormData } from '../types';
 
 export function useSurveyForm(onSuccess?: () => void) {
     const form = useForm<SurveyFormData>({
-        resolver: zodResolver(surveySchema),
+        // The schema's input type is nullable (eventId/organizationId start null)
+        // while its output is non-null; cast to the output resolver to match.
+        resolver: zodResolver(surveySchema) as Resolver<SurveyFormData>,
         mode: 'onBlur',
         defaultValues: {
             eventId: undefined,

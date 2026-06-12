@@ -216,7 +216,7 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
         description={t("phases.hint")}
         icon={CalendarClock}
       >
-        <EventPhasesFields control={control} errors={errors} />
+        <EventPhasesFields />
       </FormSection>
 
       <div className="flex justify-end gap-3 pt-4">

@@ -100,6 +100,32 @@ def get_effective_org_id(current_user: User, client_org_id: Optional[int]) -> Op
     return client_org_id
 
 
+def get_effective_sport_id(
+    current_user: User, client_sport_id: int | None = None
+) -> int | None:
+    """
+    Return the sport_id that a query should be filtered by.
+
+    - FEDERATION role: always force own sport_id, silently ignore client param.
+      Raises 400 if the federation user has no sport linked.
+    - ORGANIZATION role: raise 403 (org users cannot manage sports).
+    - admin / super_admin: trust the optional client filter.
+    """
+    if current_user.role == UserRole.FEDERATION:
+        if current_user.sport_id is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Your federation account has no sport linked. Contact an admin.",
+            )
+        return current_user.sport_id
+    if current_user.role == UserRole.ORGANIZATION:
+        raise HTTPException(
+            status_code=403,
+            detail="Organization users cannot manage sport-level resources.",
+        )
+    return client_sport_id
+
+
 def enforce_org_access(current_user: User, requested_org_id: int) -> int:
     """
     For path-param org_id routes: verify the caller is allowed to access that org.

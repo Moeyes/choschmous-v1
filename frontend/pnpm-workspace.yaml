@@ -1,4 +1,9 @@
+overrides:
+  '@napi-rs/wasm-runtime': 1.1.4
 allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  esbuild: true
   msw: false
-  sharp: false
-  unrs-resolver: false
+  sharp: true
+  unrs-resolver: true

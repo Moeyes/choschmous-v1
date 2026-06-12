@@ -1,9 +1,9 @@
 "use client";
 
 import { useRequireRole, FEATURE_ACCESS } from "@/core/auth";
-import { ByCategoryPage } from "@/modules/common";
+import { ByCategoryForm } from "@/modules/bycategory";
 
 export default function Page() {
   useRequireRole(FEATURE_ACCESS.bycategory);
-  return <ByCategoryPage />;
+  return <ByCategoryForm />;
 }

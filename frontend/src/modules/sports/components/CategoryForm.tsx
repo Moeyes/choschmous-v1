@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Category, Gender } from '../types';
 import { categoryFormSchema, type CategoryFormValues } from '../schema/sports.schema';
@@ -20,7 +20,9 @@ export function CategoryForm({ sportId, category, onSuccess, onCancel }: Categor
     const tCommon = useTranslations('common');
 
     const { control, handleSubmit, formState: { errors } } = useForm<CategoryFormValues>({
-        resolver: zodResolver(categoryFormSchema),
+        // zodResolver infers a distinct input type (gender preprocessed from
+        // `unknown`); cast to the output resolver so it matches useForm<CategoryFormValues>.
+        resolver: zodResolver(categoryFormSchema) as Resolver<CategoryFormValues>,
         defaultValues: category
             ? { category: category.category, gender: category.gender || null }
             : { category: '', gender: null },

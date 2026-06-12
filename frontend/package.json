@@ -30,6 +30,11 @@
     "zod": "^4.3.6",
     "zustand": "^5.0.14"
   },
+  "pnpm": {
+    "overrides": {
+      "@napi-rs/wasm-runtime": "1.1.4"
+    }
+  },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.7",
     "@tailwindcss/postcss": "^4",
@@ -46,17 +51,5 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^2"
-  },
-  "pnpm": {
-    "overrides": {
-      "react-hook-form": "$react-hook-form",
-      "axios": "^1.16.0"
-    },
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ],
-    "ignoredBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }

@@ -58,4 +58,4 @@ SELECT count(*) AS remaining_dup_groups FROM (
 ) g;
 
 -- Change to ROLLBACK; for a dry run.
-COMMIT;
+`1COMMIT;

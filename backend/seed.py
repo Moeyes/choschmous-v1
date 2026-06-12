@@ -71,6 +71,17 @@ DEMO_ORG_ACCOUNTS = [
      "គង់", "ឧត្តម", "Kong", "Odom"),           # កណ្ដាល (index 8)
 ]
 
+# Demo federation accounts: (username, email, sport_index, kh_family, kh_given, en_family, en_given)
+# sport_index refers to position in SPORT_NAMES (0-based). A federation user is
+# bound to exactly one sport via users.sport_id and may only manage that sport's
+# categories — e.g. the volleyball federation never sees football categories.
+DEMO_FEDERATION_ACCOUNTS = [
+    ("football_fed", "football.fed@sport.gov.kh", 0,
+     "ឈួន", "ពិសិដ្ឋ", "Chhoun", "Piseth"),    # បាល់ទាត់ (Football)
+    ("volleyball_fed", "volleyball.fed@sport.gov.kh", 1,
+     "នួន", "សុធា", "Nuon", "Sotha"),           # បាល់ទះ (Volleyball)
+]
+
 
 async def seed_data():
     async with engine.begin() as conn:
@@ -100,9 +111,11 @@ async def seed_data():
         await session.flush()
 
         # 2. Sports — 9 real Khmer sports
+        sports = []
         for kh, en in SPORT_NAMES:
             s = Sport(name_kh=kh, sport_type=en)
             session.add(s)
+            sports.append(s)
         await session.flush()
 
         # 3. One real national event (so registration can be tested)
@@ -155,6 +168,24 @@ async def seed_data():
             )
             session.add(u)
 
+        # 6. Demo federation accounts — each bound to a single sport
+        for username, email, sport_idx, kh_f, kh_g, en_f, en_g in DEMO_FEDERATION_ACCOUNTS:
+            u = User(
+                username=username,
+                email=email,
+                hashed_password=_pw,
+                role=UserRole.FEDERATION,
+                kh_family_name=kh_f,
+                kh_given_name=kh_g,
+                en_family_name=en_f,
+                en_given_name=en_g,
+                is_active=True,
+                is_superuser=False,
+                organization_id=None,
+                sport_id=sports[sport_idx].id,
+            )
+            session.add(u)
+
         await session.commit()
         print("Seeding completed successfully!")
         _pw_display = _seed_password
@@ -163,6 +194,8 @@ async def seed_data():
         print(f"admin      / {_pw_display}  → admin")
         for username, _, org_idx, *_ in DEMO_ORG_ACCOUNTS:
             print(f"{username:<15} / {_pw_display}  → organization ({PROVINCES[org_idx] if org_idx < 25 else MINISTRIES[org_idx-25][0]})")
+        for username, _, sport_idx, *_ in DEMO_FEDERATION_ACCOUNTS:
+            print(f"{username:<15} / {_pw_display}  → federation ({SPORT_NAMES[sport_idx][0]})")
 
 
 if __name__ == "__main__":

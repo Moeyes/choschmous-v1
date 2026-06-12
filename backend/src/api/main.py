@@ -21,6 +21,7 @@ from .v1.routes import participation_per_sport as v1_participation_per_sport
 from .v1.routes import public_events as v1_public_events
 from .v1.routes import public_sports as v1_public_sports
 from .v1.routes import sports_events as v1_sports_events
+from .v1.routes import category_survey as v1_category_survey
 
 
 V1 = settings.API_V1_STR
@@ -53,6 +54,9 @@ api_router.include_router(
     v1_organization.router, prefix=V1 + "/organization", tags=["organization"], dependencies=_auth
 )
 api_router.include_router(v1_sports_events.router, prefix=V1 + "/sports-events", tags=["sports-events"], dependencies=_auth)
+api_router.include_router(
+    v1_category_survey.router, prefix=V1 + "/surveys", tags=["surveys"], dependencies=_auth
+)
 
 # Dashboard / Analytics
 api_router.include_router(
