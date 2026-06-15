@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import HTTPException
-from sqlalchemy import func, select, delete as sa_delete
+from sqlalchemy import func, select, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.team import team as Team
@@ -235,6 +235,33 @@ class TeamService:
         part.team_id = team_id
         await self.db.commit()
 
+    async def finalize_team(self, team_id: int):
+        """Finalize a team for registration — the lower-bound counterpart to the
+        ``team_size_max`` (``TEAM_FULL``) gate in ``add_member``. Enforces the
+        sport's configured minimum roster size; reuses the same team-scoped
+        ``SportsEvent`` config lookup. The minimum is enforced only here (at
+        finalize), never on member-add, so partial teams can still be built up.
+        Skipped when no minimum is configured (null / 0 → vacuously valid)."""
+        team = await self.db.get(Team, team_id)
+        if not team:
+            self._raise(404, "TEAM_NOT_FOUND", "Team not found.")
+
+        config = (
+            await self.db.execute(
+                select(SportsEvent).where(
+                    SportsEvent.events_id == team.event_id,
+                    SportsEvent.sports_id == team.sport_id,
+                )
+            )
+        ).scalar_one_or_none()
+
+        if config and config.team_size_min:
+            current_count = await self.member_count(team_id)
+            if current_count < config.team_size_min:
+                self._raise(409, "TEAM_BELOW_MIN",
+                            "The team has not reached its minimum size.",
+                            min=config.team_size_min, current=current_count)
+
     async def remove_member(self, team_id: int, enroll_id: int):
         team = await self.db.get(Team, team_id)
         if not team:
@@ -264,10 +291,13 @@ class TeamService:
         if not team:
             return False
 
+        # Detach members, do NOT delete their registrations. Mirrors remove_member
+        # (team_id = None) and the athlete_participation FK (ondelete="SET NULL"):
+        # each athlete's registration survives, just unlinked from the deleted team.
         await self.db.execute(
-            sa_delete(AthleteParticipation).where(
-                AthleteParticipation.team_id == team_id
-            )
+            sa_update(AthleteParticipation)
+            .where(AthleteParticipation.team_id == team_id)
+            .values(team_id=None)
         )
         await self.db.flush()
 

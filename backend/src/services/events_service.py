@@ -288,6 +288,11 @@ class EventService:
         result = await self.db.execute(query)
         return result.mappings().all()
 
+    async def get_event_sport_org_link(
+        self, association_id: int
+    ) -> Optional[sports_event_org]:
+        return await self.seo_repo.get(association_id)
+
     async def remove_org_from_event_sport(self, association_id: int) -> bool:
         return await self.seo_repo.delete(association_id)
 

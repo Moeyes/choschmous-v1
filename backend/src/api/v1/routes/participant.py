@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Request as FastAPIRequest
 
 from core.idempotency import check_idempotency, store_idempotency_result
-from core.ratelimit import participant_write_limiter
+from core.ratelimit import participant_write_limiter, reveal_limiter
 from src.database.deps import (
     get_db,
     get_current_user,
@@ -119,7 +119,7 @@ async def create_participant(
         return idempotency_key
 
     service = ParticipantService(db)
-    result = await service.register_participant(payload)
+    result = await service.register_participant(payload, current_user)
 
     if isinstance(idempotency_key, str):
         await store_idempotency_result(idempotency_key, 201, result)
@@ -146,7 +146,6 @@ async def list_participants(
     leader_roles: Optional[list[LeaderRole]] = Query(
         None, description="Filter by one or more leader roles (coach, manager, etc.)"
     ),
-    search: Optional[str] = Query(None, description="Search by name (KH/EN) or phone"),
     limit: int = Query(20, ge=1, le=200, description="Page size"),
     offset: int = Query(0, ge=0, description="Number of records to skip"),
     db: AsyncSession = Depends(get_db),
@@ -158,7 +157,10 @@ async def list_participants(
     - **role**: Required filter for participant type (Athlete, Leader, etc.).
     - **event_id**, **sport_id**, **organization_id**: Standard relational filters.
     - **leader_roles**: List of specific leader roles to include.
-    - **search**: Multi-field search (Khmer/Latin names or phone numbers).
+
+    Free-text search (names / phone numbers) is intentionally NOT accepted here:
+    Restricted-PII must never ride in a URL/query string (data-governance §3). Use
+    ``POST /search`` instead, which takes the search term in the request body.
 
     Organization-role users are always scoped to their own organization regardless
     of any organization_id query parameter supplied.
@@ -173,7 +175,6 @@ async def list_participants(
         category_id=category_id,
         gender=gender,
         leader_roles=leader_roles,
-        search=search,
         limit=limit,
         offset=offset,
     )
@@ -217,17 +218,21 @@ async def search_participants(
 @router.post("/{enroll_id}/reveal")
 async def reveal_participant_pii(
     enroll_id: int,
+    request: FastAPIRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
     """Reveal a participant's masked phone number. **Admin / super-admin only.**
 
-    Every successful reveal is recorded in ``pii_access_logs`` (actor, role,
-    target, field, timestamp) *before* the value is returned — the value itself
-    is never written to the audit log (data-governance §4/§6). Masked by
-    default in the UI; this is the explicit, permission-gated, audited action
-    that exposes the real value.
+    Rate-limited per admin (a burst of reveals signals bulk exfiltration). Every
+    successful reveal is recorded in ``pii_access_logs`` (actor, role, target,
+    field, timestamp) *before* the value is returned — the value itself is never
+    written to the audit log (data-governance §4/§6). Masked by default in the
+    UI; this is the explicit, permission-gated, audited action that exposes the
+    real value.
     """
+    await reveal_limiter.check(request, key_suffix=str(current_user.id), response=response)
     service = ParticipantService(db)
     phone = await service.get_participant_phone(enroll_id)
 
@@ -298,7 +303,7 @@ async def update_participant(
     if owner_org_id is None:
         raise HTTPException(status_code=404, detail="Participant not found")
     enforce_org_access(current_user, owner_org_id)
-    return await service.update_participant(body.enroll_id, body.role, body.data)
+    return await service.update_participant(body.enroll_id, body.role, body.data, current_user)
 
 
 @router.delete("/delete", status_code=status.HTTP_200_OK)

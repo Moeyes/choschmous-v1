@@ -73,6 +73,7 @@ async def list_events(
     survey_category_open: bool | None = Query(None),
     survey_sport_open: bool | None = Query(None),
     survey_number_open: bool | None = Query(None),
+    survey_open_open: bool | None = Query(None),
     registration_open: bool | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
@@ -98,6 +99,7 @@ async def list_events(
         "survey_category": survey_category_open,
         "survey_sport": survey_sport_open,
         "survey_number": survey_number_open,
+        "survey_open": survey_open_open,
         "registration": registration_open,
     }
     events = await service.get_events(
@@ -283,6 +285,16 @@ async def add_org_to_event_sport(
     """
     enforce_org_access(current_user, payload.org_id)
     service = EventService(db)
+
+    event = await service.get_event(payload.events_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if not event.survey_sport_is_open:
+        raise HTTPException(
+            status_code=403,
+            detail="Survey by sport phase is not currently open for this event.",
+        )
+
     return await service.add_org_to_event_sport(
         payload.events_id, payload.sports_id, payload.org_id
     )
@@ -347,6 +359,7 @@ async def delete_event_sport_org_link(
     body: DeleteEventSportOrgLinkBody = Body(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    _: User = Depends(require_staff),
 ):
     """
     **Break the link between an Organization and a Sport-Event.**
@@ -360,9 +373,18 @@ async def delete_event_sport_org_link(
     **Error Cases:**
     - `404 Not Found`: The association ID provided does not exist.
     """
-    require_staff(current_user)
-    enforce_org_access(current_user, body.org_id)
     service = EventService(db)
+
+    # Load the ACTUAL target row first so authorization binds to that row's real
+    # owner org — not an attacker-supplied body.org_id (IDOR). 404 if it's gone.
+    link = await service.get_event_sport_org_link(body.association_id)
+    if not link:
+        raise HTTPException(
+            status_code=404,
+            detail="The requested organization association was not found.",
+        )
+    enforce_org_access(current_user, link.organization_id)
+
     success = await service.remove_org_from_event_sport(body.association_id)
     if not success:
         raise HTTPException(
