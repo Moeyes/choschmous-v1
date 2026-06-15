@@ -51,6 +51,16 @@ async def create_participation_per_sport(
     await participation_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
     enforce_org_access(current_user, obj_in.org_id)
     service = ParticipationPerSportService(db)
+
+    event = await service.get_event(obj_in.events_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if not event.survey_number_is_open:
+        raise HTTPException(
+            status_code=403,
+            detail="Survey by number phase is not currently open for this event.",
+        )
+
     return await service.create(obj_in)
 
 

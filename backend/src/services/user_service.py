@@ -9,6 +9,7 @@ from core.security import hash_password, validate_password_strength
 from src.database.base_repository import BaseRepository
 from src.models.user import User
 from src.schemas.user import UserCreate, UserUpdate
+from src.services.file_access import assert_can_reference_files
 
 
 class UserService:
@@ -28,7 +29,15 @@ class UserService:
     async def count_users(self) -> int:
         return await self.repo.count()
 
-    async def create_user(self, payload: UserCreate) -> User:
+    async def create_user(
+        self, payload: UserCreate, current_user: User
+    ) -> User:
+        # Defense-in-depth: validate file references so future route-access
+        # changes don't accidentally open a vector for forged file UUIDs.
+        await assert_can_reference_files(
+            self.db, current_user,
+            [payload.photo_path],
+        )
 
         try:
             validate_password_strength(payload.password)
@@ -42,8 +51,14 @@ class UserService:
         return await self.repo.create(data)
 
     async def update_user(
-        self, user_id: uuid.UUID, payload: UserUpdate
+        self, user_id: uuid.UUID, payload: UserUpdate, current_user: User
     ) -> Optional[User]:
+        # Defense-in-depth: validate file references at write time.
+        if payload.photo_path is not None:
+            await assert_can_reference_files(
+                self.db, current_user,
+                [payload.photo_path],
+            )
 
         data = payload.model_dump(exclude_unset=True)
 

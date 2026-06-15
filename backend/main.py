@@ -18,10 +18,12 @@ from core.security_headers import SecurityHeadersMiddleware
 from core.request_size_limit import RequestSizeLimitMiddleware
 from core.cache_control import CacheControlMiddleware
 from core.dashboard_invalidation import DashboardCacheMiddleware
-from core.redis_client import close_redis
+from core.redis_client import close_redis, ping_redis
 from src.api.main import api_router
 
 logger = logging.getLogger(__name__)
+
+_IS_LOCAL = settings.ENVIRONMENT.lower() == "local"
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -38,9 +40,13 @@ async def lifespan(app: FastAPI):
     yield
     await close_redis()
 
+# Only expose the OpenAPI schema + interactive docs in local/dev. In production
+# the full API surface should not be publicly enumerable.
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" if _IS_LOCAL else None,
+    docs_url="/docs" if _IS_LOCAL else None,
+    redoc_url="/redoc" if _IS_LOCAL else None,
     generate_unique_id_function=custom_generate_unique_id,
     lifespan=lifespan,
 )
@@ -50,6 +56,23 @@ app = FastAPI(
 async def health() -> dict[str, str]:
     """Liveness probe used by the container HEALTHCHECK and load balancers."""
     return {"status": "ok"}
+
+
+@app.get("/health/ready", tags=["health"], include_in_schema=False)
+async def readiness() -> JSONResponse:
+    """Readiness probe. Reports Redis status without failing: when Redis is down
+    the app stays operational (rate limiting / idempotency degrade to in-memory),
+    so this returns 200 with ``redis: "down"`` rather than taking the pod out of
+    rotation. Flip the status code if your platform should drain on Redis loss."""
+    redis_ok = await ping_redis()
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "ok",
+            "redis": "up" if redis_ok else "down",
+            "degraded": not redis_ok,
+        },
+    )
 
 
 @app.exception_handler(Exception)
@@ -130,6 +153,15 @@ if origins:
             "X-Correlation-Id",
             "Accept",
         ],
+    )
+elif not _IS_LOCAL:
+    # No CORS origins configured in a non-local environment. If the frontend is
+    # served from a different origin, every browser request will be blocked.
+    # Warn loudly at boot so this misconfiguration is caught in deployment.
+    logger.warning(
+        "BACKEND_CORS_ORIGINS is empty in ENVIRONMENT=%s — cross-origin browser "
+        "requests will be blocked. Set it if the frontend is on a different origin.",
+        settings.ENVIRONMENT,
     )
 
 app.include_router(api_router)

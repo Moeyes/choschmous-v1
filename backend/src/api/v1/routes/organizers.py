@@ -30,7 +30,7 @@ async def register_organizer(
     if resolved_org_id is not None:
         payload.organizationId = resolved_org_id
     service = OrganizerService(db)
-    result = await service.register_organizer(payload)
+    result = await service.register_organizer(payload, current_user)
     return result
 
 

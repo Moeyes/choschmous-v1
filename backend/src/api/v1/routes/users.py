@@ -88,9 +88,9 @@ async def create_user(
     response: Response,
     payload: UserCreate,
     db_service: UserService = Depends(get_user_service),
-    _: User = Depends(require_superadmin),
+    current_user: User = Depends(require_superadmin),
 ):
-    await create_user_limiter.check(request, key_suffix=str(_.id), response=response)
+    await create_user_limiter.check(request, key_suffix=str(current_user.id), response=response)
     """
     **Register a new Administrative User.**
 
@@ -106,7 +106,7 @@ async def create_user(
     - `422 Unprocessable Entity`: Invalid data format (e.g., weak password, invalid email).
     """
     try:
-        user = await db_service.create_user(payload)
+        user = await db_service.create_user(payload, current_user)
     except IntegrityError:
         raise HTTPException(status_code=400, detail="Username or email already exists.")
     return user
@@ -124,7 +124,7 @@ class UserUpdateBody(BaseModel):
 async def update_user(
     body: UserUpdateBody = Body(...),
     db_service: UserService = Depends(get_user_service),
-    _: User = Depends(require_superadmin),
+    current_user: User = Depends(require_superadmin),
 ):
     """
     **Update existing user details.**
@@ -139,7 +139,7 @@ async def update_user(
     - `404 Not Found`: User UUID not found.
     - `422 Unprocessable Entity`: Malformed data object.
     """
-    user = await db_service.update_user(body.user_id, body.data)
+    user = await db_service.update_user(body.user_id, body.data, current_user)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user

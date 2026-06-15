@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
@@ -9,6 +10,9 @@ from core.ratelimit import upload_limiter
 from src.database.deps import get_db, get_current_user
 from src.models.uploaded_file import UploadedFile
 from src.models.user import User
+from src.services.file_access import user_can_access_file
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -109,11 +113,29 @@ async def get_file(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """**Serve a stored file by its id.** Auth-required (contents are PII)."""
+    """**Serve a stored file by its id.** Auth-required (contents are PII).
+
+    Object-level authorization: a non-admin caller may only read files they
+    uploaded or files referenced by an enrollment within their organization /
+    sport scope (see ``user_can_access_file``). Every access is audit-logged.
+    """
     result = await db.execute(select(UploadedFile).where(UploadedFile.id == file_id))
     record = result.scalars().first()
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
+
+    if not await user_can_access_file(db, current_user, record):
+        # 404 (not 403) so an unauthorized caller can't even confirm the file exists.
+        logger.warning(
+            "File access DENIED user=%s role=%s file=%s",
+            current_user.id, getattr(current_user.role, "value", current_user.role), file_id,
+        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
+
+    logger.info(
+        "File access user=%s role=%s file=%s",
+        current_user.id, getattr(current_user.role, "value", current_user.role), file_id,
+    )
 
     safe_filename = (record.filename or str(record.id)).replace('"', "").replace("\r", "").replace("\n", "")
     return Response(

@@ -1,14 +1,38 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+import asyncio
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.ratelimit import report_limiter
 from src.database.deps import get_db, get_current_user, require_admin, get_effective_org_id
 from src.models.user import User
 from src.services.report_service import ReportService
 from src.services.report_renderers import render_xlsx, render_pdf
 
 router = APIRouter()
+
+# Cap concurrent CPU-bound renders so report generation cannot starve the async
+# workers serving every other request. Renders run in a worker thread (off the
+# event loop) and are time-boxed.
+_RENDER_CONCURRENCY = 2
+_RENDER_TIMEOUT_SECONDS = 30.0
+_render_semaphore = asyncio.Semaphore(_RENDER_CONCURRENCY)
+
+
+async def _render_offloaded(fn, *args):
+    """Run a blocking renderer in a thread, bounded by a semaphore + timeout."""
+    async with _render_semaphore:
+        try:
+            return await asyncio.wait_for(
+                asyncio.to_thread(fn, *args), timeout=_RENDER_TIMEOUT_SECONDS
+            )
+        except asyncio.TimeoutError:
+            raise HTTPException(
+                status_code=503,
+                detail="Report generation timed out. Narrow the filters and retry.",
+            )
 
 REPORT_KEYS = {
     "sport-list",
@@ -140,28 +164,10 @@ def _build_totals_columns(
     return display, keys, numeric
 
 
-def _make_xlsx(
-    key: str, columns: list[tuple[str, int]], col_keys: list[str], rows: list[dict]
-) -> bytes:
-    """Build XLSX bytes."""
-    return render_xlsx(columns, rows, col_keys)
-
-
-def _make_pdf(
-    key: str,
-    display_headers: list[str],
-    col_keys: list[str],
-    rows: list[dict],
-    numeric_indices: set[int],
-    event_name: str,
-) -> bytes:
-    title = HEADER_MAP.get(key, key)
-    subtitle = event_name
-    return render_pdf(title, subtitle, display_headers, rows, col_keys, numeric_indices)
-
-
 @router.get("/reports/{key}")
 async def generate_report(
+    request: Request,
+    response: Response,
     key: str,
     event_id: int = Query(...),
     org_id: int | None = Query(None),
@@ -173,8 +179,13 @@ async def generate_report(
     """**Generate a report by key.** Org users auto-scope to own org. Admin may
     specify any org_id or omit for event-wide reports.
 
+    Rate-limited per user; rendering is offloaded to a bounded thread pool with a
+    timeout so CPU-heavy reports cannot exhaust or block request workers.
+
     Supported keys: sport-list, totals, counts, album, name-list, leaders, coach-athlete, delegation.
     """
+    await report_limiter.check(request, key_suffix=str(current_user.id), response=response)
+
     if key not in REPORT_KEYS:
         raise HTTPException(status_code=400, detail=f"Unknown report key: {key}")
 
@@ -198,11 +209,12 @@ async def generate_report(
     xlsx_cols = [(h, 15) for h in display_headers]
 
     if format == "xlsx":
-        content = render_xlsx(xlsx_cols, rows, col_keys)
+        content = await _render_offloaded(render_xlsx, xlsx_cols, rows, col_keys)
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         filename = f"{key}_{event_id}.xlsx"
     else:
-        content = render_pdf(
+        content = await _render_offloaded(
+            render_pdf,
             HEADER_MAP.get(key, key),
             event.name_kh or "",
             display_headers,

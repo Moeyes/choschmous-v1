@@ -20,6 +20,7 @@ from .v1.routes import public_events as v1_public_events
 from .v1.routes import public_sports as v1_public_sports
 from .v1.routes import sports_events as v1_sports_events
 from .v1.routes import category_survey as v1_category_survey
+from .v1.routes import open_survey as v1_open_survey
 from .v1.routes import teams as v1_teams
 from .v1.routes import organizers as v1_organizers
 from .v1.routes import reports as v1_reports
@@ -56,6 +57,9 @@ api_router.include_router(
 api_router.include_router(v1_sports_events.router, prefix=V1 + "/sports-events", tags=["sports-events"], dependencies=_auth)
 api_router.include_router(
     v1_category_survey.router, prefix=V1 + "/surveys", tags=["surveys"], dependencies=_auth
+)
+api_router.include_router(
+    v1_open_survey.router, prefix=V1 + "/surveys/open", tags=["open-survey"], dependencies=_auth
 )
 
 # Dashboard / Analytics

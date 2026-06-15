@@ -33,11 +33,13 @@ from src.models.sports_event import sports_event as SportsEvent
 from src.models.sports_event_org import sports_event_org as SportsEventOrg
 from src.models.enum.user import LeaderRole
 from src.models.enum.event import AgeMode
+from src.models.user import User
 
 from datetime import date
 
 from src.schemas.enroll import ParticipantFilterParams, ParticipantUpdateRequest
 from src.schemas.registration import FullRegistrationRequest
+from src.services.file_access import assert_can_reference_files
 
 
 class ParticipantService:
@@ -260,7 +262,23 @@ class ParticipantService:
                     },
                 )
 
-    async def register_participant(self, data: FullRegistrationRequest):
+    async def register_participant(
+        self, data: FullRegistrationRequest, current_user: User
+    ):
+        # Defense-in-depth: reject managed file references (/api/files/{uuid})
+        # the caller is not authorized to use, so a stolen/forged UUID can never
+        # be attached to an enrollment (same policy as file download).
+        await assert_can_reference_files(
+            self.db,
+            current_user,
+            [
+                data.photoUrl,
+                data.nationalityDocumentUrl,
+                data.birthCertificateUrl,
+                data.nationalIdUrl,
+                data.passportUrl,
+            ],
+        )
         try:
             await self._validate_registration(data)
 
@@ -582,10 +600,23 @@ class ParticipantService:
         return phone
 
     async def update_participant(
-        self, enroll_id: int, role: str, data: ParticipantUpdateRequest
+        self, enroll_id: int, role: str, data: ParticipantUpdateRequest, current_user: User
     ):
         """Update Enroll personal info and participation data atomically."""
         role = role.lower()
+
+        # Reject managed file references the caller is not authorized to use.
+        await assert_can_reference_files(
+            self.db,
+            current_user,
+            [
+                data.photoUrl,
+                data.nationalityDocumentUrl,
+                data.birthCertificateUrl,
+                data.nationalIdUrl,
+                data.passportUrl,
+            ],
+        )
 
         try:
             enroll = await self.db.get(Enroll, enroll_id)

@@ -47,8 +47,15 @@ async def get_current_user(
             )
 
         return user
-    except Exception:
-        logger.exception("Failed to authenticate user")
+    except HTTPException:
+        # Expected auth failure (missing/invalid/expired/revoked token). Re-raise
+        # without a stack trace — these are routine and logging .exception() on
+        # every one floods the logs (and inflates log costs) under load.
+        raise
+    except Exception as exc:
+        # Unexpected error (malformed token, decode bug, DB issue) — log at
+        # debug with the cause but still return a generic 401 to the client.
+        logger.debug("Authentication failed: %s", exc)
         raise HTTPException(status_code=401, detail="Invalid token")
 
 

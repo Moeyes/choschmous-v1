@@ -57,7 +57,7 @@ services:
         - API_PROXY_TARGET=${API_PROXY_TARGET:-http://backend:8000}
     init: true
     ports:
-      - "3001:3000"
+      - "3003:3003"
     environment:
       - API_PROXY_TARGET=${API_PROXY_TARGET:-http://backend:8000}
     depends_on:

@@ -10,11 +10,13 @@ from src.models.events import Events
 from src.models.organization import Organization
 from src.models.organizer_role import OrganizerRole
 from src.models.organizer_participation import OrganizerParticipation
+from src.models.user import User
 from src.schemas.organizer import (
     OrganizerRegistrationRequest,
     OrganizerRoleCreate,
     OrganizerRoleUpdate,
 )
+from src.services.file_access import assert_can_reference_files
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,21 @@ class OrganizerService:
             detail["params"] = params
         raise HTTPException(status_code=status_code, detail=detail)
 
-    async def register_organizer(self, data: OrganizerRegistrationRequest) -> dict:
+    async def register_organizer(
+        self, data: OrganizerRegistrationRequest, current_user: User
+    ) -> dict:
+        # Reject managed file references the caller is not authorized to use.
+        await assert_can_reference_files(
+            self.db,
+            current_user,
+            [
+                data.photoUrl,
+                data.nationalityDocumentPath,
+                data.birthCertificatePath,
+                data.nationalIdPath,
+                data.passportPath,
+            ],
+        )
         event = await self.db.get(Events, data.eventId)
         if not event:
             self._raise(404, "EVENT_NOT_FOUND", "Event not found.")

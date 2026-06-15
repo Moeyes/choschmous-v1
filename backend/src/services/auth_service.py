@@ -15,14 +15,28 @@ from core.security import (
     create_refresh_token,
     decode_refresh_token,
     verify_password,
+    hash_password,
     hash_token_value,
     generate_csrf_token,
-    validate_password_strength,
 )
 from core.csrf import CSRF_COOKIE_NAME
 
 from src.models.user import User
 from src.models.refresh_token import RefreshToken
+
+
+# A precomputed bcrypt hash used to equalize login timing when the username does
+# not exist — without it, "no such user" returns far faster than a real bcrypt
+# verify, leaking which usernames are valid (user enumeration). Lazily built so
+# import stays cheap; uses the same cost factor as real password hashes.
+_DUMMY_PASSWORD_HASH: str | None = None
+
+
+def _dummy_hash() -> str:
+    global _DUMMY_PASSWORD_HASH
+    if _DUMMY_PASSWORD_HASH is None:
+        _DUMMY_PASSWORD_HASH = hash_password("constant-time-equalizer-not-a-real-password")
+    return _DUMMY_PASSWORD_HASH
 
 
 class AuthService:
@@ -80,13 +94,18 @@ class AuthService:
     LOCKOUT_DURATION_MINUTES: int = 15
 
     async def login(self, username: str, password: str, response: Response):
-        try:
-            validate_password_strength(password)
-        except ValueError:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-
+        # NOTE: password-strength is validated at registration / password-change
+        # (UserService), NOT here. Gating login on the current strength policy
+        # would lock out any pre-existing account whose stored password predates
+        # the policy. Login only authenticates an existing credential.
         result = await self.db.execute(select(User).where(User.username == username))
         user = result.scalars().first()
+
+        # Always perform exactly one bcrypt verify — against the real hash when
+        # the user exists, otherwise against a dummy hash — so the response time
+        # is the same whether or not the username exists (no enumeration oracle).
+        hashed = user.hashed_password if user else _dummy_hash()
+        password_ok = verify_password(password, hashed)
 
         if user and user.locked_until and user.locked_until > datetime.now(timezone.utc):
             remaining = int((user.locked_until - datetime.now(timezone.utc)).total_seconds())
@@ -96,7 +115,7 @@ class AuthService:
                 detail="Invalid credentials",
             )
 
-        if not user or not verify_password(password, user.hashed_password):
+        if not user or not password_ok:
             if user:
                 user.failed_attempts = (user.failed_attempts or 0) + 1
                 if user.failed_attempts >= self.MAX_FAILED_ATTEMPTS:

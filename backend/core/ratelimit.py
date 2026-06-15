@@ -1,14 +1,31 @@
+import asyncio
 import logging
-import secrets
 import time
 from collections import defaultdict
 from typing import Optional
 
 from fastapi import HTTPException, Request, Response
+from redis.exceptions import RedisError
 
 from core.redis_client import get_redis
 
 logger = logging.getLogger(__name__)
+
+# Throttle the "Redis unavailable" warning so an outage doesn't flood the logs.
+_REDIS_WARN_INTERVAL = 30.0
+_last_redis_warn = 0.0
+
+
+def _warn_redis_unavailable(exc: Exception) -> None:
+    global _last_redis_warn
+    now = time.monotonic()
+    if now - _last_redis_warn >= _REDIS_WARN_INTERVAL:
+        _last_redis_warn = now
+        logger.warning(
+            "Redis unavailable for rate limiting — degrading to in-memory limiter "
+            "(per-process; weaker under multiple workers): %s",
+            exc,
+        )
 
 
 class RateLimiter:
@@ -68,9 +85,18 @@ class RateLimiter:
         client_ip = request.client.host if request.client else "unknown"
         key = self._key(client_ip, key_suffix)
 
-        redis = await get_redis()
-        if redis is not None:
-            return await self._check_redis(redis, key, response)
+        # Try Redis (shared, accurate across workers). On ANY Redis failure fall
+        # back to the in-memory limiter so a Redis outage degrades the limiter
+        # instead of taking down login/uploads/etc. A 429 (HTTPException) from
+        # the Redis path is a real limit hit and must propagate unchanged.
+        try:
+            redis = await get_redis()
+            if redis is not None:
+                return await self._check_redis(redis, key, response)
+        except HTTPException:
+            raise
+        except (RedisError, ConnectionError, OSError, asyncio.TimeoutError) as exc:
+            _warn_redis_unavailable(exc)
 
         return self._check_memory(key, response)
 
@@ -201,3 +227,10 @@ participation_review_limiter = RateLimiter(max_requests=30, window_seconds=60, p
 
 # Sports-events associations
 sports_event_write_limiter = RateLimiter(max_requests=30, window_seconds=60, prefix="rl:se:w")
+
+# Reports — CPU-heavy (XLSX/PDF rendering). Tight per-user cap to prevent a
+# single user from exhausting render workers.
+report_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="rl:report")
+
+# PII reveal — very tight; a burst is a sign of bulk exfiltration. Per-user.
+reveal_limiter = RateLimiter(max_requests=15, window_seconds=60, prefix="rl:reveal")

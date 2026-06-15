@@ -56,7 +56,8 @@ async def list_sports_events(
 async def create_sports_event(
     request: Request,
     response: Response,
-    payload: SportsEventCreate, service: EventService = Depends(get_event_service)
+    payload: SportsEventCreate, service: EventService = Depends(get_event_service),
+    _: User = Depends(require_staff),
 ):
     """
     Associate a sport with an event.
@@ -96,7 +97,8 @@ async def update_sports_event_config(
 async def delete_sports_event(
     request: Request,
     response: Response,
-    id: int, service: EventService = Depends(get_event_service)
+    id: int, service: EventService = Depends(get_event_service),
+    _: User = Depends(require_staff),
 ):
     """
     Remove the association between a sport and an event.

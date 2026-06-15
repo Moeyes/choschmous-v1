@@ -34,6 +34,10 @@ class ParticipationPerSportService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def get_event(self, event_id: int) -> Events | None:
+        """Fetch event for the phase gate; returns None if not found."""
+        return await self.db.get(Events, event_id)
+
     async def create(self, obj_in: ParticipationPerSportCreate):
         # Find or create sports_event_org
         q = select(sports_event_org).where(

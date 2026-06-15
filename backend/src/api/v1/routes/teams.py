@@ -181,6 +181,34 @@ async def add_team_member(
     return {"message": "Member added."}
 
 
+@router.post("/{team_id}/finalize", status_code=status.HTTP_200_OK)
+async def finalize_team(
+    request: Request,
+    response: Response,
+    team_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    **Finalize a team for registration.**
+
+    Enforces the sport's configured minimum roster size (``team_size_min``) — the
+    lower-bound counterpart to the ``TEAM_FULL`` (max) gate applied on member-add.
+    Raises ``409 TEAM_BELOW_MIN`` when the roster is below the minimum; the check
+    is skipped when no minimum is configured. Org users may only finalize their
+    own org's teams.
+    """
+    await sports_event_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    service = TeamService(db)
+    team = await service.get_team(team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found.")
+    enforce_org_access(current_user, team.org_id)
+
+    await service.finalize_team(team_id)
+    return {"message": "Team finalized."}
+
+
 @router.delete("/{team_id}/members/{enroll_id}", status_code=status.HTTP_200_OK)
 async def remove_team_member(
     team_id: int,
