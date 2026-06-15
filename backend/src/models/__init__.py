@@ -18,6 +18,7 @@ from .uploaded_file import UploadedFile
 from .team import team
 from .organizer_role import OrganizerRole
 from .organizer_participation import OrganizerParticipation
+from .open_survey import OpenSurveyField, OpenSurveyResponse
 
 __all__ = [
     "User",
@@ -40,4 +41,6 @@ __all__ = [
     "team",
     "OrganizerRole",
     "OrganizerParticipation",
+    "OpenSurveyField",
+    "OpenSurveyResponse",
 ]

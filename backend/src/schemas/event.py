@@ -123,6 +123,7 @@ class EventPublic(BaseModel):
     survey_category_is_open: bool
     survey_sport_is_open: bool
     survey_number_is_open: bool
+    survey_open_is_open: bool
     registration_is_open: bool
 
     created_at: datetime

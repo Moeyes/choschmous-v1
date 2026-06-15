@@ -18,8 +18,14 @@ _phase_status_enum = Enum(
     values_callable=lambda e: [m.value for m in e],
 )
 
-# The four lifecycle phases of an event, in order.
-PHASES = ("survey_category", "survey_sport", "survey_number", "registration")
+# The lifecycle phases of an event, in order.
+PHASES = (
+    "survey_category",
+    "survey_sport",
+    "survey_number",
+    "survey_open",
+    "registration",
+)
 
 
 def phase_is_open(
@@ -87,6 +93,13 @@ class Events(Base):
     survey_number_open_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     survey_number_close_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
+    # --- Phase: open survey --------------------------------------------
+    survey_open_status: Mapped[PhaseStatus] = mapped_column(
+        _phase_status_enum, nullable=False, server_default="AUTO"
+    )
+    survey_open_open_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    survey_open_close_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
     # --- Phase: registration -------------------------------------------
     registration_status: Mapped[PhaseStatus] = mapped_column(
         _phase_status_enum, nullable=False, server_default="AUTO"
@@ -121,6 +134,14 @@ class Events(Base):
             self.survey_number_status,
             self.survey_number_open_date,
             self.survey_number_close_date,
+        )
+
+    @property
+    def survey_open_is_open(self) -> bool:
+        return phase_is_open(
+            self.survey_open_status,
+            self.survey_open_open_date,
+            self.survey_open_close_date,
         )
 
     @property
