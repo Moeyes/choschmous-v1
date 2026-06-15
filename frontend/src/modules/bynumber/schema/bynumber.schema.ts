@@ -4,6 +4,7 @@ const eventSchema = z.object({
     id: z.number(),
     name_kh: z.string(),
     type: z.string().optional(),
+    survey_number_is_open: z.boolean().optional(),
     created_at: z.string().optional(),
 });
 

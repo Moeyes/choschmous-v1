@@ -20,6 +20,8 @@ export const routes = {
   byNumber:           '/by-number',
   byCategory:         '/by-category',
   bySport:            '/by-sport',
+  openSurvey:         '/open-survey',
+  openSurveyFields:   '/open-survey/fields',
 } as const;
 
 

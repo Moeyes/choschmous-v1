@@ -10,6 +10,7 @@ import {
   apiFetchEligibleEvents,
   apiFetchCategories,
   apiSubmitCategories,
+  apiFetchSport,
 } from '../api';
 
 const CACHE_DURATION = 5 * 60 * 1000;
@@ -83,6 +84,14 @@ export const byCategoryHttpAdapter: IByCategoryRepository = {
     } catch {
       return [];
     }
+  },
+
+  async fetchSportName(sportId: number): Promise<string> {
+    // Unlike the list reads above, this does not swallow errors: the caller
+    // (ByCategoryForm) catches a rejection to render its own `Sport #<id>`
+    // fallback, so behaviour stays identical to the previous inline lookup.
+    const raw = await apiFetchSport(sportId);
+    return (raw as { name_kh: string }).name_kh;
   },
 
   async submitCategories(payload: CategorySurveyUpsertPayload): Promise<CategorySurveyEntry[]> {

@@ -138,6 +138,7 @@
     "leaderRegistration": "Leader Registration",
     "organizerRegistration": "Organizer Registration",
     "organizerRoles": "Organizer Roles",
+    "openSurvey": "Open Survey",
     "portalVersion": "Portal v1.0"
   },
   "auth": {
@@ -878,6 +879,92 @@
       "breakdown": "Sports Breakdown",
       "athletes": "Athletes",
       "leaders": "Leaders"
+    }
+  },
+  "opensurvey": {
+    "title": "Open Survey",
+    "subtitle": "Fill in your organization's answers for this event",
+    "loading": "Loading events...",
+    "loadingFields": "Loading survey...",
+    "eventLabel": "Event",
+    "eventPlaceholder": "Select an event",
+    "choicePlaceholder": "Select an option",
+    "noEvents": "No events available",
+    "noFields": "This event has no open-survey questions yet.",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "closedNotice": "This survey phase is closed. Your saved answers are shown for review only.",
+    "validation": {
+      "required": "This field is required",
+      "selectOne": "Please select an option",
+      "selectAtLeastOne": "Please select at least one option"
+    },
+    "messages": {
+      "submitSuccess": "Your answers were saved.",
+      "submitError": "Could not save your answers. Please try again.",
+      "phaseClosed": "This survey phase is currently closed. Your answers were not saved."
+    },
+    "success": {
+      "title": "Answers Saved",
+      "description": "Your organization's survey answers have been saved for this event.",
+      "another": "Fill Another Event"
+    },
+    "admin": {
+      "title": "Open Survey Fields",
+      "subtitle": "Define the questions organizations answer for an event.",
+      "eventLabel": "Event",
+      "eventPlaceholder": "Select an event",
+      "selectEventPrompt": "Select an event to manage its open-survey fields.",
+      "showInactive": "Show inactive fields",
+      "addField": "Add field",
+      "noFields": "No fields defined for this event yet.",
+      "loading": "Loading fields...",
+      "loadError": "Could not load fields. Please try again.",
+      "requiredBadge": "Required",
+      "optionalBadge": "Optional",
+      "inactiveBadge": "Inactive",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "editField": "Edit field",
+      "deleteField": "Deactivate field",
+      "deleteConfirm": "Deactivate this field? Organizations' saved answers are kept, but the field stops accepting new answers.",
+      "dialog": {
+        "createTitle": "Add Field",
+        "editTitle": "Edit Field",
+        "labelKh": "Label (Khmer)",
+        "labelEn": "Label (English)",
+        "fieldType": "Field type",
+        "required": "Required",
+        "active": "Active",
+        "options": "Options",
+        "optionValue": "Value",
+        "optionLabel": "Label",
+        "addOption": "Add option",
+        "removeOption": "Remove option",
+        "optionsHint": "Each option needs a unique value with no commas. The label is shown to organizations.",
+        "noOptions": "No options yet. Add at least one."
+      },
+      "fieldTypes": {
+        "text": "Text",
+        "number": "Number",
+        "select": "Dropdown",
+        "radio": "Radio buttons",
+        "checkbox": "Checkboxes"
+      },
+      "validation": {
+        "labelKhRequired": "Khmer label is required",
+        "optionsRequired": "Add at least one option for this field type",
+        "optionEmpty": "Option value cannot be empty",
+        "optionDuplicate": "Option values must be unique",
+        "optionComma": "Option value cannot contain a comma"
+      },
+      "messages": {
+        "createSuccess": "Field added",
+        "updateSuccess": "Field updated",
+        "deleteSuccess": "Field deactivated",
+        "saveError": "Could not save the field. Please try again.",
+        "reorderError": "Could not reorder fields. Please try again."
+      }
     }
   },
   "organizer": {

@@ -56,7 +56,7 @@ export const API = {
         review: (id: number) => `/api/participation-per-sport/${id}/review`,
     },
     survey: {
-        events: '/api/events?skip=0&limit=100',
+        events: '/api/events?survey_sport_open=true&skip=0&limit=100',
         sports: '/api/sports?skip=0&limit=200',
         organizations: '/api/organization?skip=0&limit=100',
         eventSports: (eventId: number) => `/api/events/${eventId}/sports`,
@@ -64,7 +64,7 @@ export const API = {
         addOrgToSport: '/api/events/add-org-to-sport',
     },
     bynumber: {
-        events: '/api/events?skip=0&limit=100',
+        events: '/api/events?survey_number_open=true&skip=0&limit=100',
         sports: '/api/sports?skip=0&limit=200',
         organizations: '/api/organization?skip=0&limit=100',
         eventSports: (eventId: number) => `/api/events/${eventId}/sports`,
@@ -96,5 +96,20 @@ export const API = {
         categories: (eventId: number, sportId: number) =>
             `/api/surveys/category?event_id=${eventId}&sport_id=${sportId}`,
         upsert: '/api/surveys/category',
+    },
+    openSurvey: {
+        events: '/api/events?skip=0&limit=100',
+        // Shared by GET (fill view) and POST (upsert). organization_id is ignored
+        // server-side for ORG users (forced to their own org). No PII in the URL.
+        responses: (eventId: number, organizationId?: number) =>
+            `/api/surveys/open/responses?event_id=${eventId}` +
+            (organizationId ? `&organization_id=${organizationId}` : ''),
+        // Admin field management (producer side). GET lists an event's fields,
+        // POST (createField URL) adds one. Only event_id/field_id in the URL — no PII.
+        fields: (eventId: number, includeInactive = false) =>
+            `/api/surveys/open/fields?event_id=${eventId}` +
+            (includeInactive ? '&include_inactive=true' : ''),
+        createField: (eventId: number) => `/api/surveys/open/fields?event_id=${eventId}`,
+        field: (fieldId: number) => `/api/surveys/open/fields/${fieldId}`,
     },
 } as const;

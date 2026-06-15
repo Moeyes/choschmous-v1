@@ -7,7 +7,7 @@ COPY package.json pnpm-lock.yaml pnpm.yaml pnpm-workspace.yaml ./
 FROM base AS development
 RUN pnpm install --frozen-lockfile
 COPY . .
-EXPOSE 3000
+EXPOSE 3003
 CMD ["pnpm", "dev"]
 
 # ── Builder (production assets) ──────────────────
@@ -29,10 +29,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 USER nextjs
-EXPOSE 3000
-ENV NODE_ENV=production PORT=3000 HOSTNAME="0.0.0.0"
+EXPOSE 3003
+ENV NODE_ENV=production PORT=3003 HOSTNAME="0.0.0.0"
 # Use 127.0.0.1 (not localhost): the Next.js standalone server binds IPv4
 # 0.0.0.0 only, so "localhost" resolving to IPv6 ::1 would be refused.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3003/ || exit 1
 CMD ["node", "server.js"]

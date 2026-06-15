@@ -38,8 +38,9 @@ export const byNumberHttpAdapter: IByNumberRepository = {
         try {
             const raw = await apiGetEvents();
             const parsed = eventListResponseSchema.parse(raw);
-            setCached('events', parsed.data);
-            return parsed.data;
+            const eligible = parsed.data.filter((e) => e.survey_number_is_open !== false);
+            setCached('events', eligible);
+            return eligible;
         } catch {
             return [];
         }

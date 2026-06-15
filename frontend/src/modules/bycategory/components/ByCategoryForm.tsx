@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth, UserRole } from '@/core/auth';
 import { useByCategoryForm } from '../hooks/useByCategory';
-import { byCategoryHttpAdapter } from '../adapters/bycategoryHttpAdapter';
+import { byCategoryRepository } from '../adapters';
 import type { Event } from '../types';
 import { ByCategoryFormFields } from './ByCategoryFormFields';
 import { ByCategoryFormNavButtons } from './ByCategoryFormNavButtons';
@@ -46,7 +46,7 @@ export function ByCategoryForm() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const eligibleEvents = await byCategoryHttpAdapter.fetchEligibleEvents();
+        const eligibleEvents = await byCategoryRepository.fetchEligibleEvents();
         setEvents(eligibleEvents);
       } finally {
         setLoading(false);
@@ -57,11 +57,7 @@ export function ByCategoryForm() {
 
   const resolveSportName = useCallback(async (sportId: number) => {
     try {
-      const { default: apiClient } = await import('@/core/api/client');
-      const { API } = await import('@/core/api/endpoints');
-      const response = await apiClient.get(API.sports.byId(sportId));
-      const data = response.data as { name_kh: string };
-      setSportName(data.name_kh);
+      setSportName(await byCategoryRepository.fetchSportName(sportId));
     } catch {
       setSportName(`Sport #${sportId}`);
     }
@@ -74,7 +70,7 @@ export function ByCategoryForm() {
       const init = async () => {
         await resolveSportName(Number(user.sport_id));
         try {
-          const rows = await byCategoryHttpAdapter.fetchPreviousCategories(
+          const rows = await byCategoryRepository.fetchPreviousCategories(
             Number(user.sport_id),
             0,
           );
@@ -97,7 +93,7 @@ export function ByCategoryForm() {
         const init = async () => {
           await resolveSportName(sportId);
           try {
-            const rows = await byCategoryHttpAdapter.fetchPreviousCategories(sportId, eventId);
+            const rows = await byCategoryRepository.fetchPreviousCategories(sportId, eventId);
             setHasPrevious(rows.length > 0);
             form.setValue('previousCategories', rows);
           } catch {
@@ -124,7 +120,7 @@ export function ByCategoryForm() {
       const sportId = form.getValues('sportId');
       const currentEventId = form.getValues('eventId');
       if (!sportId) return;
-      const rows = await byCategoryHttpAdapter.fetchPreviousCategories(
+      const rows = await byCategoryRepository.fetchPreviousCategories(
         sportId,
         currentEventId || 0,
       );

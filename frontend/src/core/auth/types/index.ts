@@ -77,6 +77,7 @@ export type FeatureKey =
     | 'users'
     | 'bysport'
     | 'bynumber'
+    | 'opensurvey'
     | 'register'
     | 'leaderregistration'
     | 'registrations'
@@ -104,6 +105,8 @@ export const FEATURE_ACCESS: Record<FeatureKey, UserRole[]> = {
     // Registration — organizations register their own participants
     bysport:            [SUPER_ADMIN, ADMIN, ORGANIZATION],
     bynumber:           [SUPER_ADMIN, ADMIN, ORGANIZATION],
+    // Open survey — organizations fill the admin-defined fields for an event.
+    opensurvey:         [SUPER_ADMIN, ADMIN, ORGANIZATION],
     register:           [SUPER_ADMIN, ADMIN, ORGANIZATION],
     leaderregistration: [SUPER_ADMIN, ADMIN, ORGANIZATION],
     // Records

@@ -8,7 +8,7 @@ import {
 } from '../schema/survey.schema';
 import {
     apiGetEvents, apiGetAllSports, apiGetAllOrganizations,
-    apiGetEventSports, apiAddOrgToSport,
+    apiGetEventSports, apiGetOrgSports, apiAddOrgToSport,
 } from '../api';
 
 const CACHE_DURATION = 5 * 60 * 1000;
@@ -35,8 +35,9 @@ export const surveyHttpAdapter: ISurveyRepository = {
         try {
             const raw = await apiGetEvents();
             const parsed = eventListResponseSchema.parse(raw);
-            setCached('events', parsed.data);
-            return parsed.data;
+            const eligible = parsed.data.filter((e) => e.survey_sport_is_open !== false);
+            setCached('events', eligible);
+            return eligible;
         } catch {
             return [];
         }
@@ -109,10 +110,8 @@ export const surveyHttpAdapter: ISurveyRepository = {
         const cached = getCached<{ sport_id: number; created_at: string }[]>(cacheKey);
         if (cached) return cached;
         try {
-            const { default: apiClient } = await import('@/core/api/client');
-            const { API } = await import('@/core/api/endpoints');
-            const response = await apiClient.get(API.survey.orgSports(eventId, orgId));
-            const rows = response.data as Array<{
+            const raw = await apiGetOrgSports(eventId, orgId);
+            const rows = raw as Array<{
                 sports_id: number; created_at: string;
             }>;
             const result = rows.map((r) => ({

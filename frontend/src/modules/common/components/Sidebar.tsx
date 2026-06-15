@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   CreditCard,
+  FileText,
   FilePieChart,
   LayoutDashboard,
   Layers,
@@ -47,6 +48,7 @@ const MENU_SECTIONS: MenuSections = [
   [
     { labelKey: "bysport", href: "/by-sport", icon: ClipboardList, feature: "bysport" },
     { labelKey: "bynumber", href: "/by-number", icon: UserCheck, feature: "bynumber" },
+    { labelKey: "openSurvey", href: "/open-survey", icon: FileText, feature: "opensurvey" },
     { labelKey: "athleteRegistration", href: "/register", icon: CreditCard, feature: "register" },
     { labelKey: "leaderRegistration", href: "/leader-registration", icon: ClipboardCheck, feature: "leaderregistration" },
   ],

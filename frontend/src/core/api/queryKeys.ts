@@ -67,4 +67,13 @@ export const queryKeys = {
     eligibleEvents: ['bycategory', 'eligible-events'] as const,
     categories: (eventId: number, sportId: number) => ['bycategory', 'categories', eventId, sportId] as const,
   },
+  openSurvey: {
+    events: ['open-survey', 'events'] as const,
+    fillView: (eventId: number, orgId?: number) => ['open-survey', 'fill-view', eventId, orgId ?? null] as const,
+    // Admin field-builder list. `fieldsAll` is the event-scoped prefix used to
+    // invalidate every variant (active-only + include-inactive) in one call.
+    fieldsAll: (eventId: number) => ['open-survey', 'fields', eventId] as const,
+    fields: (eventId: number, includeInactive: boolean) =>
+      ['open-survey', 'fields', eventId, includeInactive] as const,
+  },
 } as const;

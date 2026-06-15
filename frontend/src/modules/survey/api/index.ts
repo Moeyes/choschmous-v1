@@ -21,6 +21,11 @@ export async function apiGetEventSports(eventId: number) {
     return response.data;
 }
 
+export async function apiGetOrgSports(eventId: number, orgId: number) {
+    const response = await apiClient.get(API.survey.orgSports(eventId, orgId));
+    return response.data;
+}
+
 export async function apiAddOrgToSport(body: { org_id: number; events_id: number; sports_id: number }) {
     await apiClient.post(API.survey.addOrgToSport, body);
 }

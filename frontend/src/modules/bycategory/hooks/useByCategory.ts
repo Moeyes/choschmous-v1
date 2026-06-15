@@ -23,13 +23,13 @@ export function useByCategoryForm(onSuccess?: () => void) {
 
   const handleSubmit = async (data: ByCategoryFormData) => {
     try {
-      const { byCategoryHttpAdapter } = await import('../adapters/bycategoryHttpAdapter');
+      const { byCategoryRepository } = await import('../adapters');
 
       if (!data.eventId || !data.sportId) {
         throw new Error('Missing required fields');
       }
 
-      await byCategoryHttpAdapter.submitCategories({
+      await byCategoryRepository.submitCategories({
         event_id: data.eventId,
         sport_id: data.sportId,
         categories: data.categories.map((c) => ({
