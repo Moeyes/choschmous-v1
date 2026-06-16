@@ -1,4 +1,12 @@
 confirmModulesPurge: false
+# Resilience for a slow / high-latency npm registry connection. pnpm 11 reads
+# these from pnpm-workspace.yaml (camelCase); the equivalents in .npmrc were
+# being ignored. Lower concurrency avoids saturating a weak link.
+networkConcurrency: 4
+fetchRetries: 6
+fetchRetryMintimeout: 20000
+fetchRetryMaxtimeout: 180000
+fetchTimeout: 600000
 overrides:
   '@napi-rs/wasm-runtime': 1.1.4
 allowBuilds:

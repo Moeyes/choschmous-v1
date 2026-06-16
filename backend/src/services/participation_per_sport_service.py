@@ -56,16 +56,28 @@ class ParticipationPerSportService:
             self.db.add(seo)
             await self.db.commit()
             await self.db.refresh(seo)
-        # Now create participation_per_sport
-        obj = participation_per_sport(
-            org_id=obj_in.org_id,
-            sports_Events_id=seo.id,
-            athlete_female_count=obj_in.athlete_female_count,
-            leader_female_count=obj_in.leader_female_count,
-            athlete_male_count=obj_in.athlete_male_count,
-            leader_male_count=obj_in.leader_male_count,
+        # Upsert participation_per_sport (update if exists for same org+sport_event)
+        existing_q = select(participation_per_sport).where(
+            participation_per_sport.sports_Events_id == seo.id,
+            participation_per_sport.org_id == obj_in.org_id,
         )
-        self.db.add(obj)
+        existing_result = await self.db.execute(existing_q)
+        obj = existing_result.scalar_one_or_none()
+        if obj:
+            obj.athlete_female_count = obj_in.athlete_female_count
+            obj.leader_female_count = obj_in.leader_female_count
+            obj.athlete_male_count = obj_in.athlete_male_count
+            obj.leader_male_count = obj_in.leader_male_count
+        else:
+            obj = participation_per_sport(
+                org_id=obj_in.org_id,
+                sports_Events_id=seo.id,
+                athlete_female_count=obj_in.athlete_female_count,
+                leader_female_count=obj_in.leader_female_count,
+                athlete_male_count=obj_in.athlete_male_count,
+                leader_male_count=obj_in.leader_male_count,
+            )
+            self.db.add(obj)
         await self.db.commit()
         await self.db.refresh(obj)
         return obj

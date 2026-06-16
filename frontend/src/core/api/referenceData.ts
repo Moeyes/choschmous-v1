@@ -3,8 +3,13 @@ import apiClient from '@/core/api/client';
 interface EventReference {
     id: number;
     name_kh: string;
-    name_en: string;
+    name_en?: string | null;
     type?: string;
+    registration_is_open?: boolean;
+    survey_open_is_open?: boolean;
+    survey_sport_is_open?: boolean;
+    survey_number_is_open?: boolean;
+    survey_category_is_open?: boolean;
 }
 
 export interface OrganizationReference {
@@ -94,8 +99,6 @@ export interface EligibleSport {
     athletes_used: number;
 }
 
-/** Sports the caller's org may register for in an event (survey-② selections +
- * per-sport config + the org's current athlete count). Org-scoped server-side. */
 export async function fetchEligibleSports(eventId: number): Promise<EligibleSport[]> {
     try {
         const response = await apiClient.get(`/api/events/${eventId}/my-eligible-sports`);

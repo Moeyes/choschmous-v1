@@ -1,4 +1,16 @@
+# Keep the build context tiny — node_modules (817M) and .next (4.8G) must never
+# be sent to the daemon or copied over the in-image install (musl vs glibc).
 node_modules
 .next
 .git
 .env.local
+.env*.local
+
+# Test / tooling artifacts
+e2e/.auth
+e2e/screenshots
+e2e/test-results
+e2e/playwright-report
+*.tsbuildinfo
+npm-debug.log*
+coverage

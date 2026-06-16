@@ -31,6 +31,10 @@ export const rawEventSchema = z
         survey_category_is_open: z.boolean().optional(),
         survey_sport_is_open: z.boolean().optional(),
         survey_number_is_open: z.boolean().optional(),
+        // Backend EventPublic also emits this computed gate for the open-survey
+        // phase; rawEventSchema is .strict(), so it must be listed or the whole
+        // /events response is rejected.
+        survey_open_is_open: z.boolean().optional(),
         registration_is_open: z.boolean().optional(),
 
         created_at: z.string().optional(),

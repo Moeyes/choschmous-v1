@@ -311,8 +311,7 @@
       "type": "Type",
       "categoryCount": "Category Count"
     },
-    "categories": {
-      "title": "Sport Categories",
+          "title": "Sport Categories",
       "addCategory": "Add Category",
       "editCategory": "Edit Category",
       "categoryName": "Category Name",
@@ -763,8 +762,7 @@
         "lockedLabel": "Your sport",
         "locked": "Assigned"
       },
-      "categories": {
-        "title": "Categories",
+              "title": "Categories",
         "subtitle": "Add the competition categories for your sport",
         "namePlaceholder": "Category name (e.g. Men's Singles)",
         "genderPlaceholder": "Gender",

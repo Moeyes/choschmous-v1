@@ -210,6 +210,7 @@ class EventService:
             .where(
                 sports_event_org.events_id == event_id,
                 sports_event_org.organization_id == org_id,
+                sports_event_org.status == 'APPROVED',
             )
             .order_by(Sport.name_kh.asc())
         )
@@ -282,6 +283,7 @@ class EventService:
             .where(
                 sports_event_org.events_id == event_id,
                 sports_event_org.organization_id == org_id,
+                sports_event_org.status == 'APPROVED',
             )
             .order_by(sports_event_org.created_at.asc())
         )

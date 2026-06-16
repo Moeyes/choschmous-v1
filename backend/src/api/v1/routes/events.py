@@ -32,6 +32,7 @@ from src.schemas.sports_event_org import (
     EventOrgNamesPublic,
     SportEventOrgOnly,
     SportsEventOrgPublic,
+    SportsEventOrgPublicList,
 )
 from src.schemas.report import SurveyStatusResponse
 from src.services.events_service import EventService
@@ -353,6 +354,73 @@ async def list_event_sport_categories(
     service = SportService(db)
     return await service.get_sport_categories(event_id, sport_id)
 
+
+@router.get("/sport-org/submissions", response_model=SportsEventOrgPublicList)
+async def list_sport_org_submissions(
+    event_id: int | None = Query(None),
+    status: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """List all org sport selections for admin review."""
+    from sqlalchemy import select as sa_select
+    from src.models.sports_event_org import sports_event_org as SeoModel
+    from src.models.organization import Organization
+    from src.models.sports import Sport
+    from src.models.events import Events
+    query = (
+        sa_select(
+            SeoModel.id,
+            SeoModel.events_id,
+            SeoModel.sports_id,
+            SeoModel.organization_id,
+            SeoModel.status,
+            SeoModel.review_note,
+            SeoModel.reviewed_at,
+            SeoModel.created_at,
+            Organization.name_kh.label("org_name"),
+            Sport.name_kh.label("sport_name"),
+            Events.name_kh.label("event_name"),
+        )
+        .join(Organization, Organization.id == SeoModel.organization_id)
+        .join(Sport, Sport.id == SeoModel.sports_id)
+        .join(Events, Events.id == SeoModel.events_id)
+    )
+    if event_id:
+        query = query.where(SeoModel.events_id == event_id)
+    if status:
+        query = query.where(SeoModel.status == status)
+    result = await db.execute(query)
+    rows = result.mappings().all()
+    return {"data": [dict(r) for r in rows], "count": len(rows)}
+
+@router.patch("/sport-org/{id}/review", response_model=SportsEventOrgPublic)
+async def review_sport_org(
+    id: int,
+    action: str = Body(..., embed=True),
+    note: str | None = Body(None, embed=True),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """Approve or reject an org sport selection (admin only).
+    action: approve | reject
+    """
+    from sqlalchemy import select as sa_select
+    from src.models.sports_event_org import sports_event_org as SeoModel
+    from datetime import datetime as dt
+    async with db as session:
+        result = await session.execute(sa_select(SeoModel).where(SeoModel.id == id))
+        obj = result.scalar_one_or_none()
+    if not obj:
+        raise HTTPException(status_code=404, detail="Not found")
+    if action not in ("approve", "reject"):
+        raise HTTPException(status_code=400, detail="action must be approve or reject")
+    obj.status = "APPROVED" if action == "approve" else "REJECTED"
+    obj.review_note = note
+    obj.reviewed_at = dt.utcnow()
+    await db.commit()
+    await db.refresh(obj)
+    return obj
 
 @router.delete("/delete-event-sport-org-link", status_code=status.HTTP_200_OK)
 async def delete_event_sport_org_link(

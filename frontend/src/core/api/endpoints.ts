@@ -84,7 +84,7 @@ export const API = {
         list: (orgId: string, eventId: string) => `/api/cards/${orgId}/${eventId}`,
     },
     participant: {
-        base: '/api/participant',
+        base: '/api/registration',
     },
     organizer: {
         register: '/api/registration/organizer',

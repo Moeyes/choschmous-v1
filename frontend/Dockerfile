@@ -1,11 +1,20 @@
 FROM node:22-alpine AS base
+# Faster registry mirror. registry.npmjs.org (via Cloudflare) is slow/unreachable
+# from SE Asia — esp. its IPv6 addresses inside Docker's IPv4-only bridge. The
+# mirror serves byte-identical tarballs, so lockfile integrity still verifies.
+#   npm_config_registry      → pnpm's package downloads
+#   COREPACK_NPM_REGISTRY     → corepack's download of pnpm itself (was failing)
+ENV npm_config_registry=https://registry.npmmirror.com/ \
+    COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 RUN corepack enable
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm.yaml pnpm-workspace.yaml .npmrc ./
 
 # ── Development ──────────────────────────────────
 FROM base AS development
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    --mount=type=cache,target=/root/.cache/node/corepack \
+    pnpm install --frozen-lockfile
 COPY . .
 EXPOSE 3003
 CMD ["pnpm", "dev"]
@@ -17,7 +26,9 @@ FROM base AS builder
 # setting it only at runtime is ignored.
 ARG API_PROXY_TARGET=http://backend:8000
 ENV API_PROXY_TARGET=$API_PROXY_TARGET
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    --mount=type=cache,target=/root/.cache/node/corepack \
+    pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
