@@ -63,7 +63,7 @@ jobs:
 
       # ── Backend: deps, schema, seed, serve ────────────────────
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
       - name: Sync backend deps
         run: uv sync --frozen
         working-directory: backend
