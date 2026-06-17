@@ -85,10 +85,18 @@ async def make_sports_event(
 
 
 async def link_org_sport(
-    db: AsyncSession, event: Events, sport: Sport, org: Organization
+    db: AsyncSession,
+    event: Events,
+    sport: Sport,
+    org: Organization,
+    *,
+    status: str = "SUBMITTED",
 ) -> sports_event_org:
     link = sports_event_org(
-        events_id=event.id, sports_id=sport.id, organization_id=org.id
+        events_id=event.id,
+        sports_id=sport.id,
+        organization_id=org.id,
+        status=status,
     )
     db.add(link)
     await db.flush()

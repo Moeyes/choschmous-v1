@@ -65,12 +65,18 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      # Read the pinned pnpm from the `packageManager` field in
+      # frontend/package.json (currently pnpm@11.7.0) — the same version corepack
+      # installs in the Dockerfile. `package_json_file` is required because
+      # action-setup runs from the repo root (there is no root package.json), and
+      # `working-directory` only affects `run:` steps. pnpm 9 cannot install this
+      # project: the lockfile and pnpm-workspace.yaml overrides are pnpm-11 format.
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          package_json_file: frontend/package.json
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - name: Install dependencies

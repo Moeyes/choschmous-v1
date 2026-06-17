@@ -87,7 +87,8 @@ async def test_my_eligible_sports_returns_surveyed_with_config(
         db_session, event, surveyed, quota_athletes_per_org=23, team_size_max=18
     )
     await make_sports_event(db_session, event, other)  # config exists but not surveyed
-    await link_org_sport(db_session, event, surveyed, org)  # only surveyed is linked
+    # only surveyed is linked, and its selection has been approved by staff
+    await link_org_sport(db_session, event, surveyed, org, status="APPROVED")
 
     as_user(make_user(UserRole.ORGANIZATION, organization_id=org.id))
     resp = await client.get(f"/api/events/{event.id}/my-eligible-sports")
