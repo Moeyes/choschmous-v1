@@ -133,6 +133,8 @@
     "bynumber": "តាមលេខ",
     "bycategory": "តាមប្រភេទ",
     "submissions": "ការដាក់ស្នើ",
+    "sportSubmissions": "ការដាក់ស្នើតាមកីឡា",
+    "categorySubmissions": "ការដាក់ស្នើតាមប្រភេទ",
     "registrations": "បញ្ជីចុះឈ្មោះ",
     "athleteRegistration": "ការចុះឈ្មោះអត្តពលិក",
     "leaderRegistration": "ការចុះឈ្មោះមេក្រុម",
@@ -489,6 +491,10 @@
       "noCategories": "គ្មានប្រភេទ",
       "fullNameKhmer": "ឈ្មោះពេញ (ខ្មែរ)",
       "fullNameEnglish": "ឈ្មោះពេញ (អង់គ្លេស)",
+      "khFamilyName": "នាមត្រកូល (ខ្មែរ)",
+      "khGivenName": "ឈ្មោះ (ខ្មែរ)",
+      "enFamilyName": "នាមត្រកូល (អង់គ្លេស)",
+      "enGivenName": "ឈ្មោះ (អង់គ្លេស)",
       "familyName": "នាមត្រកូល",
       "givenName": "ឈ្មោះ",
       "gender": "ភេទ",
@@ -683,6 +689,56 @@
       "actionFailed": "សកម្មភាពបរាជ័យ",
       "cancel": "បោះបង់"
     }
+  },
+  "sportReview": {
+    "queueTitle": "ការត្រួតពិនិត្យការដាក់ស្នើតាមកីឡា",
+    "queueSubtitle": "ពិនិត្យ និងសម្រេចលើការជ្រើសរើសកីឡារបស់ស្ថាប័ន",
+    "search": "ស្វែងរក...",
+    "allStatuses": "ស្ថានភាពទាំងអស់",
+    "failedToLoad": "បរាជ័យក្នុងការផ្ទុកការដាក់ស្នើ",
+    "records": {
+      "title": "ការដាក់ស្នើតាមកីឡា",
+      "subtitle": "ការប្រកាសចេតនាចូលរួមរបស់ស្ថាប័នតាមកីឡា"
+    },
+    "columns": {
+      "organization": "ស្ថាប័ន",
+      "sport": "កីឡា",
+      "event": "ព្រឹត្តិការណ៍",
+      "status": "ស្ថានភាព",
+      "submitted": "បានដាក់ស្នើ"
+    },
+    "declaration": "ការប្រកាសកីឡា",
+    "actionSuccess": "បានធ្វើបច្ចុប្បន្នភាពស្ថានភាព",
+    "actionFailed": "សកម្មភាពបរាជ័យ"
+  },
+  "categoryReview": {
+    "queueTitle": "ការត្រួតពិនិត្យការដាក់ស្នើតាមប្រភេទ",
+    "queueSubtitle": "ពិនិត្យ និងសម្រេចលើការប្រកាសប្រភេទរបស់សហព័ន្ធ",
+    "search": "ស្វែងរក...",
+    "allStatuses": "ស្ថានភាពទាំងអស់",
+    "failedToLoad": "បរាជ័យក្នុងការផ្ទុកការដាក់ស្នើ",
+    "records": {
+      "title": "ការដាក់ស្នើតាមប្រភេទ",
+      "subtitle": "ការប្រកាសប្រភេទរបស់សហព័ន្ធតាមកីឡា"
+    },
+    "columns": {
+      "sport": "កីឡា",
+      "event": "ព្រឹត្តិការណ៍",
+      "categories": "ប្រភេទ",
+      "status": "ស្ថានភាព",
+      "submitted": "បានដាក់ស្នើ",
+      "category": "ប្រភេទ",
+      "gender": "ភេទ"
+    },
+    "declaredCategories": "ប្រភេទដែលបានប្រកាស",
+    "noCategories": "មិនមានប្រភេទដែលបានប្រកាស",
+    "gender": {
+      "MALE": "ប្រុស",
+      "FEMALE": "ស្រី",
+      "MIXED": "ចម្រុះ"
+    },
+    "actionSuccess": "បានធ្វើបច្ចុប្បន្នភាពស្ថានភាព",
+    "actionFailed": "សកម្មភាពបរាជ័យ"
   },
   "cards": {
     "title": "កាតអ្នកចូលរួម",

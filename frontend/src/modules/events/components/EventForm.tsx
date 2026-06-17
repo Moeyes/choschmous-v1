@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Event,
@@ -31,11 +31,7 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
   const t = useTranslations("events");
   const tCommon = useTranslations("common");
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<EventFormValues>({
+  const methods = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: event
       ? {
@@ -87,7 +83,7 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
   });
 
   // Age labels switch between "birth year" and "age" depending on the mode.
-  const ageMode = useWatch({ control, name: "age_mode" });
+  const ageMode = useWatch({ control: methods.control, name: "age_mode" });
   const isBirthYear = ageMode === AgeMode.BIRTH_YEAR;
   const ageMinLabel = isBirthYear ? t("birthYearFrom") : t("ageMin");
   const ageMaxLabel = isBirthYear ? t("birthYearTo") : t("ageMax");
@@ -103,7 +99,8 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
+      <FormProvider {...methods}>
       <FormSection
         title={t("eventName")}
         description={t("description_field")}
@@ -111,17 +108,17 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
       >
         <div className="space-y-3">
           <TextInputField
-            control={control}
+            control={methods.control}
             name="name"
             label={t("eventName")}
             required
-            error={errors.name?.message}
+            error={methods.formState.errors.name?.message}
           />
           <TextInputField
-            control={control}
+            control={methods.control}
             name="description"
             label={t("description_field")}
-            error={errors.description?.message}
+            error={methods.formState.errors.description?.message}
           />
         </div>
       </FormSection>
@@ -129,20 +126,20 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
       <FormSection title={t("schedule")} description="" icon={Calendar}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TextInputField
-            control={control}
+            control={methods.control}
             name="start_date"
             label={t("startDate")}
             type="date"
             required
-            error={errors.start_date?.message}
+            error={methods.formState.errors.start_date?.message}
           />
           <TextInputField
-            control={control}
+            control={methods.control}
             name="end_date"
             label={t("endDate")}
             type="date"
             required
-            error={errors.end_date?.message}
+            error={methods.formState.errors.end_date?.message}
           />
         </div>
       </FormSection>
@@ -150,7 +147,7 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
       <FormSection title={t("eventType")} description="" icon={Calendar}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SelectField
-            control={control}
+            control={methods.control}
             name="event_type"
             label={t("eventType")}
             required
@@ -163,14 +160,14 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
                 label: t("types.PRIMARY_SCHOOL"),
               },
             ]}
-            error={errors.event_type?.message}
+            error={methods.formState.errors.event_type?.message}
           />
           <TextInputField
-            control={control}
+            control={methods.control}
             name="location"
             label={t("location")}
             required
-            error={errors.location?.message}
+            error={methods.formState.errors.location?.message}
           />
         </div>
       </FormSection>
@@ -182,7 +179,7 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SelectField
-            control={control}
+            control={methods.control}
             name="age_mode"
             label={t("ageMode")}
             required
@@ -190,23 +187,23 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
               { value: AgeMode.BIRTH_YEAR, label: t("ageModes.BIRTH_YEAR") },
               { value: AgeMode.EXACT_AGE, label: t("ageModes.EXACT_AGE") },
             ]}
-            error={errors.age_mode?.message}
+            error={methods.formState.errors.age_mode?.message}
           />
           <TextInputField
-            control={control}
+            control={methods.control}
             name="age_min"
             label={ageMinLabel}
             type="number"
             required
-            error={errors.age_min?.message}
+            error={methods.formState.errors.age_min?.message}
           />
           <TextInputField
-            control={control}
+            control={methods.control}
             name="age_max"
             label={ageMaxLabel}
             type="number"
             required
-            error={errors.age_max?.message}
+            error={methods.formState.errors.age_max?.message}
           />
         </div>
       </FormSection>
@@ -231,6 +228,7 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
               : t("createEvent")}
         </Button>
       </div>
+      </FormProvider>
     </form>
   );
 }

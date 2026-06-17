@@ -11,6 +11,8 @@ export const routes = {
   users:              '/users',
   organizations:      '/organizations',
   participation:      '/participation',
+  sportSubmissions:   '/sport-submissions',
+  categorySubmissions: '/category-submissions',
   cards:              '/cards',
   reports:            '/reports',
   register:           '/register',

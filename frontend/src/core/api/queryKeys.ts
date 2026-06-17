@@ -51,6 +51,15 @@ export const queryKeys = {
     all: ['participations'] as const,
     list: <F>(filter: F) => ['participations', filter] as const,
   },
+  sportSubmissions: {
+    all: ['sport-submissions'] as const,
+    list: <F>(filter: F) => ['sport-submissions', filter] as const,
+  },
+  categorySubmissions: {
+    all: ['category-submissions'] as const,
+    list: <F>(filter: F) => ['category-submissions', filter] as const,
+    detail: (id: number) => ['category-submissions', 'detail', id] as const,
+  },
   dashboard: {
     all: ['dashboard'] as const,
     scoped: (role: string | null | undefined, orgId: number | null | undefined) => ['dashboard', role, orgId] as const,

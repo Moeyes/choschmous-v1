@@ -24,9 +24,12 @@ export function useUpdateEvent() {
     return useMutation({
         meta: { successMessage: t('updated') },
         mutationFn: (eventData: EventUpdate) => eventsRepository.update(eventData),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
-        },
+    onSuccess: (_data, eventData) => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
+        if (eventData.id) {
+            queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(eventData.id) });
+        }
+    },
     });
 }
 

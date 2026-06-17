@@ -19,14 +19,17 @@ export function useRequireRole(requiredRoles: UserRole | UserRole[]) {
   useEffect(() => {
     if (isLoading) return;
 
-    if (!isAuthenticated) {
-      router.push(`/login?returnUrl=${encodeURIComponent(pathname)}`);
-      return;
-    }
+    // Defer so the router has time to initialise (avoids Fast Refresh races).
+    queueMicrotask(() => {
+      if (!isAuthenticated) {
+        router.push(`/login?returnUrl=${encodeURIComponent(pathname)}`);
+        return;
+      }
 
-    if (!hasRole(requiredRoles)) {
-      router.push('/unauthorized');
-    }
+      if (!hasRole(requiredRoles)) {
+        router.push('/unauthorized');
+      }
+    });
   }, [isLoading, isAuthenticated, requiredRoles, hasRole, router, pathname]);
 
   return { isAuthenticated, hasRole: hasRole(requiredRoles), isLoading };

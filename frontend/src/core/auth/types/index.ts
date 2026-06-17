@@ -86,7 +86,8 @@ export type FeatureKey =
     | 'cards'
     | 'organizerregistration'
     | 'organizerroles'
-    | 'sportsubmissions';
+    | 'sportsubmissions'
+    | 'categorysubmissions';
 
 const { SUPER_ADMIN, ADMIN, ORGANIZATION, FEDERATION } = UserRole;
 
@@ -117,6 +118,8 @@ export const FEATURE_ACCESS: Record<FeatureKey, UserRole[]> = {
     cards:              [SUPER_ADMIN, ADMIN, ORGANIZATION],
     organizerregistration: [SUPER_ADMIN, ADMIN, ORGANIZATION],
     organizerroles:     [SUPER_ADMIN, ADMIN],
+    // Admin review queues for the by-sport / by-category surveys.
     sportsubmissions:   [SUPER_ADMIN, ADMIN],
+    categorysubmissions: [SUPER_ADMIN, ADMIN],
 };
 

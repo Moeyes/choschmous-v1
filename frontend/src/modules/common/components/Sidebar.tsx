@@ -57,6 +57,8 @@ const MENU_SECTIONS: MenuSections = [
     { labelKey: "organizerRoles", href: "/organizer-roles", icon: UserCog, feature: "organizerroles" },
     { labelKey: "registrations", href: "/registrations", icon: ListChecks, feature: "registrations" },
     { labelKey: "submissions", href: "/participation", icon: UserCheck, feature: "participation" },
+    { labelKey: "sportSubmissions", href: "/sport-submissions", icon: ClipboardCheck, feature: "sportsubmissions" },
+    { labelKey: "categorySubmissions", href: "/category-submissions", icon: Layers, feature: "categorysubmissions" },
     { labelKey: "reports", href: "/reports", icon: FilePieChart, feature: "reports" },
   ],
 ];

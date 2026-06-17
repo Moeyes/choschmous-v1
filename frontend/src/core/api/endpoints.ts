@@ -55,6 +55,17 @@ export const API = {
         byId: (id: number) => `/api/participation-per-sport/${id}`,
         review: (id: number) => `/api/participation-per-sport/${id}/review`,
     },
+    // By-sport admin review queue (submission = sports_event_org row).
+    sportSubmissions: {
+        list: '/api/events/sport-org/submissions',
+        review: (id: number) => `/api/events/sport-org/${id}/review`,
+    },
+    // By-category admin review queue (submission = categories for an event+sport).
+    categorySubmissions: {
+        list: '/api/surveys/category/submissions',
+        byId: (id: number) => `/api/surveys/category/submissions/${id}`,
+        review: (id: number) => `/api/surveys/category/submissions/${id}/review`,
+    },
     survey: {
         events: '/api/events?survey_sport_open=true&skip=0&limit=100',
         sports: '/api/sports?skip=0&limit=200',

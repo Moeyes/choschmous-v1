@@ -27,6 +27,14 @@ class SportsEventOrgPublicList(BaseModel):
     data: list[SportEventOrgOnly]
     count: int
 
+class SportsEventOrgReviewList(BaseModel):
+    """List wrapper for the admin by-sport review queue. Unlike
+    ``SportsEventOrgPublicList`` (the minimal org-only projection), each row is a
+    full ``SportsEventOrgPublic`` — status + enriched org/sport/event names —
+    matching what ``GET /events/sport-org/submissions`` actually returns."""
+    data: list[SportsEventOrgPublic]
+    count: int
+
 class EventOrgNamesPublic(BaseModel):
     organization_id: int
     organization_name: str

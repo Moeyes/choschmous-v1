@@ -39,7 +39,7 @@ export function EventDetailPage({ eventId }: EventDetailPageProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { role } = useAuth();
   const canManage =
-    role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
+    role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN || role === UserRole.FEDERATION;
   const { mutate: publishEvent } = useUpdateEvent();
   const t = useTranslations("events");
   const tCommon = useTranslations("common");

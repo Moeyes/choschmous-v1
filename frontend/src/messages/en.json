@@ -133,6 +133,8 @@
     "bynumber": "By Number",
     "bycategory": "By Category",
     "submissions": "Submissions",
+    "sportSubmissions": "Sport Submissions",
+    "categorySubmissions": "Category Submissions",
     "registrations": "Registrations",
     "athleteRegistration": "Athlete Registration",
     "leaderRegistration": "Leader Registration",
@@ -311,7 +313,8 @@
       "type": "Type",
       "categoryCount": "Category Count"
     },
-          "title": "Sport Categories",
+    "categories": {
+      "title": "Sport Categories",
       "addCategory": "Add Category",
       "editCategory": "Edit Category",
       "categoryName": "Category Name",
@@ -456,7 +459,7 @@
     },
     "registrationOpensOn": "Registration opens on {date}",
     "registrationClosedOn": "Registration closed on {date}",
-    "registrationClosed": "Registration is currently closed",
+    "registrationClosed": "Registration is closed for this event",
     "errors": {
       "REGISTRATION_CLOSED": "Registration is not open for this event.",
       "SPORT_NOT_ELIGIBLE": "This sport is not in your organization's survey selections for this event.",
@@ -488,6 +491,10 @@
       "noCategories": "No categories available",
       "fullNameKhmer": "Full Name (Khmer)",
       "fullNameEnglish": "Full Name (English)",
+      "khFamilyName": "Family Name (Khmer)",
+      "khGivenName": "Given Name (Khmer)",
+      "enFamilyName": "Family Name (English)",
+      "enGivenName": "Given Name (English)",
       "familyName": "Family Name",
       "givenName": "Given Name",
       "gender": "Gender",
@@ -550,7 +557,6 @@
         "showing": "Showing {from} to {to} of {total} participants"
       }
     },
-    "registrationClosed": "Registration is closed for this event",
     "detail": {
       "backToList": "Back to registrations",
       "notFoundTitle": "Participant not found",
@@ -560,36 +566,36 @@
         "participation": "Participation",
         "documents": "Documents"
       },
-    "team": {
-      "modeTitle": "Registration Mode",
-      "modeSubtitle": "Choose how you want to register athletes for this sport",
-      "individual": "Individual",
-      "individualDesc": "Register athletes one at a time",
-      "team": "Team",
-      "teamDesc": "Register athletes as a team",
-      "selectTitle": "Team",
-      "selectSubtitle": "Select or create a team to manage members",
-      "namePlaceholder": "Enter team name",
-      "create": "Create Team",
-      "createNew": "+ Create New Team",
-      "existing": "Existing teams",
-      "noTeams": "No teams found for this sport. Create one above.",
-      "members": "members",
-      "min": "min",
-      "max": "max",
-      "rosterTitle": "Team Roster",
-      "rosterSubtitle": "Manage your team members",
-      "noMembers": "No members yet. Add members to your team.",
-      "addMember": "Add Member",
-      "memberAdded": "Member registered successfully! You can add another member.",
-      "minNotReached": "You need at least {min} members before submitting.",
-      "required": "Please select or create a team first.",
-      "status": {
-        "complete": "Complete",
-        "incomplete": "Incomplete"
-      }
-    },
-    "fields": {
+      "team": {
+        "modeTitle": "Registration Mode",
+        "modeSubtitle": "Choose how you want to register athletes for this sport",
+        "individual": "Individual",
+        "individualDesc": "Register athletes one at a time",
+        "team": "Team",
+        "teamDesc": "Register athletes as a team",
+        "selectTitle": "Team",
+        "selectSubtitle": "Select or create a team to manage members",
+        "namePlaceholder": "Enter team name",
+        "create": "Create Team",
+        "createNew": "+ Create New Team",
+        "existing": "Existing teams",
+        "noTeams": "No teams found for this sport. Create one above.",
+        "members": "members",
+        "min": "min",
+        "max": "max",
+        "rosterTitle": "Team Roster",
+        "rosterSubtitle": "Manage your team members",
+        "noMembers": "No members yet. Add members to your team.",
+        "addMember": "Add Member",
+        "memberAdded": "Member registered successfully! You can add another member.",
+        "minNotReached": "You need at least {min} members before submitting.",
+        "required": "Please select or create a team first.",
+        "status": {
+          "complete": "Complete",
+          "incomplete": "Incomplete"
+        }
+      },
+      "fields": {
         "gender": "Gender",
         "dateOfBirth": "Date of birth",
         "phone": "Phone",
@@ -684,6 +690,56 @@
       "cancel": "Cancel"
     }
   },
+  "sportReview": {
+    "queueTitle": "By-Sport Submissions Review",
+    "queueSubtitle": "Review and decide on organization sport selections",
+    "search": "Search...",
+    "allStatuses": "All statuses",
+    "failedToLoad": "Failed to load submissions",
+    "records": {
+      "title": "Sport Submissions",
+      "subtitle": "Organization declarations of intent to participate, by sport"
+    },
+    "columns": {
+      "organization": "Organization",
+      "sport": "Sport",
+      "event": "Event",
+      "status": "Status",
+      "submitted": "Submitted"
+    },
+    "declaration": "Sport declaration",
+    "actionSuccess": "Status updated",
+    "actionFailed": "Action failed"
+  },
+  "categoryReview": {
+    "queueTitle": "By-Category Submissions Review",
+    "queueSubtitle": "Review and decide on federation category declarations",
+    "search": "Search...",
+    "allStatuses": "All statuses",
+    "failedToLoad": "Failed to load submissions",
+    "records": {
+      "title": "Category Submissions",
+      "subtitle": "Federation category declarations, by sport"
+    },
+    "columns": {
+      "sport": "Sport",
+      "event": "Event",
+      "categories": "Categories",
+      "status": "Status",
+      "submitted": "Submitted",
+      "category": "Category",
+      "gender": "Gender"
+    },
+    "declaredCategories": "Declared categories",
+    "noCategories": "No categories declared",
+    "gender": {
+      "MALE": "Male",
+      "FEMALE": "Female",
+      "MIXED": "Mixed"
+    },
+    "actionSuccess": "Status updated",
+    "actionFailed": "Action failed"
+  },
   "cards": {
     "title": "Participant Cards",
     "description": "Generate and manage participant cards for National Primary School Games 2026.",
@@ -762,7 +818,8 @@
         "lockedLabel": "Your sport",
         "locked": "Assigned"
       },
-              "title": "Categories",
+      "categories": {
+        "title": "Categories",
         "subtitle": "Add the competition categories for your sport",
         "namePlaceholder": "Category name (e.g. Men's Singles)",
         "genderPlaceholder": "Gender",

@@ -33,6 +33,7 @@ from src.schemas.sports_event_org import (
     SportEventOrgOnly,
     SportsEventOrgPublic,
     SportsEventOrgPublicList,
+    SportsEventOrgReviewList,
 )
 from src.schemas.report import SurveyStatusResponse
 from src.services.events_service import EventService
@@ -355,7 +356,7 @@ async def list_event_sport_categories(
     return await service.get_sport_categories(event_id, sport_id)
 
 
-@router.get("/sport-org/submissions", response_model=SportsEventOrgPublicList)
+@router.get("/sport-org/submissions", response_model=SportsEventOrgReviewList)
 async def list_sport_org_submissions(
     event_id: int | None = Query(None),
     status: str | None = Query(None),
@@ -405,16 +406,14 @@ async def review_sport_org(
     """Approve or reject an org sport selection (admin only).
     action: approve | reject
     """
-    from sqlalchemy import select as sa_select
     from src.models.sports_event_org import sports_event_org as SeoModel
     from datetime import datetime as dt
-    async with db as session:
-        result = await session.execute(sa_select(SeoModel).where(SeoModel.id == id))
-        obj = result.scalar_one_or_none()
-    if not obj:
-        raise HTTPException(status_code=404, detail="Not found")
+
     if action not in ("approve", "reject"):
         raise HTTPException(status_code=400, detail="action must be approve or reject")
+    obj = await db.get(SeoModel, id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Not found")
     obj.status = "APPROVED" if action == "approve" else "REJECTED"
     obj.review_note = note
     obj.reviewed_at = dt.utcnow()
