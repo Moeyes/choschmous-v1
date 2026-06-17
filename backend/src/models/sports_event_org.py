@@ -23,7 +23,7 @@ class sports_event_org(Base):
         nullable=True,
         index=True,
     )
-    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default='SUBMITTED')
+    status: Mapped[str] = mapped_column(String(32), nullable=False, server_default='SUBMITTED')
     review_note: Mapped[str | None] = mapped_column(String, nullable=True)
     reviewed_at: Mapped[datetime | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(
