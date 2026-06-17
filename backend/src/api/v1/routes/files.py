@@ -21,7 +21,22 @@ router = APIRouter()
 # client-declared MIME type, which is attacker-controlled). Per-field limits
 # Per-field limits (photo = image, document = image|pdf) are enforced client-side; this
 # is the server-side safety net and caps everything at the largest allowance.
-ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+ALLOWED_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+    "application/pdf",
+}
+ALLOWED_TYPES_LABEL = "JPG, PNG, WebP, GIF, HEIC, PDF"
+
+# HEIC and HEIF are the same underlying container (ISO BMFF/HEIF); different
+# browsers/OSes report either MIME type for the same file. Treat them as
+# interchangeable when comparing the declared type against the sniffed type.
+_HEIC_ALIASES = {"image/heic", "image/heif"}
+
 MAX_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
@@ -42,6 +57,14 @@ def _sniff_type(data: bytes) -> str | None:
         return "image/png"
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return "image/webp"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if data[4:8] == b"ftyp" and data[8:12] in (
+        b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1",
+    ):
+        # HEIC/HEIF container; mif1/msf1 are HEIF image variants some
+        # encoders (e.g. iOS) emit alongside the heic/heix brands.
+        return "image/heic"
     if data[:5] == b"%PDF-":
         return "application/pdf"
     return None
@@ -57,15 +80,15 @@ async def upload_file(
 ):
     """**Store an uploaded file in the database, keyed by a new UUID.**
 
-    Validates type (JPG/PNG/WebP/PDF) and size (<= 5MB), then persists the raw
-    bytes and returns the file's id plus a relative URL (`/api/files/{id}`) the
-    client can store and render directly.
+    Validates type (JPG/PNG/WebP/GIF/HEIC/PDF) and size (<= 5MB), then persists
+    the raw bytes and returns the file's id plus a relative URL
+    (`/api/files/{id}`) the client can store and render directly.
     """
     await upload_limiter.check(request, key_suffix=str(current_user.id), response=response)
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported file type. Allowed: JPG, PNG, WebP, PDF.",
+            detail=f"Unsupported file type. Allowed: {ALLOWED_TYPES_LABEL}.",
         )
 
     # Reject obviously-oversized uploads before reading the body when the client
@@ -87,10 +110,15 @@ async def upload_file(
         )
 
     sniffed = _sniff_type(data)
-    if sniffed is None or sniffed != file.content_type:
+    declared = file.content_type
+    matches = sniffed is not None and (
+        sniffed == declared
+        or (sniffed in _HEIC_ALIASES and declared in _HEIC_ALIASES)
+    )
+    if not matches:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="File content does not match an allowed type (JPG, PNG, WebP, PDF).",
+            detail=f"File content does not match an allowed type ({ALLOWED_TYPES_LABEL}).",
         )
 
     record = UploadedFile(
