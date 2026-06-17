@@ -41,9 +41,7 @@ class CategorySurveyService:
         """Fetch event; returns None if not found."""
         return await self.db.get(Events, event_id)
 
-    async def upsert_categories(
-        self, payload: CategorySurveyUpsert
-    ) -> list[category]:
+    async def upsert_categories(self, payload: CategorySurveyUpsert) -> list[category]:
         event_id = payload.event_id
         sport_id = payload.sport_id
 
@@ -95,28 +93,28 @@ class CategorySurveyService:
             )
         )
         if existing_review.scalar_one_or_none() is None:
-            self.db.add(
-                category_survey_review(events_id=event_id, sports_id=sport_id)
-            )
+            self.db.add(category_survey_review(events_id=event_id, sports_id=sport_id))
 
         await self.db.commit()
 
         result = await self.db.execute(
-            select(category).where(
+            select(category)
+            .where(
                 category.events_id == event_id,
                 category.sports_id == sport_id,
-            ).order_by(category.id)
+            )
+            .order_by(category.id)
         )
         return result.scalars().all()
 
-    async def list_categories(
-        self, event_id: int, sport_id: int
-    ) -> list[category]:
+    async def list_categories(self, event_id: int, sport_id: int) -> list[category]:
         result = await self.db.execute(
-            select(category).where(
+            select(category)
+            .where(
                 category.events_id == event_id,
                 category.sports_id == sport_id,
-            ).order_by(category.id)
+            )
+            .order_by(category.id)
         )
         return result.scalars().all()
 
@@ -216,7 +214,9 @@ class CategorySurveyService:
             return None
         return await self._enrich_submission(item, with_categories=True)
 
-    async def review(self, id: int, action: str, note: str | None = None) -> dict | None:
+    async def review(
+        self, id: int, action: str, note: str | None = None
+    ) -> dict | None:
         """Apply an FSM review transition. Returns the enriched submission, or
         None if the id does not exist. Raises CategoryReviewError on an illegal
         transition or a missing required note. Identical semantics to
@@ -237,9 +237,7 @@ class CategorySurveyService:
                 code=409,
             )
         if needs_note and not (note and note.strip()):
-            raise CategoryReviewError(
-                f"A note is required to '{action}'.", code=400
-            )
+            raise CategoryReviewError(f"A note is required to '{action}'.", code=400)
 
         item.status = target
         if note is not None:

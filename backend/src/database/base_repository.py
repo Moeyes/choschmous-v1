@@ -7,7 +7,6 @@ T = TypeVar("T")
 
 
 class BaseRepository(Generic[T]):
-
     def __init__(self, db: AsyncSession, model: Type[T]):
         self.db = db
         self.model = model
@@ -32,10 +31,15 @@ class BaseRepository(Generic[T]):
         return result.scalars().all()
 
     async def exists(self, **kwargs) -> bool:
-        stmt = select(exists().where(
-            *[getattr(self.model, field) == value for field, value in kwargs.items()
-              if hasattr(self.model, field)]
-        ))
+        stmt = select(
+            exists().where(
+                *[
+                    getattr(self.model, field) == value
+                    for field, value in kwargs.items()
+                    if hasattr(self.model, field)
+                ]
+            )
+        )
         result = await self.db.scalar(stmt)
         return bool(result)
 

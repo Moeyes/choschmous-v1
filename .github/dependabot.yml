@@ -1,0 +1,37 @@
+# Dependabot keeps the three ecosystems in this repo up to date and, crucially,
+# bumps the GitHub Actions themselves — which is what surfaces deprecations like
+# the Node.js 20 runtime warning before it becomes a hard failure.
+version: 2
+updates:
+  # Frontend (pnpm). Dependabot reads the lockfile to compute updates.
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Batch the noisy, low-risk dev/test tooling into one PR.
+      dev-dependencies:
+        dependency-type: development
+    labels:
+      - dependencies
+      - frontend
+
+  # Backend (uv / PEP 621). Dependabot supports uv.lock natively.
+  - package-ecosystem: uv
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - backend
+
+  # The workflow actions themselves (actions/checkout, setup-node, setup-uv, …).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - ci

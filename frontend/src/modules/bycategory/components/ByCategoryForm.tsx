@@ -39,7 +39,7 @@ export function ByCategoryForm() {
 
   const stepLabels = useMemo(
     () => ALL_FORM_STEPS.map((s) => t(`steps.${s}.title`)),
-    [ALL_FORM_STEPS, t],
+    [t],
   );
 
   useEffect(() => {

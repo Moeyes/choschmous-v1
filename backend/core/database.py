@@ -30,4 +30,6 @@ engine = create_async_engine(
     },
 )
 Base = declarative_base()
-SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False, autoflush=False)
+SessionLocal = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
+)

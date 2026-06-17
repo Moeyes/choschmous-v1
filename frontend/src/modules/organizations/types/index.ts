@@ -9,15 +9,6 @@ export enum InstituteType {
     UNIVERSITY = "university",
 }
 
-interface Organization {
-    id: number;
-    name_kh: string;
-    name_en?: string;
-    type: InstituteType;
-    code?: string;
-    created_at?: string;
-}
-
 export interface OrganizationCreate {
     name_kh: string;
     name_en?: string;
@@ -30,9 +21,4 @@ export interface OrganizationUpdateBody extends Partial<OrganizationCreate> {
 
 export interface OrganizationDeleteBody {
     org_id: number;
-}
-
-interface OrganizationsResponse {
-    data: Organization[];
-    count: number;
 }

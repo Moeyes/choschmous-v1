@@ -97,9 +97,7 @@ async def list_category_submissions(
     return CategorySubmissionsPublic(data=rows, count=len(rows))
 
 
-@router.get(
-    "/category/submissions/{id}", response_model=CategorySubmissionDetail
-)
+@router.get("/category/submissions/{id}", response_model=CategorySubmissionDetail)
 async def get_category_submission(
     id: int,
     db: AsyncSession = Depends(get_db),

@@ -42,4 +42,6 @@ class leader_participation(Base):
         "leader", back_populates="participations"
     )
     sport: Mapped["Sport"] = relationship("Sport", foreign_keys=[sports_id])
-    organization: Mapped["Organization"] = relationship("Organization", foreign_keys=[organization_id])
+    organization: Mapped["Organization"] = relationship(
+        "Organization", foreign_keys=[organization_id]
+    )

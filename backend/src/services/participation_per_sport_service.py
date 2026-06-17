@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, outerjoin
+from sqlalchemy import select
 from src.models.participation_per_sport import participation_per_sport
 from src.models.sports_event_org import sports_event_org
 from src.models.organization import Organization

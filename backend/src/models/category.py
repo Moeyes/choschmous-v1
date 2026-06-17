@@ -5,6 +5,7 @@ from datetime import datetime
 from core.database import Base
 from src.models.enum.user import genderEnum
 
+
 class category(Base):
     __tablename__ = "categories"
 

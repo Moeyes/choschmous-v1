@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
+
 class SportsEventOrgPublic(BaseModel):
     id: int
     events_id: int | None = None
@@ -16,6 +17,7 @@ class SportsEventOrgPublic(BaseModel):
     event_name: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
+
 class SportEventOrgOnly(BaseModel):
     id: int
     organization_id: int
@@ -23,17 +25,21 @@ class SportEventOrgOnly(BaseModel):
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
+
 class SportsEventOrgPublicList(BaseModel):
     data: list[SportEventOrgOnly]
     count: int
+
 
 class SportsEventOrgReviewList(BaseModel):
     """List wrapper for the admin by-sport review queue. Unlike
     ``SportsEventOrgPublicList`` (the minimal org-only projection), each row is a
     full ``SportsEventOrgPublic`` — status + enriched org/sport/event names —
     matching what ``GET /events/sport-org/submissions`` actually returns."""
+
     data: list[SportsEventOrgPublic]
     count: int
+
 
 class EventOrgNamesPublic(BaseModel):
     organization_id: int

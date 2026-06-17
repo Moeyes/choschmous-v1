@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import { Users, UserPlus, Trash2, AlertCircle, Pencil, CheckCircle2, XCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from "@/shared";
 import { useTeam, useRemoveTeamMember } from "../hooks/useTeams";
-import type { TeamDetail } from "../types/team";
 
 interface TeamRosterStepProps {
     teamId: number;
@@ -21,7 +20,6 @@ export function TeamRosterStep({
     teamSizeMax,
     onAddMember,
     onEditMember,
-    onValidationChange,
 }: TeamRosterStepProps) {
     const t = useTranslations("registration");
     const { data: team, isLoading, refetch } = useTeam(teamId);
@@ -84,6 +82,9 @@ export function TeamRosterStep({
                             >
                                 <div className="flex items-center gap-3">
                                     {member.photo_url ? (
+                                        // 32px remote avatar — not worth next/image
+                                        // remote-host allowlisting + optimization overhead.
+                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img
                                             src={member.photo_url}
                                             alt=""

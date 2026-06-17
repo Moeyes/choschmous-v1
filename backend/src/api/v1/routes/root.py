@@ -5,7 +5,6 @@ router = APIRouter()
 
 @router.get("/")
 async def root():
-    
     """
     # hi
     Retrieve a single item by its ID.
@@ -17,5 +16,5 @@ async def root():
 
     Very useful for long explanations, lists, examples, etc.
     """
-    
+
     return {"message": "Hello World"}

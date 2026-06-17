@@ -13,7 +13,10 @@ router = APIRouter()
 
 @router.get("/org-sport", response_model=OrgSportParticipantFullResponse)
 async def org_sport_participant(
-    org_id: Optional[int] = Query(None, description="Organization ID (ignored for org-role users — derived from token)"),
+    org_id: Optional[int] = Query(
+        None,
+        description="Organization ID (ignored for org-role users — derived from token)",
+    ),
     events_id: int = Query(..., description="Event ID"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -33,7 +36,10 @@ async def org_sport_participant(
 
 @router.get("/org-sport-participant", response_model=OrgSportParticipantExcelResponse)
 async def org_sport_participant_counts(
-    org_id: Optional[int] = Query(None, description="Organization ID (ignored for org-role users — derived from token)"),
+    org_id: Optional[int] = Query(
+        None,
+        description="Organization ID (ignored for org-role users — derived from token)",
+    ),
     events_id: int = Query(..., description="Event ID"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),

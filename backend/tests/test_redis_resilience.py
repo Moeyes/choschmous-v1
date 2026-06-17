@@ -62,7 +62,9 @@ class _DownRedis:
 
 
 @pytest.mark.asyncio
-async def test_ratelimiter_falls_back_to_memory_when_redis_down(monkeypatch, real_rate_limiter):
+async def test_ratelimiter_falls_back_to_memory_when_redis_down(
+    monkeypatch, real_rate_limiter
+):
     async def _down_get_redis():
         return _DownRedis()
 
@@ -83,7 +85,9 @@ async def test_ratelimiter_falls_back_to_memory_when_redis_down(monkeypatch, rea
 
 
 @pytest.mark.asyncio
-async def test_ratelimiter_falls_back_when_get_redis_returns_none(monkeypatch, real_rate_limiter):
+async def test_ratelimiter_falls_back_when_get_redis_returns_none(
+    monkeypatch, real_rate_limiter
+):
     async def _none_get_redis():
         return None
 
@@ -100,8 +104,11 @@ async def test_ratelimiter_falls_back_when_get_redis_returns_none(monkeypatch, r
 
 
 @pytest.mark.asyncio
-async def test_redis_connection_error_does_not_become_500(monkeypatch, real_rate_limiter):
+async def test_redis_connection_error_does_not_become_500(
+    monkeypatch, real_rate_limiter
+):
     """A Redis ConnectionError must be swallowed (degrade), never surface."""
+
     async def _down_get_redis():
         return _DownRedis()
 

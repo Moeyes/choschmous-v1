@@ -17,7 +17,14 @@ from weasyprint import HTML, default_url_fetcher
 
 # Absolute path so the WeasyPrint url_fetcher allowlist can compare realpaths.
 FONT_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "assets", "fonts", "KantumruyPro-Variable.ttf")
+    os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "..",
+        "assets",
+        "fonts",
+        "KantumruyPro-Variable.ttf",
+    )
 )
 # The single local asset reports are allowed to load (the embedded Khmer font).
 _FONT_URL = Path(FONT_PATH).as_uri()
@@ -44,7 +51,7 @@ def _ip_is_internal(ip: ipaddress._BaseAddress) -> bool:
     return (
         ip.is_private
         or ip.is_loopback
-        or ip.is_link_local      # 169.254.0.0/16 — includes cloud metadata 169.254.169.254
+        or ip.is_link_local  # 169.254.0.0/16 — includes cloud metadata 169.254.169.254
         or ip.is_reserved
         or ip.is_multicast
         or ip.is_unspecified
@@ -96,7 +103,9 @@ def secure_url_fetcher(url: str):
         raise ReportAssetBlocked(f"Blocked local file in report asset: {url!r}")
     if scheme in ("http", "https"):
         if _host_is_blocked(urlparse(url).hostname or ""):
-            raise ReportAssetBlocked(f"Blocked SSRF / internal target in report asset: {url!r}")
+            raise ReportAssetBlocked(
+                f"Blocked SSRF / internal target in report asset: {url!r}"
+            )
         # Reports never legitimately reference remote assets.
         raise ReportAssetBlocked(f"Remote assets are not permitted in reports: {url!r}")
     raise ReportAssetBlocked(f"Blocked URL scheme {scheme!r} in report asset: {url!r}")
@@ -113,6 +122,7 @@ def _excel_safe(value):
     if isinstance(value, str) and value and value[0] in _FORMULA_TRIGGERS:
         return "'" + value
     return value
+
 
 # ── XLSX Renderer ──────────────────────────────────────────────
 
@@ -149,7 +159,9 @@ def render_xlsx(
         cell = ws.cell(row=1, column=col_idx, value=header)
         cell.font = HEADER_FONT
         cell.fill = HEADER_FILL
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.alignment = Alignment(
+            horizontal="center", vertical="center", wrap_text=True
+        )
         cell.border = THIN_BORDER
         ws.column_dimensions[get_column_letter(col_idx)].width = width
 
@@ -182,7 +194,9 @@ def render_xlsx(
 
 # ── PDF Renderer ──────────────────────────────────────────────
 
-_KHMER_NUMS = str.maketrans("0123456789", "\u17E0\u17E1\u17E2\u17E3\u17E4\u17E5\u17E6\u17E7\u17E8\u17E9")
+_KHMER_NUMS = str.maketrans(
+    "0123456789", "\u17e0\u17e1\u17e2\u17e3\u17e4\u17e5\u17e6\u17e7\u17e8\u17e9"
+)
 
 
 def _kh_num(val: int | str | None) -> str:
@@ -325,7 +339,9 @@ def render_pdf(
     All dynamic content is HTML-escaped (see ``build_report_html``) and external
     resource loading is locked down via ``secure_url_fetcher``.
     """
-    html_str = build_report_html(title, subtitle, columns, rows, col_keys, numeric_indices)
+    html_str = build_report_html(
+        title, subtitle, columns, rows, col_keys, numeric_indices
+    )
     buf = io.BytesIO()
     HTML(string=html_str, url_fetcher=secure_url_fetcher).write_pdf(buf)
     buf.seek(0)

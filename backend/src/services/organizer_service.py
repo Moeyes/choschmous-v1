@@ -51,8 +51,9 @@ class OrganizerService:
         if not event:
             self._raise(404, "EVENT_NOT_FOUND", "Event not found.")
         if not event.registration_is_open:
-            self._raise(403, "REGISTRATION_CLOSED",
-                        "Registration is not open for this event.")
+            self._raise(
+                403, "REGISTRATION_CLOSED", "Registration is not open for this event."
+            )
 
         role = await self.db.get(OrganizerRole, data.organizerRoleId)
         if not role:
@@ -68,6 +69,7 @@ class OrganizerService:
         gender_upper = data.gender.strip().upper() if data.gender else ""
 
         from src.models.enum.user import genderEnum, IdDocumentType
+
         try:
             gender_val = genderEnum(gender_upper)
         except ValueError:
@@ -86,7 +88,9 @@ class OrganizerService:
         try:
             id_doc_val = IdDocumentType(raw_doc)
         except ValueError:
-            self._raise(422, "INVALID_ID_DOC_TYPE", f"Invalid ID doc type: {data.idDocType}")
+            self._raise(
+                422, "INVALID_ID_DOC_TYPE", f"Invalid ID doc type: {data.idDocType}"
+            )
 
         today = date_type.today()
         age = today.year - data.dateOfBirth.year
@@ -94,14 +98,22 @@ class OrganizerService:
             age -= 1
         if age < 18:
             if not data.birthCertificatePath:
-                self._raise(422, "DOCUMENT_REQUIRED",
-                            "A birth certificate is required for participants under 18.",
-                            requires="birth_certificate", age=age)
+                self._raise(
+                    422,
+                    "DOCUMENT_REQUIRED",
+                    "A birth certificate is required for participants under 18.",
+                    requires="birth_certificate",
+                    age=age,
+                )
         else:
             if not data.nationalIdPath and not data.passportPath:
-                self._raise(422, "DOCUMENT_REQUIRED",
-                            "A national ID or passport is required for participants 18 and older.",
-                            requires="national_id_or_passport", age=age)
+                self._raise(
+                    422,
+                    "DOCUMENT_REQUIRED",
+                    "A national ID or passport is required for participants 18 and older.",
+                    requires="national_id_or_passport",
+                    age=age,
+                )
 
         enroll = Enroll(
             kh_family_name=data.lastNameKhmer,
@@ -163,8 +175,9 @@ class OrganizerService:
             )
         )
         if existing.scalar_one_or_none():
-            self._raise(409, "ROLE_EXISTS",
-                        "An organizer role with this name already exists.")
+            self._raise(
+                409, "ROLE_EXISTS", "An organizer role with this name already exists."
+            )
 
         role = OrganizerRole(**data.model_dump())
         self.db.add(role)
@@ -172,7 +185,9 @@ class OrganizerService:
         await self.db.refresh(role)
         return role
 
-    async def update_role(self, role_id: int, data: OrganizerRoleUpdate) -> OrganizerRole:
+    async def update_role(
+        self, role_id: int, data: OrganizerRoleUpdate
+    ) -> OrganizerRole:
         role = await self.db.get(OrganizerRole, role_id)
         if not role:
             self._raise(404, "ROLE_NOT_FOUND", "Organizer role not found.")

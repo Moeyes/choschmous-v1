@@ -51,8 +51,6 @@ export const rawEventsSchema = z
     })
     .strict();
 
-type RawEvents = z.infer<typeof rawEventsSchema>;
-
 export const eventPublicSchema = z.object({
     id:         z.number().int(),
     name:       z.string(),

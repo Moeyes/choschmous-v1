@@ -32,15 +32,21 @@ async def get_dashboard(
     Requires authentication. Organization-role users see data scoped to their
     own organization. Admin and super_admin see global stats.
     """
-    await dashboard_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await dashboard_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     org_id = get_effective_org_id(current_user, None)
 
     stats = await dashboard_service.get_dashboard_stats(db, org_id=org_id)
     events = await dashboard_service.get_dashboard_events(db, org_id=org_id)
     sports = await dashboard_service.get_dashboard_sports(db, org_id=org_id)
-    top_orgs = await dashboard_service.get_dashboard_top_organizations(db, org_id=org_id)
+    top_orgs = await dashboard_service.get_dashboard_top_organizations(
+        db, org_id=org_id
+    )
     enrollments = await dashboard_service.get_dashboard_recent_enrollments(db)
-    gender_dist = await dashboard_service.get_dashboard_gender_distribution(db, org_id=org_id)
+    gender_dist = await dashboard_service.get_dashboard_gender_distribution(
+        db, org_id=org_id
+    )
 
     dashboard_data = DashboardData(
         stats=StatsResponse(**stats),

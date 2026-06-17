@@ -15,21 +15,24 @@ API_PREFIXES = ("/api",)
 
 class ContentTypeValidationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        if (
-            request.method in _UNSAFE_METHODS
-            and request.url.path.startswith(API_PREFIXES)
+        if request.method in _UNSAFE_METHODS and request.url.path.startswith(
+            API_PREFIXES
         ):
             content_type = request.headers.get("content-type", "").lower().strip()
             if not content_type:
                 return JSONResponse(
                     status_code=415,
-                    content={"detail": "Content-Type header is required on mutating requests."},
+                    content={
+                        "detail": "Content-Type header is required on mutating requests."
+                    },
                 )
             is_json = any(ct in content_type for ct in _JSON_CONTENT_TYPES)
             is_multipart = content_type.startswith(_MULTIPART_PREFIX)
             if not (is_json or is_multipart):
                 return JSONResponse(
                     status_code=415,
-                    content={"detail": "Unsupported media type. Use application/json or multipart/form-data."},
+                    content={
+                        "detail": "Unsupported media type. Use application/json or multipart/form-data."
+                    },
                 )
         return await call_next(request)

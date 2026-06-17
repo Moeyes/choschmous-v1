@@ -147,7 +147,9 @@ class RateLimiter:
         if now - self._last_cleanup > 60:
             self._last_cleanup = now
             for k in list(self._fallback.keys()):
-                self._fallback[k][:] = [t for t in self._fallback[k] if t > window_start]
+                self._fallback[k][:] = [
+                    t for t in self._fallback[k] if t > window_start
+                ]
                 if not self._fallback[k]:
                     del self._fallback[k]
 
@@ -207,9 +209,15 @@ dashboard_limiter = RateLimiter(max_requests=30, window_seconds=60, prefix="rl:d
 # CRUD — wider limits for admin/staff operations
 create_user_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="rl:user")
 create_org_limiter = RateLimiter(max_requests=20, window_seconds=60, prefix="rl:org")
-create_event_limiter = RateLimiter(max_requests=20, window_seconds=60, prefix="rl:event")
-create_sport_limiter = RateLimiter(max_requests=30, window_seconds=60, prefix="rl:sport")
-create_category_limiter = RateLimiter(max_requests=30, window_seconds=60, prefix="rl:cat")
+create_event_limiter = RateLimiter(
+    max_requests=20, window_seconds=60, prefix="rl:event"
+)
+create_sport_limiter = RateLimiter(
+    max_requests=30, window_seconds=60, prefix="rl:sport"
+)
+create_category_limiter = RateLimiter(
+    max_requests=30, window_seconds=60, prefix="rl:cat"
+)
 
 # Uploads — prevent storage exhaustion
 upload_limiter = RateLimiter(max_requests=20, window_seconds=60, prefix="rl:upload")
@@ -218,15 +226,25 @@ upload_limiter = RateLimiter(max_requests=20, window_seconds=60, prefix="rl:uplo
 cloudinary_limiter = RateLimiter(max_requests=30, window_seconds=60, prefix="rl:cld")
 
 # Participants — tight per-user to prevent enumeration / bulk registration
-participant_limiter = RateLimiter(max_requests=30, window_seconds=60, prefix="rl:participant")
-participant_write_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="rl:participant:w")
+participant_limiter = RateLimiter(
+    max_requests=30, window_seconds=60, prefix="rl:participant"
+)
+participant_write_limiter = RateLimiter(
+    max_requests=10, window_seconds=60, prefix="rl:participant:w"
+)
 
 # Participation per sport — prevent rapid create/update/delete/review
-participation_write_limiter = RateLimiter(max_requests=20, window_seconds=60, prefix="rl:pps:w")
-participation_review_limiter = RateLimiter(max_requests=30, window_seconds=60, prefix="rl:pps:r")
+participation_write_limiter = RateLimiter(
+    max_requests=20, window_seconds=60, prefix="rl:pps:w"
+)
+participation_review_limiter = RateLimiter(
+    max_requests=30, window_seconds=60, prefix="rl:pps:r"
+)
 
 # Sports-events associations
-sports_event_write_limiter = RateLimiter(max_requests=30, window_seconds=60, prefix="rl:se:w")
+sports_event_write_limiter = RateLimiter(
+    max_requests=30, window_seconds=60, prefix="rl:se:w"
+)
 
 # Reports — CPU-heavy (XLSX/PDF rendering). Tight per-user cap to prevent a
 # single user from exhausting render workers.

@@ -2,7 +2,7 @@ from sqlalchemy import String, Boolean, Enum, ForeignKey, Integer, func, DateTim
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 
 from core.database import Base
 from src.models.enum.user import UserRole

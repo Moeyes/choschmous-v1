@@ -10,7 +10,9 @@ ROLES_URL = "/api/organizer-roles"
 ORG_REG_URL = "/api/registration/organizer"
 
 
-async def _make_role(db_session, *, name_en="Referee", name_kh="អាជ្ញាកណ្ដាល", active=True):
+async def _make_role(
+    db_session, *, name_en="Referee", name_kh="អាជ្ញាកណ្ដាល", active=True
+):
     from src.models.organizer_role import OrganizerRole
 
     role = OrganizerRole(name_en=name_en, name_kh=name_kh, active=active)
@@ -37,7 +39,9 @@ def _person(**over):
 
 async def test_admin_creates_and_lists_role(client, db_session, as_user):
     as_user(make_user(UserRole.ADMIN))
-    resp = await client.post(ROLES_URL, json={"name_kh": "អ្នកថត", "name_en": "Photographer"})
+    resp = await client.post(
+        ROLES_URL, json={"name_kh": "អ្នកថត", "name_en": "Photographer"}
+    )
     assert resp.status_code == 201, resp.text
     rid = resp.json()["id"]
 
@@ -49,7 +53,9 @@ async def test_admin_creates_and_lists_role(client, db_session, as_user):
 async def test_create_role_rejects_duplicate(client, db_session, as_user):
     await _make_role(db_session, name_en="Medic", name_kh="វេជ្ជបណ្ឌិត")
     as_user(make_user(UserRole.ADMIN))
-    resp = await client.post(ROLES_URL, json={"name_kh": "វេជ្ជបណ្ឌិត", "name_en": "Medic"})
+    resp = await client.post(
+        ROLES_URL, json={"name_kh": "វេជ្ជបណ្ឌិត", "name_en": "Medic"}
+    )
     assert resp.status_code == 409, resp.text
 
 
@@ -61,7 +67,9 @@ async def test_create_role_rejects_non_staff(client, db_session, as_user):
 
 async def test_list_roles_excludes_inactive_by_default(client, db_session, as_user):
     active = await _make_role(db_session, name_en="Active1", name_kh="សកម្ម")
-    inactive = await _make_role(db_session, name_en="Inactive1", name_kh="អសកម្ម", active=False)
+    inactive = await _make_role(
+        db_session, name_en="Inactive1", name_kh="អសកម្ម", active=False
+    )
     as_user(make_user(UserRole.ADMIN))
 
     default = await client.get(ROLES_URL)
@@ -82,7 +90,12 @@ async def test_register_organizer_success(client, db_session, as_user):
 
     resp = await client.post(
         ORG_REG_URL,
-        json={"eventId": event.id, "organizationId": org.id, "organizerRoleId": role.id, **_person()},
+        json={
+            "eventId": event.id,
+            "organizationId": org.id,
+            "organizerRoleId": role.id,
+            **_person(),
+        },
     )
     assert resp.status_code == 201, resp.text
     body = resp.json()
@@ -91,7 +104,9 @@ async def test_register_organizer_success(client, db_session, as_user):
     assert body["role_name_en"] == "Referee"
 
 
-async def test_register_organizer_under_18_requires_birth_cert(client, db_session, as_user):
+async def test_register_organizer_under_18_requires_birth_cert(
+    client, db_session, as_user
+):
     event = await make_event(db_session)
     role = await _make_role(db_session)
     as_user(make_user(UserRole.ADMIN))
@@ -121,7 +136,9 @@ async def test_register_organizer_inactive_role_rejected(client, db_session, as_
     assert resp.json()["detail"]["code"] == "ROLE_INACTIVE"
 
 
-async def test_register_organizer_closed_registration_rejected(client, db_session, as_user):
+async def test_register_organizer_closed_registration_rejected(
+    client, db_session, as_user
+):
     event = await make_event(db_session, registration=PhaseStatus.CLOSED)
     role = await _make_role(db_session)
     as_user(make_user(UserRole.ADMIN))
@@ -133,7 +150,9 @@ async def test_register_organizer_closed_registration_rejected(client, db_sessio
     assert resp.status_code == 403, resp.text
 
 
-async def test_register_organizer_org_user_scoped_to_own_org(client, db_session, as_user):
+async def test_register_organizer_org_user_scoped_to_own_org(
+    client, db_session, as_user
+):
     """An ORGANIZATION user's organizer is forced onto their own org regardless
     of the organizationId they send."""
     event = await make_event(db_session)
@@ -143,7 +162,12 @@ async def test_register_organizer_org_user_scoped_to_own_org(client, db_session,
 
     resp = await client.post(
         ORG_REG_URL,
-        json={"eventId": event.id, "organizationId": 999_999, "organizerRoleId": role.id, **_person()},
+        json={
+            "eventId": event.id,
+            "organizationId": 999_999,
+            "organizerRoleId": role.id,
+            **_person(),
+        },
     )
     assert resp.status_code == 201, resp.text
     assert resp.json()["organization_id"] == own.id

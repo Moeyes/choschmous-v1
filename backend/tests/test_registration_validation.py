@@ -1,8 +1,6 @@
 """Tests for the Phase-2 server-side registration validation rules in
 ParticipantService.register_participant (POST /api/registration)."""
 
-from datetime import date
-
 from src.models.athlete_participation import athlete_participation
 from src.models.enum.event import AgeMode, PhaseStatus
 from src.models.enum.user import UserRole
@@ -32,7 +30,9 @@ async def _valid_setup(db, **event_kwargs):
     return event, sport, org, category
 
 
-def _athlete_body(event, sport, org, category, *, dob="2010-01-01", docs=None, force=False):
+def _athlete_body(
+    event, sport, org, category, *, dob="2010-01-01", docs=None, force=False
+):
     body = {
         "eventId": event.id,
         "organizationId": org.id,
@@ -129,7 +129,11 @@ async def test_document_required_adult(client, db_session, as_user):
 
     # adult (born 1990) with neither national ID nor passport
     body = _athlete_body(
-        event, sport, org, category, dob="1990-01-01",
+        event,
+        sport,
+        org,
+        category,
+        dob="1990-01-01",
         docs={"birthCertificateUrl": "https://x/bc.pdf"},
     )
     resp = await client.post(REG_URL, json=body)
@@ -148,7 +152,9 @@ async def test_quota_full(client, db_session, as_user):
     # one athlete already registered for (org, event, sport) → quota of 1 is full
     db_session.add(
         athlete_participation(
-            events_id=event.id, sports_id=sport.id, organization_id=org.id,
+            events_id=event.id,
+            sports_id=sport.id,
+            organization_id=org.id,
             category_id=category.id,
         )
     )

@@ -1,0 +1,112 @@
+name: E2E (smoke crawl)
+
+# Brings up the full stack (Postgres + Redis + backend + Next.js dev server),
+# seeds demo accounts, and runs the Playwright smoke crawl that visits every
+# route looking for crashes, console errors, 4xx/5xx and unexpected redirects.
+#
+# Triggered manually and nightly — NOT per-PR. The crawl is broad and inherently
+# flakier than unit tests, so it stays off the PR critical path. Promote it to a
+# `pull_request` trigger once it has proven stable on the schedule.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 18 * * *" # 18:00 UTC nightly
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Playwright smoke crawl
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: moeys_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      # Backend runtime config (throwaway CI database).
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: moeys_e2e
+      REDIS_URL: redis://localhost:6379/0
+      ENVIRONMENT: local
+      JWT_SECRET_KEY: ci-test-secret-key-not-for-production-0001
+      JWT_REFRESH_SECRET_KEY: ci-test-refresh-secret-not-for-prod-0002
+      # Demo seed password → also the E2E login password.
+      SEED_DEFAULT_PASSWORD: e2e-ci-Password-123
+      # Frontend → backend API proxy (Next.js dev server, same runner).
+      API_PROXY_TARGET: http://localhost:8000
+      # Playwright: use the bundled chromium, not the system Chrome channel.
+      PW_BROWSER_CHANNEL: chromium
+      E2E_BASE_URL: http://localhost:3003
+      E2E_USERNAME: admin
+      E2E_PASSWORD: e2e-ci-Password-123
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Backend: deps, schema, seed, serve ────────────────────
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Sync backend deps
+        run: uv sync --frozen
+        working-directory: backend
+      - name: Bootstrap schema + seed demo accounts
+        run: |
+          uv run python scripts/init_db_schema.py
+          uv run python seed.py
+        working-directory: backend
+      - name: Start backend (uvicorn)
+        run: |
+          nohup uv run uvicorn main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/health >/dev/null; then
+              echo "backend up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "backend failed to start"; cat backend.log; exit 1
+        working-directory: backend
+
+      # ── Frontend: deps, browser, crawl ────────────────────────
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install frontend deps
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Run smoke crawl
+        run: pnpm e2e
+        working-directory: frontend
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/e2e/playwright-report
+          retention-days: 7

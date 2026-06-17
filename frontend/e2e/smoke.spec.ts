@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'node:path';
-import { ROUTES, type RouteDef } from './routes';
+import { ROUTES } from './routes';
 
 const hasCreds = !!(process.env.E2E_USERNAME && process.env.E2E_PASSWORD);
 const SHOTS_DIR = path.join(__dirname, 'screenshots');

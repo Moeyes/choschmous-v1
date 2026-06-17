@@ -48,7 +48,9 @@ async def create_participation_per_sport(
     **Access control:** ORGANIZATION users may only register their own org;
     admin / super_admin / federation may register any.
     """
-    await participation_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await participation_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     enforce_org_access(current_user, obj_in.org_id)
     service = ParticipationPerSportService(db)
 
@@ -122,7 +124,9 @@ async def patch_participation_per_sport(
     - `403 Forbidden`: Record belongs to another organization.
     - `404 Not Found`: Record ID not found.
     """
-    await participation_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await participation_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     service = ParticipationPerSportService(db)
     owner_org_id = await service.get_owner_org_id(id)
     if owner_org_id is None:
@@ -194,7 +198,9 @@ async def delete_participation_per_sport(
     - `403 Forbidden`: Record belongs to another organization.
     - `404 Not Found`: Record ID does not exist.
     """
-    await participation_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await participation_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     service = ParticipationPerSportService(db)
     owner_org_id = await service.get_owner_org_id(id)
     if owner_org_id is None:

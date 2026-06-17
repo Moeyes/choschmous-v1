@@ -34,9 +34,7 @@ class UploadedFile(Base):
         String(100), nullable=False, comment="MIME type, e.g. image/png"
     )
 
-    size: Mapped[int] = mapped_column(
-        Integer, nullable=False, comment="Size in bytes"
-    )
+    size: Mapped[int] = mapped_column(Integer, nullable=False, comment="Size in bytes")
 
     data: Mapped[bytes] = mapped_column(
         LargeBinary, nullable=False, comment="Raw file bytes"

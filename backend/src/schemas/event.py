@@ -138,6 +138,7 @@ class EventsPublic(BaseModel):
 
 class PhaseUpdate(BaseModel):
     """Body for PATCH /events/{event_id}/phase."""
+
     phase: str
     status: PhaseStatus
     open_date: date | None = None

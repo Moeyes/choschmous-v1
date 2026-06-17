@@ -6,12 +6,10 @@ from sqlalchemy import (
     desc,
     func,
     literal,
-    or_,
     select,
     String,
     Text,
     union_all,
-    update as sa_update,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
@@ -31,7 +29,6 @@ from src.models.organization import Organization
 from src.models.category import category as CategoryModel
 from src.models.sports_event import sports_event as SportsEvent
 from src.models.sports_event_org import sports_event_org as SportsEventOrg
-from src.models.enum.user import LeaderRole
 from src.models.enum.event import AgeMode
 from src.models.user import User
 
@@ -58,8 +55,10 @@ class ParticipantService:
 
     @staticmethod
     def _age_on(dob: date, on_date: date) -> int:
-        return on_date.year - dob.year - (
-            (on_date.month, on_date.day) < (dob.month, dob.day)
+        return (
+            on_date.year
+            - dob.year
+            - ((on_date.month, on_date.day) < (dob.month, dob.day))
         )
 
     async def _validate_registration(self, data: FullRegistrationRequest):
@@ -71,29 +70,36 @@ class ParticipantService:
 
         # Rule 1 — registration phase must be open.
         if not event.registration_is_open:
-            self._raise(403, "REGISTRATION_CLOSED",
-                        "Registration is not open for this event.")
+            self._raise(
+                403, "REGISTRATION_CLOSED", "Registration is not open for this event."
+            )
 
         # Rule 0 — event-wide participant cap.
         if event.participant_cap is not None:
             used_total = (
                 await self.db.execute(
                     select(func.count()).select_from(
-                        select(AthleteParticipation.c.id).where(
+                        select(AthleteParticipation.c.id)
+                        .where(
                             AthleteParticipation.c.events_id == data.eventId,
-                        ).union_all(
+                        )
+                        .union_all(
                             select(LeaderParticipation.c.id).where(
                                 LeaderParticipation.c.events_id == data.eventId,
                             )
-                        ).subquery()
+                        )
+                        .subquery()
                     )
                 )
             ).scalar() or 0
             if used_total >= event.participant_cap:
-                self._raise(409, "PARTICIPANT_CAP_REACHED",
-                            "The event has reached its maximum participant "
-                            "capacity.",
-                            used=used_total, cap=event.participant_cap)
+                self._raise(
+                    409,
+                    "PARTICIPANT_CAP_REACHED",
+                    "The event has reached its maximum participant capacity.",
+                    used=used_total,
+                    cap=event.participant_cap,
+                )
 
         # Rule 6a — sport eligibility: the org must have selected this sport in
         # survey ② (sports_event_org).
@@ -105,9 +111,12 @@ class ParticipantService:
             )
         )
         if elig.scalar_one_or_none() is None:
-            self._raise(403, "SPORT_NOT_ELIGIBLE",
-                        "This sport is not in your organization's survey "
-                        "selections for this event.")
+            self._raise(
+                403,
+                "SPORT_NOT_ELIGIBLE",
+                "This sport is not in your organization's survey "
+                "selections for this event.",
+            )
 
         config = (
             await self.db.execute(
@@ -122,8 +131,9 @@ class ParticipantService:
         if role == "athlete":
             # Rule 6b — category must exist for (event, sport).
             if data.categoryId is None:
-                self._raise(422, "CATEGORY_INVALID",
-                            "An athlete must be assigned a category.")
+                self._raise(
+                    422, "CATEGORY_INVALID", "An athlete must be assigned a category."
+                )
             cat = await self.db.execute(
                 select(CategoryModel.id).where(
                     CategoryModel.id == data.categoryId,
@@ -132,9 +142,12 @@ class ParticipantService:
                 )
             )
             if cat.scalar_one_or_none() is None:
-                self._raise(422, "CATEGORY_INVALID",
-                            "The selected category does not exist for this "
-                            "sport in this event.")
+                self._raise(
+                    422,
+                    "CATEGORY_INVALID",
+                    "The selected category does not exist for this "
+                    "sport in this event.",
+                )
 
             # Rule 2 — age window.
             self._validate_age(event, data.date_of_birth)
@@ -153,37 +166,54 @@ class ParticipantService:
                     )
                 ).scalar() or 0
                 if used >= config.quota_athletes_per_org:
-                    self._raise(409, "QUOTA_FULL",
-                                "The athlete quota for this sport is full.",
-                                used=used, quota=config.quota_athletes_per_org)
+                    self._raise(
+                        409,
+                        "QUOTA_FULL",
+                        "The athlete quota for this sport is full.",
+                        used=used,
+                        quota=config.quota_athletes_per_org,
+                    )
 
             # Team mode validation if teamId is provided
             if data.teamId is not None and role == "athlete":
                 if config and config.mode == "individual":
-                    self._raise(422, "TEAM_MODE_DISALLOWED",
-                                "This sport does not allow team registration.")
+                    self._raise(
+                        422,
+                        "TEAM_MODE_DISALLOWED",
+                        "This sport does not allow team registration.",
+                    )
                 from src.models.team import team as TeamModel
+
                 team = await self.db.get(TeamModel, data.teamId)
                 if not team:
                     self._raise(404, "TEAM_NOT_FOUND", "Team not found.")
                 if team.event_id != data.eventId or team.sport_id != data.sportId:
-                    self._raise(422, "TEAM_MISMATCH",
-                                "Team does not match the event/sport.")
+                    self._raise(
+                        422, "TEAM_MISMATCH", "Team does not match the event/sport."
+                    )
                 if team.org_id != data.organizationId:
-                    self._raise(422, "TEAM_ORG_MISMATCH",
-                                "Team does not belong to your organization.")
+                    self._raise(
+                        422,
+                        "TEAM_ORG_MISMATCH",
+                        "Team does not belong to your organization.",
+                    )
                 if config and config.team_size_max is not None:
                     used_team = (
                         await self.db.execute(
-                            select(func.count()).select_from(AthleteParticipation).where(
+                            select(func.count())
+                            .select_from(AthleteParticipation)
+                            .where(
                                 AthleteParticipation.team_id == data.teamId,
                             )
                         )
                     ).scalar() or 0
                     if used_team >= config.team_size_max:
-                        self._raise(409, "TEAM_FULL",
-                                    "The team has reached its maximum size.",
-                                    max=config.team_size_max)
+                        self._raise(
+                            409,
+                            "TEAM_FULL",
+                            "The team has reached its maximum size.",
+                            max=config.team_size_max,
+                        )
 
         # Rule 3 — document requirement (all participants).
         self._validate_documents(event, data)
@@ -198,36 +228,52 @@ class ParticipantService:
         if event.age_mode == AgeMode.BIRTH_YEAR:
             birth_year = dob.year
             if not (event.age_min <= birth_year <= event.age_max):
-                self._raise(422, "AGE_OUT_OF_RANGE",
-                            "Birth year is outside the allowed range.",
-                            mode="BIRTH_YEAR", min=event.age_min,
-                            max=event.age_max, value=birth_year)
+                self._raise(
+                    422,
+                    "AGE_OUT_OF_RANGE",
+                    "Birth year is outside the allowed range.",
+                    mode="BIRTH_YEAR",
+                    min=event.age_min,
+                    max=event.age_max,
+                    value=birth_year,
+                )
         else:  # EXACT_AGE
             if event.start_date is None:
                 return
             age = self._age_on(dob, event.start_date)
             if not (event.age_min <= age <= event.age_max):
-                self._raise(422, "AGE_OUT_OF_RANGE",
-                            "Age at the event start date is outside the "
-                            "allowed range.",
-                            mode="EXACT_AGE", min=event.age_min,
-                            max=event.age_max, value=age)
+                self._raise(
+                    422,
+                    "AGE_OUT_OF_RANGE",
+                    "Age at the event start date is outside the allowed range.",
+                    mode="EXACT_AGE",
+                    min=event.age_min,
+                    max=event.age_max,
+                    value=age,
+                )
 
     def _validate_documents(self, event: Events, data: FullRegistrationRequest):
         basis = event.start_date or date.today()
         age = self._age_on(data.date_of_birth, basis)
         if age < 18:
             if not data.birthCertificateUrl:
-                self._raise(422, "DOCUMENT_REQUIRED",
-                            "A birth certificate is required for participants "
-                            "under 18.",
-                            requires="birth_certificate", age=age)
+                self._raise(
+                    422,
+                    "DOCUMENT_REQUIRED",
+                    "A birth certificate is required for participants under 18.",
+                    requires="birth_certificate",
+                    age=age,
+                )
         else:
             if not (data.nationalIdUrl or data.passportUrl):
-                self._raise(422, "DOCUMENT_REQUIRED",
-                            "A national ID or passport is required for "
-                            "participants 18 and older.",
-                            requires="national_id_or_passport", age=age)
+                self._raise(
+                    422,
+                    "DOCUMENT_REQUIRED",
+                    "A national ID or passport is required for "
+                    "participants 18 and older.",
+                    requires="national_id_or_passport",
+                    age=age,
+                )
 
     async def _check_duplicate(self, data: FullRegistrationRequest):
         name_dob = (
@@ -257,7 +303,7 @@ class ParticipantService:
                     detail={
                         "code": "DUPLICATE_SUSPECT",
                         "message": "A participant with the same name and date of "
-                                   "birth is already registered for this event.",
+                        "birth is already registered for this event.",
                         "duplicate_suspect": True,
                     },
                 )
@@ -318,7 +364,7 @@ class ParticipantService:
         except HTTPException:
             await self.db.rollback()
             raise
-        except Exception as e:
+        except Exception:
             await self.db.rollback()
             logger.error("Registration failed", exc_info=True)
             raise HTTPException(
@@ -383,7 +429,7 @@ class ParticipantService:
             )
 
         if params.category_id is not None:
-            if hasattr(participation_model, 'category_id'):
+            if hasattr(participation_model, "category_id"):
                 query = query.filter(
                     participation_model.category_id == params.category_id
                 )
@@ -458,7 +504,9 @@ class ParticipantService:
             if params.sport_id is not None:
                 q = q.filter(participation_model.sports_id == params.sport_id)
             if params.organization_id is not None:
-                q = q.filter(participation_model.organization_id == params.organization_id)
+                q = q.filter(
+                    participation_model.organization_id == params.organization_id
+                )
             if params.category_id is not None:
                 q = q.filter(participation_model.category_id == params.category_id)
             if params.gender is not None:
@@ -480,7 +528,9 @@ class ParticipantService:
             .join(Athlete, Athlete.enroll_id == Enroll.id)
             .join(AthleteParticipation, Athlete.id == AthleteParticipation.athletes_id)
             .outerjoin(Sport, Sport.id == AthleteParticipation.sports_id)
-            .outerjoin(Organization, Organization.id == AthleteParticipation.organization_id)
+            .outerjoin(
+                Organization, Organization.id == AthleteParticipation.organization_id
+            )
             .outerjoin(Events, Events.id == AthleteParticipation.events_id),
             AthleteParticipation,
         )
@@ -498,7 +548,9 @@ class ParticipantService:
             .join(Leader, Leader.enroll_id == Enroll.id)
             .join(LeaderParticipation, Leader.id == LeaderParticipation.leaders_id)
             .outerjoin(Sport, Sport.id == LeaderParticipation.sports_id)
-            .outerjoin(Organization, Organization.id == LeaderParticipation.organization_id)
+            .outerjoin(
+                Organization, Organization.id == LeaderParticipation.organization_id
+            )
             .outerjoin(Events, Events.id == LeaderParticipation.events_id),
             LeaderParticipation,
         )
@@ -600,7 +652,11 @@ class ParticipantService:
         return phone
 
     async def update_participant(
-        self, enroll_id: int, role: str, data: ParticipantUpdateRequest, current_user: User
+        self,
+        enroll_id: int,
+        role: str,
+        data: ParticipantUpdateRequest,
+        current_user: User,
     ):
         """Update Enroll personal info and participation data atomically."""
         role = role.lower()
@@ -657,10 +713,12 @@ class ParticipantService:
         except HTTPException:
             await self.db.rollback()
             raise
-        except Exception as e:
+        except Exception:
             await self.db.rollback()
             logger.error("Participant update failed", exc_info=True)
-            raise HTTPException(status_code=500, detail="Update failed due to a server error")
+            raise HTTPException(
+                status_code=500, detail="Update failed due to a server error"
+            )
 
     async def _update_athlete_participation(
         self, enroll_id: int, data: ParticipantUpdateRequest
@@ -777,10 +835,12 @@ class ParticipantService:
         except HTTPException:
             await self.db.rollback()
             raise
-        except Exception as e:
+        except Exception:
             await self.db.rollback()
             logger.error("Participant delete failed", exc_info=True)
-            raise HTTPException(status_code=500, detail="Delete failed due to a server error")
+            raise HTTPException(
+                status_code=500, detail="Delete failed due to a server error"
+            )
 
     def _build_athlete_query(self):
         """Build the SELECT + JOIN chain for athletes."""
@@ -941,6 +1001,8 @@ class ParticipantService:
             "leader_role": (
                 None
                 if role == "athlete"
-                else (leader_role.value if hasattr(leader_role, "value") else leader_role)
+                else (
+                    leader_role.value if hasattr(leader_role, "value") else leader_role
+                )
             ),
         }

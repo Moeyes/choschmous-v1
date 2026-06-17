@@ -98,6 +98,8 @@ export function FileUpload({
     return (
       <div className={cn('flex flex-col items-center gap-3', className)}>
         <div className="relative size-32 overflow-hidden rounded-full border-4 border-border">
+          {/* Local blob/object-URL preview — next/image cannot optimize blob: URLs. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
             alt="Preview"

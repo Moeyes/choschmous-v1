@@ -1,5 +1,6 @@
 from enum import Enum as PyEnum
 
+
 class eventType(PyEnum):
     NATIONAL = "កីឡាជាតិ"
     UNIVERSITY = "កីឡាឧត្តមសិក្សា និងមធ្យមសិក្សា​បចេ្ចកទេសថ្នាក់ជាតិថ្នាក់ជាតិ"
@@ -9,6 +10,7 @@ class eventType(PyEnum):
 
 class AgeMode(PyEnum):
     """How an event's age_min/age_max are interpreted."""
+
     BIRTH_YEAR = "BIRTH_YEAR"
     EXACT_AGE = "EXACT_AGE"
 
@@ -21,6 +23,7 @@ class PhaseStatus(PyEnum):
     - OPEN   : phase forced open regardless of dates.
     - CLOSED : phase forced closed regardless of dates.
     """
+
     AUTO = "AUTO"
     OPEN = "OPEN"
     CLOSED = "CLOSED"
@@ -28,6 +31,7 @@ class PhaseStatus(PyEnum):
 
 class SportMode(PyEnum):
     """How a sport is contested within an event (per sports_event config)."""
+
     INDIVIDUAL = "individual"
     TEAM = "team"
     BOTH = "both"

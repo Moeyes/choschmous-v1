@@ -2,7 +2,18 @@ from datetime import date
 from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import String, case, cast, delete, distinct, func, select, true, false, and_
+from sqlalchemy import (
+    String,
+    case,
+    cast,
+    delete,
+    distinct,
+    func,
+    select,
+    true,
+    false,
+    and_,
+)
 
 from src.database.base_repository import BaseRepository
 from src.models.organization import Organization
@@ -15,7 +26,12 @@ from src.models.sports_event_org import sports_event_org
 from src.models.participation_per_sport import participation_per_sport
 from src.schemas.event import EventCreate, EventUpdate
 from src.schemas.sports_event import SportsEventPublic
-from src.schemas.report import SurveyStatusOrgRow, SurveyStatusSportRow, SurveyStatusResponse
+from src.schemas.report import (
+    SurveyStatusOrgRow,
+    SurveyStatusSportRow,
+    SurveyStatusResponse,
+)
+
 
 class EventService:
     def __init__(self, db: AsyncSession):
@@ -23,7 +39,7 @@ class EventService:
         self.repo = BaseRepository(db, Events)
         # Fix: Initialize se_repo so it can be used in other methods
         self.se_repo = BaseRepository(db, sports_event)
-        self.seo_repo = BaseRepository(db,sports_event_org)
+        self.seo_repo = BaseRepository(db, sports_event_org)
 
     async def get_event(self, event_id: int) -> Optional[Events]:
         return await self.repo.get(event_id)
@@ -45,9 +61,9 @@ class EventService:
                     else:
                         query = query.where(cast(column, String).ilike(f"{value}%"))
 
-        active_phase_filters = (
-            {p: v for p, v in (phase_open_filters or {}).items() if v is not None}
-        )
+        active_phase_filters = {
+            p: v for p, v in (phase_open_filters or {}).items() if v is not None
+        }
         if active_phase_filters:
             today = date.today()
             for phase, want_open in active_phase_filters.items():
@@ -108,7 +124,7 @@ class EventService:
         if existing:
             raise HTTPException(
                 status_code=400,
-                detail="This sport is already associated with this event."
+                detail="This sport is already associated with this event.",
             )
 
         payload = {"events_id": event_id, "sports_id": sport_id}
@@ -116,7 +132,7 @@ class EventService:
 
         query = (
             select(
-                sports_event.id.label("id"), 
+                sports_event.id.label("id"),
                 Events.name_kh.label("event_name"),
                 Sport.name_kh.label("sport_name"),
                 sports_event.created_at,
@@ -128,7 +144,7 @@ class EventService:
         result = await self.db.execute(query)
         return result.mappings().first()
 
-    async def get_event_sports(self, event_id: int)->SportsEventPublic:
+    async def get_event_sports(self, event_id: int) -> SportsEventPublic:
         query = (
             select(
                 sports_event.id.label("id"),
@@ -149,7 +165,9 @@ class EventService:
         result = await self.db.execute(query)
         return result.mappings().all()
 
-    async def update_sport_event_config(self, sports_event_id: int, config) -> sports_event:
+    async def update_sport_event_config(
+        self, sports_event_id: int, config
+    ) -> sports_event:
         """Set per-sport competition config on a sports_event link. Only fields
         present in ``config`` (exclude_unset) are written."""
         se = await self.db.get(sports_event, sports_event_id)
@@ -210,7 +228,7 @@ class EventService:
             .where(
                 sports_event_org.events_id == event_id,
                 sports_event_org.organization_id == org_id,
-                sports_event_org.status == 'APPROVED',
+                sports_event_org.status == "APPROVED",
             )
             .order_by(Sport.name_kh.asc())
         )
@@ -283,7 +301,7 @@ class EventService:
             .where(
                 sports_event_org.events_id == event_id,
                 sports_event_org.organization_id == org_id,
-                sports_event_org.status == 'APPROVED',
+                sports_event_org.status == "APPROVED",
             )
             .order_by(sports_event_org.created_at.asc())
         )
@@ -310,7 +328,6 @@ class EventService:
 
         result = await self.db.execute(query)
         return result.mappings().all()
-
 
     async def remove_org_from_entire_event(self, event_id: int, org_id: int) -> bool:
         query = delete(sports_event_org).where(
@@ -348,7 +365,10 @@ class EventService:
 
             pps_q = (
                 select(participation_per_sport.status)
-                .join(sports_event_org, participation_per_sport.sports_Events_id == sports_event_org.id)
+                .join(
+                    sports_event_org,
+                    participation_per_sport.sports_Events_id == sports_event_org.id,
+                )
                 .where(
                     sports_event_org.events_id == event_id,
                     sports_event_org.organization_id == o.id,
@@ -358,13 +378,15 @@ class EventService:
             pps_r = await self.db.execute(pps_q)
             pps_status = pps_r.scalar()
 
-            org_statuses.append(SurveyStatusOrgRow(
-                org_id=o.id,
-                org_name_kh=o.name_kh,
-                org_name_en=o.name_en,
-                survey_sport_submitted=survey_sport_submitted,
-                survey_number_status=pps_status,
-            ))
+            org_statuses.append(
+                SurveyStatusOrgRow(
+                    org_id=o.id,
+                    org_name_kh=o.name_kh,
+                    org_name_en=o.name_en,
+                    survey_sport_submitted=survey_sport_submitted,
+                    survey_number_status=pps_status,
+                )
+            )
 
         fed_sport_q = (
             select(
@@ -373,10 +395,13 @@ class EventService:
                 func.count(Category.id).label("cat_count"),
             )
             .join(sports_event, sports_event.sports_id == Sport.id)
-            .outerjoin(Category, and_(
-                Category.sports_id == Sport.id,
-                Category.events_id == event_id,
-            ))
+            .outerjoin(
+                Category,
+                and_(
+                    Category.sports_id == Sport.id,
+                    Category.events_id == event_id,
+                ),
+            )
             .where(sports_event.events_id == event_id)
             .group_by(Sport.id, Sport.name_kh)
             .order_by(Sport.name_kh)

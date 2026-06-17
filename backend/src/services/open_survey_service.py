@@ -100,8 +100,7 @@ class OpenSurveyService:
         unknown = set(payload.responses) - active_ids
         if unknown:
             raise OpenSurveyError(
-                f"Unknown or inactive field id(s) for this event: "
-                f"{sorted(unknown)}",
+                f"Unknown or inactive field id(s) for this event: {sorted(unknown)}",
                 code=400,
             )
 
@@ -235,9 +234,7 @@ class OpenSurveyService:
             for row in answered_q
         }
 
-        orgs_q = await self.db.execute(
-            select(Organization).order_by(Organization.id)
-        )
+        orgs_q = await self.db.execute(select(Organization).order_by(Organization.id))
         orgs = orgs_q.scalars().all()
 
         overview: list[OpenSurveyOrgStatus] = []

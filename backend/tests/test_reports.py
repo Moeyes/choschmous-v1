@@ -29,10 +29,17 @@ def _xlsx_values(content: bytes) -> set[str]:
                 out.add(str(cell))
     return out
 
+
 XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 REPORT_KEYS = [
-    "sport-list", "totals", "counts", "album",
-    "name-list", "leaders", "coach-athlete", "delegation",
+    "sport-list",
+    "totals",
+    "counts",
+    "album",
+    "name-list",
+    "leaders",
+    "coach-athlete",
+    "delegation",
 ]
 
 
@@ -68,7 +75,7 @@ async def test_sport_list_xlsx_cells_are_populated(client, db_session, as_user):
 
     ws = load_workbook(io.BytesIO(resp.content)).active
     assert ws.cell(row=1, column=2).value  # header row present
-    assert ws.cell(row=2, column=1).value == 1            # "no"
+    assert ws.cell(row=2, column=1).value == 1  # "no"
     assert ws.cell(row=2, column=2).value == "កីឡាសាកល្បង"  # sport_name_kh, not blank
 
 
@@ -86,7 +93,9 @@ async def test_report_pdf_renders(client, db_session, as_user):
 async def test_report_unknown_key_rejected(client, db_session, as_user):
     event = await make_event(db_session)
     as_user(make_user(UserRole.ADMIN))
-    resp = await client.get(f"/api/reports/not-a-report?event_id={event.id}&format=xlsx")
+    resp = await client.get(
+        f"/api/reports/not-a-report?event_id={event.id}&format=xlsx"
+    )
     assert resp.status_code == 400, resp.text
 
 
@@ -132,36 +141,67 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
     as_user(make_user(UserRole.ADMIN))
 
     athlete = {
-        "eventId": event.id, "organizationId": org.id, "sportId": sport.id,
-        "categoryId": cat.id, "role": "athlete",
-        "lastNameKhmer": "ម៉េង", "firstNameKhmer": "សុភា",
-        "lastNameLatin": "Meng", "firstNameLatin": "Sophea",
-        "gender": "Male", "dateOfBirth": "2010-03-03",
-        "phone": "012111222", "idDocType": "IDCard",
+        "eventId": event.id,
+        "organizationId": org.id,
+        "sportId": sport.id,
+        "categoryId": cat.id,
+        "role": "athlete",
+        "lastNameKhmer": "ម៉េង",
+        "firstNameKhmer": "សុភា",
+        "lastNameLatin": "Meng",
+        "firstNameLatin": "Sophea",
+        "gender": "Male",
+        "dateOfBirth": "2010-03-03",
+        "phone": "012111222",
+        "idDocType": "IDCard",
         "birthCertificateUrl": "/u/bc.jpg",
     }
     assert (await client.post("/api/registration", json=athlete)).status_code == 201
-    athlete_f = {**athlete, "firstNameKhmer": "ច័ន្ទនី", "firstNameLatin": "Channy",
-                 "gender": "Female", "phone": "012111333"}
+    athlete_f = {
+        **athlete,
+        "firstNameKhmer": "ច័ន្ទនី",
+        "firstNameLatin": "Channy",
+        "gender": "Female",
+        "phone": "012111333",
+    }
     assert (await client.post("/api/registration", json=athlete_f)).status_code == 201
 
-    coach = {**athlete, "role": "leader", "leaderRole": "coach", "categoryId": None,
-             "firstNameKhmer": "រតនៈ", "firstNameLatin": "Ratana",
-             "gender": "Male", "dateOfBirth": "1985-06-06", "phone": "012111444",
-             "birthCertificateUrl": None, "nationalIdUrl": "/u/nid.jpg"}
+    coach = {
+        **athlete,
+        "role": "leader",
+        "leaderRole": "coach",
+        "categoryId": None,
+        "firstNameKhmer": "រតនៈ",
+        "firstNameLatin": "Ratana",
+        "gender": "Male",
+        "dateOfBirth": "1985-06-06",
+        "phone": "012111444",
+        "birthCertificateUrl": None,
+        "nationalIdUrl": "/u/nid.jpg",
+    }
     r_coach = await client.post("/api/registration", json=coach)
     assert r_coach.status_code == 201, r_coach.text
 
     role = OrganizerRole(name_en="Head", name_kh="ប្រធាន", active=True)
     db_session.add(role)
     await db_session.flush()
-    org_reg = await client.post("/api/registration/organizer", json={
-        "eventId": event.id, "organizationId": org.id, "organizerRoleId": role.id,
-        "lastNameKhmer": "ខេមរា", "firstNameKhmer": "វិសាល",
-        "lastNameLatin": "Khemara", "firstNameLatin": "Visal",
-        "gender": "Male", "dateOfBirth": "1980-02-02", "phone": "012111555",
-        "idDocType": "IDCard", "nationalIdPath": "/u/nid.jpg",
-    })
+    org_reg = await client.post(
+        "/api/registration/organizer",
+        json={
+            "eventId": event.id,
+            "organizationId": org.id,
+            "organizerRoleId": role.id,
+            "lastNameKhmer": "ខេមរា",
+            "firstNameKhmer": "វិសាល",
+            "lastNameLatin": "Khemara",
+            "firstNameLatin": "Visal",
+            "gender": "Male",
+            "dateOfBirth": "1980-02-02",
+            "phone": "012111555",
+            "idDocType": "IDCard",
+            "nationalIdPath": "/u/nid.jpg",
+        },
+    )
     assert org_reg.status_code == 201, org_reg.text
 
     # sport-list: planned M=3 / F=2 (cols 4,5)
@@ -177,11 +217,23 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
     assert wc.cell(row=2, column=6).value == 2
 
     # album / name-list carry the actual people
-    album = _xlsx_values((await client.get(f"/api/reports/album?event_id={event.id}&format=xlsx")).content)
+    album = _xlsx_values(
+        (
+            await client.get(f"/api/reports/album?event_id={event.id}&format=xlsx")
+        ).content
+    )
     assert {"ម៉េង", "សុភា", "ច័ន្ទនី"} <= album
-    name_list = _xlsx_values((await client.get(f"/api/reports/name-list?event_id={event.id}&format=xlsx")).content)
+    name_list = _xlsx_values(
+        (
+            await client.get(f"/api/reports/name-list?event_id={event.id}&format=xlsx")
+        ).content
+    )
     assert "រតនៈ" in name_list  # the coach
-    delegation = _xlsx_values((await client.get(f"/api/reports/delegation?event_id={event.id}&format=xlsx")).content)
+    delegation = _xlsx_values(
+        (
+            await client.get(f"/api/reports/delegation?event_id={event.id}&format=xlsx")
+        ).content
+    )
     assert {"ខេមរា", "ប្រធាន"} <= delegation  # organizer + their role
 
     # a fully-populated PDF renders

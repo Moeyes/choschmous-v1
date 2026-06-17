@@ -62,7 +62,9 @@ async def get_sport(sport_id: int, service: SportService = Depends(get_sport_ser
 
 
 @router.get("/{sport_id}/categories", response_model=list[CategoryPublic])
-async def get_categories_for_sport(sport_id: int, service: SportService = Depends(get_sport_service)):
+async def get_categories_for_sport(
+    sport_id: int, service: SportService = Depends(get_sport_service)
+):
     """Return categories associated with a sport across events."""
     categories = await service.get_categories_by_sport(sport_id)
     return categories
@@ -72,7 +74,8 @@ async def get_categories_for_sport(sport_id: int, service: SportService = Depend
 async def create_sport(
     request: Request,
     response: Response,
-    payload: SportCreate, service: SportService = Depends(get_sport_service),
+    payload: SportCreate,
+    service: SportService = Depends(get_sport_service),
     _: User = Depends(require_admin),
 ):
     """
@@ -92,7 +95,6 @@ async def create_sport(
     return await service.create_sport(payload)
 
 
-from fastapi import Body
 from pydantic import BaseModel, field_validator
 from src.models.enum.user import genderEnum
 
@@ -224,7 +226,9 @@ async def update_category(
     """
     Update the descriptive fields of an existing category.
     """
-    updated = await service.update_category(body.id, body.model_dump(exclude_unset=True, exclude={"id"}))
+    updated = await service.update_category(
+        body.id, body.model_dump(exclude_unset=True, exclude={"id"})
+    )
     if not updated:
         raise HTTPException(status_code=404, detail="Category not found")
     return updated

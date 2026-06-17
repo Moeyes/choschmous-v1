@@ -45,14 +45,20 @@ def _disable_auth_limiters(monkeypatch):
     async def _noop(*a, **k):
         return (0, 0, 0)
 
-    for lim in (ratelimit.login_limiter, ratelimit.refresh_limiter, ratelimit.logout_limiter):
+    for lim in (
+        ratelimit.login_limiter,
+        ratelimit.refresh_limiter,
+        ratelimit.logout_limiter,
+    ):
         monkeypatch.setattr(lim, "check", _noop)
 
 
 async def _make_user(db, *, username, password, role=UserRole.ADMIN):
     user = User(
-        kh_family_name="ស", kh_given_name="ស",
-        en_family_name="S", en_given_name="S",
+        kh_family_name="ស",
+        kh_given_name="ស",
+        en_family_name="S",
+        en_given_name="S",
         email=f"{username}@test.local",
         username=username,
         hashed_password=hash_password(password),
@@ -72,7 +78,9 @@ async def test_login_success_sets_cookies(client, db_session):
     uname = _uname()
     await _make_user(db_session, username=uname, password="ValidPass123")
 
-    r = await client.post("/api/auth/login", json={"username": uname, "password": "ValidPass123"})
+    r = await client.post(
+        "/api/auth/login", json={"username": uname, "password": "ValidPass123"}
+    )
 
     assert r.status_code == 200
     assert "access_token_expires_at" in r.json()
@@ -86,7 +94,9 @@ async def test_login_wrong_password_rejected(client, db_session):
     uname = _uname()
     await _make_user(db_session, username=uname, password="ValidPass123")
 
-    r = await client.post("/api/auth/login", json={"username": uname, "password": "WrongPass999"})
+    r = await client.post(
+        "/api/auth/login", json={"username": uname, "password": "WrongPass999"}
+    )
 
     assert r.status_code == 401
     assert r.json()["detail"] == "Invalid credentials"
@@ -99,7 +109,9 @@ async def test_legacy_weak_password_account_can_log_in(client, db_session):
     uname = _uname()
     await _make_user(db_session, username=uname, password="weak")  # < policy
 
-    r = await client.post("/api/auth/login", json={"username": uname, "password": "weak"})
+    r = await client.post(
+        "/api/auth/login", json={"username": uname, "password": "weak"}
+    )
 
     assert r.status_code == 200
 
@@ -111,9 +123,12 @@ async def test_unknown_user_returns_same_response_as_wrong_password(client, db_s
     uname = _uname()
     await _make_user(db_session, username=uname, password="ValidPass123")
 
-    wrong = await client.post("/api/auth/login", json={"username": uname, "password": "Nope12345"})
+    wrong = await client.post(
+        "/api/auth/login", json={"username": uname, "password": "Nope12345"}
+    )
     unknown = await client.post(
-        "/api/auth/login", json={"username": "ghost_" + uuid.uuid4().hex[:6], "password": "Nope12345"}
+        "/api/auth/login",
+        json={"username": "ghost_" + uuid.uuid4().hex[:6], "password": "Nope12345"},
     )
 
     assert wrong.status_code == unknown.status_code == 401
@@ -136,7 +151,8 @@ async def test_unknown_user_still_runs_bcrypt_verify(client, db_session, monkeyp
     monkeypatch.setattr(auth_mod, "verify_password", spy)
 
     r = await client.post(
-        "/api/auth/login", json={"username": "nobody_" + uuid.uuid4().hex[:6], "password": "Whatever123"}
+        "/api/auth/login",
+        json={"username": "nobody_" + uuid.uuid4().hex[:6], "password": "Whatever123"},
     )
 
     assert r.status_code == 401
@@ -149,10 +165,14 @@ async def test_account_locks_after_five_failures(client, db_session):
     await _make_user(db_session, username=uname, password="ValidPass123")
 
     for _ in range(5):
-        r = await client.post("/api/auth/login", json={"username": uname, "password": "WrongPass999"})
+        r = await client.post(
+            "/api/auth/login", json={"username": uname, "password": "WrongPass999"}
+        )
         assert r.status_code == 401
 
     # Now locked: even the correct password is rejected.
-    r = await client.post("/api/auth/login", json={"username": uname, "password": "ValidPass123"})
+    r = await client.post(
+        "/api/auth/login", json={"username": uname, "password": "ValidPass123"}
+    )
     assert r.status_code == 401
     assert r.json()["detail"] == "Invalid credentials"

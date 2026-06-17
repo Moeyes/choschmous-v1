@@ -89,6 +89,7 @@ async def client(db_session: AsyncSession) -> AsyncClient:
 def _disable_rate_limits(monkeypatch):
     """Neutralize all rate limiters in tests — they are Redis-backed and shared
     across tests, so real limits would cause flaky cross-test 429s."""
+
     async def _noop(self, *args, **kwargs):
         return None
 

@@ -31,7 +31,6 @@ interface ReportGenerateModalProps {
 export function ReportGenerateModal({
     isOpen,
     onClose,
-    reportKey,
     reportTitle,
     supportsSource,
     events,

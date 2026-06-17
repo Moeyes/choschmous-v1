@@ -5,11 +5,8 @@ from typing import Dict, Any, Optional
 
 from src.models.athletes import athletes
 from src.models.leader import leader
-from src.models.enroll import Enroll
 from src.models.athlete_participation import athlete_participation
 from src.models.leader_participation import leader_participation
-from src.models.sport import Sport
-from src.models.organization import Organization
 
 
 async def get_card_by_p_id(
@@ -37,7 +34,11 @@ async def get_card_by_p_id(
     if athlete_part and athlete_part.athlete and athlete_part.athlete.enroll:
         enroll = athlete_part.athlete.enroll
         sport_name = athlete_part.sport.name_kh if athlete_part.sport else "Unknown"
-        org_name = athlete_part.organization.name_kh if athlete_part.organization else "Unknown"
+        org_name = (
+            athlete_part.organization.name_kh
+            if athlete_part.organization
+            else "Unknown"
+        )
 
         return {
             "id": athlete_part.athlete.id,
@@ -69,7 +70,9 @@ async def get_card_by_p_id(
     if leader_part and leader_part.leader_obj and leader_part.leader_obj.enroll:
         enroll = leader_part.leader_obj.enroll
         sport_name = leader_part.sport.name_kh if leader_part.sport else "Unknown"
-        org_name = leader_part.organization.name_kh if leader_part.organization else "Unknown"
+        org_name = (
+            leader_part.organization.name_kh if leader_part.organization else "Unknown"
+        )
 
         return {
             "id": leader_part.leader_obj.id,

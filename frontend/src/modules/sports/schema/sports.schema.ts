@@ -63,8 +63,6 @@ const sportParticipantSchema = z
     })
     .strict();
 
-type SportParticipantPublic = z.infer<typeof sportParticipantSchema>;
-
 export const sportParticipantsPublicSchema = z
     .object({
         data:  sportParticipantSchema.array(),

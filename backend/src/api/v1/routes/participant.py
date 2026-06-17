@@ -107,7 +107,9 @@ async def create_participant(
     **Access control:** ORGANIZATION users are forced to their own org;
     admin/super_admin/federation may register any org.
     """
-    await participant_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await participant_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     # Force organizationId from token for org-role users
     effective_org_id = get_effective_org_id(current_user, payload.organizationId)
     if effective_org_id is None:
@@ -130,12 +132,14 @@ async def create_participant(
 @router.get("")
 async def list_participants(
     role: Optional[RoleEnum] = Query(
-        None, description="Filter by participant role; omit to return athletes + leaders"
+        None,
+        description="Filter by participant role; omit to return athletes + leaders",
     ),
     event_id: Optional[int] = Query(None, description="Filter by event ID"),
     sport_id: Optional[int] = Query(None, description="Filter by sport ID"),
     organization_id: Optional[int] = Query(
-        None, description="Filter by organization ID (ignored for org-role users — derived from token)"
+        None,
+        description="Filter by organization ID (ignored for org-role users — derived from token)",
     ),
     category_id: Optional[int] = Query(
         None, description="Filter by category ID (athlete only)"
@@ -232,7 +236,9 @@ async def reveal_participant_pii(
     UI; this is the explicit, permission-gated, audited action that exposes the
     real value.
     """
-    await reveal_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await reveal_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     service = ParticipantService(db)
     phone = await service.get_participant_phone(enroll_id)
 
@@ -297,13 +303,17 @@ async def update_participant(
     **Access control:** ORGANIZATION users may only update participants belonging
     to their own organization; admin / super_admin / federation may update any.
     """
-    await participant_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await participant_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     service = ParticipantService(db)
     owner_org_id = await service.get_owner_org_id(body.enroll_id, body.role)
     if owner_org_id is None:
         raise HTTPException(status_code=404, detail="Participant not found")
     enforce_org_access(current_user, owner_org_id)
-    return await service.update_participant(body.enroll_id, body.role, body.data, current_user)
+    return await service.update_participant(
+        body.enroll_id, body.role, body.data, current_user
+    )
 
 
 @router.delete("/delete", status_code=status.HTTP_200_OK)
@@ -331,7 +341,9 @@ async def delete_participant(
     - `403 Forbidden`: Participant belongs to another organization.
     - `404 Not Found`: The participant does not exist.
     """
-    await participant_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await participant_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     service = ParticipantService(db)
     owner_org_id = await service.get_owner_org_id(body.enroll_id)
     if owner_org_id is None:

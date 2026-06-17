@@ -80,8 +80,3 @@ export interface SportParticipant {
     // leader-only
     leader_role?: string | null;
 }
-
-interface SportParticipantListResponse {
-    data: SportParticipant[];
-    count: number;
-}

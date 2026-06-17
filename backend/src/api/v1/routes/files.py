@@ -1,7 +1,16 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,7 +69,12 @@ def _sniff_type(data: bytes) -> str | None:
     if data[:6] in (b"GIF87a", b"GIF89a"):
         return "image/gif"
     if data[4:8] == b"ftyp" and data[8:12] in (
-        b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1",
+        b"heic",
+        b"heix",
+        b"hevc",
+        b"hevx",
+        b"mif1",
+        b"msf1",
     ):
         # HEIC/HEIF container; mif1/msf1 are HEIF image variants some
         # encoders (e.g. iOS) emit alongside the heic/heix brands.
@@ -84,7 +98,9 @@ async def upload_file(
     the raw bytes and returns the file's id plus a relative URL
     (`/api/files/{id}`) the client can store and render directly.
     """
-    await upload_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await upload_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -102,7 +118,9 @@ async def upload_file(
     data = await file.read()
 
     if len(data) == 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file."
+        )
     if len(data) > MAX_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -112,8 +130,7 @@ async def upload_file(
     sniffed = _sniff_type(data)
     declared = file.content_type
     matches = sniffed is not None and (
-        sniffed == declared
-        or (sniffed in _HEIC_ALIASES and declared in _HEIC_ALIASES)
+        sniffed == declared or (sniffed in _HEIC_ALIASES and declared in _HEIC_ALIASES)
     )
     if not matches:
         raise HTTPException(
@@ -150,22 +167,35 @@ async def get_file(
     result = await db.execute(select(UploadedFile).where(UploadedFile.id == file_id))
     record = result.scalars().first()
     if record is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="File not found."
+        )
 
     if not await user_can_access_file(db, current_user, record):
         # 404 (not 403) so an unauthorized caller can't even confirm the file exists.
         logger.warning(
             "File access DENIED user=%s role=%s file=%s",
-            current_user.id, getattr(current_user.role, "value", current_user.role), file_id,
+            current_user.id,
+            getattr(current_user.role, "value", current_user.role),
+            file_id,
         )
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="File not found."
+        )
 
     logger.info(
         "File access user=%s role=%s file=%s",
-        current_user.id, getattr(current_user.role, "value", current_user.role), file_id,
+        current_user.id,
+        getattr(current_user.role, "value", current_user.role),
+        file_id,
     )
 
-    safe_filename = (record.filename or str(record.id)).replace('"', "").replace("\r", "").replace("\n", "")
+    safe_filename = (
+        (record.filename or str(record.id))
+        .replace('"', "")
+        .replace("\r", "")
+        .replace("\n", "")
+    )
     return Response(
         content=record.data,
         media_type=record.content_type,

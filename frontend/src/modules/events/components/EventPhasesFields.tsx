@@ -1,6 +1,6 @@
 "use client";
 
-import { useController, useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { EVENT_PHASES, PhaseStatus } from "../types";
 import { SelectField, TextInputField } from "@/shared/form";
 import { useTranslations } from "next-intl";

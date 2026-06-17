@@ -34,8 +34,9 @@ class TeamService:
             self._raise(404, "EVENT_NOT_FOUND", "Event not found.")
 
         if not event.registration_is_open:
-            self._raise(403, "REGISTRATION_CLOSED",
-                        "Registration is not open for this event.")
+            self._raise(
+                403, "REGISTRATION_CLOSED", "Registration is not open for this event."
+            )
 
         config = (
             await self.db.execute(
@@ -47,18 +48,24 @@ class TeamService:
         ).scalar_one_or_none()
 
         if not config:
-            self._raise(404, "SPORT_NOT_IN_EVENT",
-                        "This sport is not linked to the event.")
+            self._raise(
+                404, "SPORT_NOT_IN_EVENT", "This sport is not linked to the event."
+            )
 
         if config.mode.value not in ("team", "both"):
-            self._raise(422, "TEAM_MODE_DISALLOWED",
-                        "This sport does not allow team registration.",
-                        mode=config.mode.value)
+            self._raise(
+                422,
+                "TEAM_MODE_DISALLOWED",
+                "This sport does not allow team registration.",
+                mode=config.mode.value,
+            )
 
         if config.quota_teams_per_org is not None:
             used = (
                 await self.db.execute(
-                    select(func.count()).select_from(Team).where(
+                    select(func.count())
+                    .select_from(Team)
+                    .where(
                         Team.event_id == data.event_id,
                         Team.sport_id == data.sport_id,
                         Team.org_id == data.org_id,
@@ -66,9 +73,13 @@ class TeamService:
                 )
             ).scalar() or 0
             if used >= config.quota_teams_per_org:
-                self._raise(409, "TEAM_QUOTA_FULL",
-                            "The team quota for this sport is full.",
-                            used=used, quota=config.quota_teams_per_org)
+                self._raise(
+                    409,
+                    "TEAM_QUOTA_FULL",
+                    "The team quota for this sport is full.",
+                    used=used,
+                    quota=config.quota_teams_per_org,
+                )
 
         existing = (
             await self.db.execute(
@@ -82,9 +93,12 @@ class TeamService:
             )
         ).scalar_one_or_none()
         if existing:
-            self._raise(409, "TEAM_NAME_TAKEN",
-                        "A team with this name already exists for your org "
-                        "in this sport and category.")
+            self._raise(
+                409,
+                "TEAM_NAME_TAKEN",
+                "A team with this name already exists for your org "
+                "in this sport and category.",
+            )
 
         team = Team(**data.model_dump())
         self.db.add(team)
@@ -92,9 +106,7 @@ class TeamService:
         await self.db.refresh(team)
         return team
 
-    async def list_teams(
-        self, event_id: int | None, org_id: int | None
-    ) -> list[dict]:
+    async def list_teams(self, event_id: int | None, org_id: int | None) -> list[dict]:
         query = select(Team)
         if event_id is not None:
             query = query.where(Team.event_id == event_id)
@@ -107,16 +119,18 @@ class TeamService:
         out = []
         for t in teams:
             count = await self.member_count(t.id)
-            out.append({
-                "id": t.id,
-                "event_id": t.event_id,
-                "sport_id": t.sport_id,
-                "org_id": t.org_id,
-                "category_id": t.category_id,
-                "name": t.name,
-                "member_count": count,
-                "created_at": t.created_at,
-            })
+            out.append(
+                {
+                    "id": t.id,
+                    "event_id": t.event_id,
+                    "sport_id": t.sport_id,
+                    "org_id": t.org_id,
+                    "category_id": t.category_id,
+                    "name": t.name,
+                    "member_count": count,
+                    "created_at": t.created_at,
+                }
+            )
         return out
 
     async def get_team(self, team_id: int) -> Team | None:
@@ -161,18 +175,24 @@ class TeamService:
             if age < 18:
                 docs_ok = bool(m.birth_certificate_path) and bool(m.photo_url)
             else:
-                docs_ok = bool(m.national_id_path or m.passport_path) and bool(m.photo_url)
+                docs_ok = bool(m.national_id_path or m.passport_path) and bool(
+                    m.photo_url
+                )
 
-            members.append({
-                "enroll_id": m.enroll_id,
-                "kh_family_name": m.kh_family_name,
-                "kh_given_name": m.kh_given_name,
-                "en_family_name": m.en_family_name,
-                "en_given_name": m.en_given_name,
-                "gender": m.gender.value if hasattr(m.gender, "value") else str(m.gender),
-                "photo_url": m.photo_url,
-                "status": "complete" if docs_ok else "incomplete",
-            })
+            members.append(
+                {
+                    "enroll_id": m.enroll_id,
+                    "kh_family_name": m.kh_family_name,
+                    "kh_given_name": m.kh_given_name,
+                    "en_family_name": m.en_family_name,
+                    "en_given_name": m.en_given_name,
+                    "gender": m.gender.value
+                    if hasattr(m.gender, "value")
+                    else str(m.gender),
+                    "photo_url": m.photo_url,
+                    "status": "complete" if docs_ok else "incomplete",
+                }
+            )
 
         return {
             "id": t.id,
@@ -201,10 +221,17 @@ class TeamService:
         ).scalar_one_or_none()
 
         current_count = await self.member_count(team_id)
-        if config and config.team_size_max is not None and current_count >= config.team_size_max:
-            self._raise(409, "TEAM_FULL",
-                        "The team has reached its maximum size.",
-                        max=config.team_size_max)
+        if (
+            config
+            and config.team_size_max is not None
+            and current_count >= config.team_size_max
+        ):
+            self._raise(
+                409,
+                "TEAM_FULL",
+                "The team has reached its maximum size.",
+                max=config.team_size_max,
+            )
 
         athlete_subq = (
             select(Athlete.id).where(Athlete.enroll_id == enroll_id).subquery()
@@ -221,16 +248,21 @@ class TeamService:
         ).scalar_one_or_none()
 
         if not part:
-            self._raise(404, "MEMBER_NOT_FOUND",
-                        "The athlete is not registered in this event/sport/org.")
+            self._raise(
+                404,
+                "MEMBER_NOT_FOUND",
+                "The athlete is not registered in this event/sport/org.",
+            )
 
         if part.team_id is not None:
-            self._raise(409, "ALREADY_ON_TEAM",
-                        "This athlete is already on a team.")
+            self._raise(409, "ALREADY_ON_TEAM", "This athlete is already on a team.")
 
         if team.category_id is not None and part.category_id != team.category_id:
-            self._raise(422, "CATEGORY_MISMATCH",
-                        "The athlete's category does not match the team's category.")
+            self._raise(
+                422,
+                "CATEGORY_MISMATCH",
+                "The athlete's category does not match the team's category.",
+            )
 
         part.team_id = team_id
         await self.db.commit()
@@ -258,9 +290,13 @@ class TeamService:
         if config and config.team_size_min:
             current_count = await self.member_count(team_id)
             if current_count < config.team_size_min:
-                self._raise(409, "TEAM_BELOW_MIN",
-                            "The team has not reached its minimum size.",
-                            min=config.team_size_min, current=current_count)
+                self._raise(
+                    409,
+                    "TEAM_BELOW_MIN",
+                    "The team has not reached its minimum size.",
+                    min=config.team_size_min,
+                    current=current_count,
+                )
 
     async def remove_member(self, team_id: int, enroll_id: int):
         team = await self.db.get(Team, team_id)
@@ -280,8 +316,7 @@ class TeamService:
         ).scalar_one_or_none()
 
         if not part:
-            self._raise(404, "MEMBER_NOT_FOUND",
-                        "This athlete is not on this team.")
+            self._raise(404, "MEMBER_NOT_FOUND", "This athlete is not on this team.")
 
         part.team_id = None
         await self.db.commit()
@@ -319,9 +354,9 @@ class TeamService:
 
     async def member_count(self, team_id: int) -> int:
         result = await self.db.execute(
-            select(func.count()).select_from(AthleteParticipation).where(
-                AthleteParticipation.team_id == team_id
-            )
+            select(func.count())
+            .select_from(AthleteParticipation)
+            .where(AthleteParticipation.team_id == team_id)
         )
         return result.scalar() or 0
 
@@ -332,6 +367,7 @@ class TeamService:
         if not team:
             self._raise(404, "TEAM_NOT_FOUND", "Team not found.")
         if team.org_id != org_id:
-            self._raise(403, "ORG_MISMATCH",
-                        "This team does not belong to your organization.")
+            self._raise(
+                403, "ORG_MISMATCH", "This team does not belong to your organization."
+            )
         return team

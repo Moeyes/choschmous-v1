@@ -16,7 +16,6 @@ interface ByCategoryFormNavButtonsProps {
 export function ByCategoryFormNavButtons({
   stepIndex,
   totalSteps,
-  isReview,
   isPending,
   onPrevious,
   onNext,

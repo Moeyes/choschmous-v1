@@ -4,7 +4,7 @@ import { useFieldArray } from 'react-hook-form';
 import { UseFormReturn } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { Plus, Trash2, Copy } from 'lucide-react';
-import type { ByCategoryFormInput, ByCategoryFormData, CategoryRow } from '../types';
+import type { ByCategoryFormInput, ByCategoryFormData } from '../types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared';
 
 interface ByCategoryCategoriesStepProps {

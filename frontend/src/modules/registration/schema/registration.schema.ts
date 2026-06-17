@@ -9,47 +9,13 @@ export const registerResponseSchema = z.object({
     user_id:  z.string().optional(),
 }).strict();
 
-type RegisterResponseParsed = z.infer<typeof registerResponseSchema>;
-
-const enrollmentSchema = z.object({
-    id: z.number().int(),
-    user_id: z.string(),
-    event_id: z.number().int(),
-    organization_id: z.number().int(),
-    sport_id: z.number().int(),
-    category_id: z.number().int().nullable().optional(),
-    kh_family_name: z.string(),
-    kh_given_name: z.string(),
-    en_family_name: z.string(),
-    en_given_name: z.string(),
-    phone: z.string(),
-    gender: z.string(),
-    date_of_birth: z.string(),
-    id_document_type: z.string(),
-    address: z.string().optional(),
-    nationality: z.string().optional(),
-    role: z.string(),
-    leader_role: z.string().nullable().optional(),
-    photo_url: z.string().nullable().optional(),
-    birth_certificate_url: z.string().nullable().optional(),
-    national_id_url: z.string().nullable().optional(),
-    passport_url: z.string().nullable().optional(),
-    created_at: z.string(),
-    event_name: z.string().optional(),
-    org_name: z.string().optional(),
-    sport_name: z.string().optional(),
-    category_name: z.string().optional(),
-}).strict();
-
-type EnrollmentParsed = z.infer<typeof enrollmentSchema>;
-
 /**
  * Lean list/search item — data minimization (data-governance §2). The
  * registrations table only renders these fields, so the backend list/search
  * endpoint returns no Restricted-PII (phone, DOB, national-ID/passport URLs,
  * gender, address). `.strict()` is deliberate: if any of those ever leak back
  * into the list response, this parse fails loudly rather than silently caching
- * PII. Full records come only from the detail endpoint (enrollmentSchema).
+ * PII. Full records come only from the detail endpoint (participantDetailSchema).
  */
 const enrollmentListItemSchema = z.object({
     id: z.number().int(),
@@ -65,8 +31,6 @@ const enrollmentListItemSchema = z.object({
     leader_role: z.string().nullable().optional(),
 }).strict();
 
-type EnrollmentListItemParsed = z.infer<typeof enrollmentListItemSchema>;
-
 export const enrollmentListResponseSchema = z.object({
     status: z.string(),
     data:   enrollmentListItemSchema.array(),
@@ -80,21 +44,17 @@ export const enrollmentListResponseSchema = z.object({
     page_size:   z.number().int().optional(),
 }).strict();
 
-type EnrollmentListParsed = z.infer<typeof enrollmentListResponseSchema>;
-
 /** Response of the audited PII reveal endpoint. */
 export const revealedPiiSchema = z.object({
     enroll_id: z.number().int(),
     phone: z.string(),
 }).strict();
 
-type RevealedPiiParsed = z.infer<typeof revealedPiiSchema>;
-
 /* ------------------------------------------------------------------ *
  * Single-participant DETAIL view (GET /api/registration/{id}?role=).
  *
- * This mirrors the backend's `_format_row` projection exactly, which differs
- * from the flat `enrollmentSchema` above: it nests sport/organization/category
+ * This mirrors the backend's `_format_row` projection exactly: it nests
+ * sport/organization/category
  * as { id, name } objects and returns Khmer/Latin composed names. Athlete rows
  * carry `category`; leader rows carry `leader_role` — so both are optional.
  *

@@ -13,7 +13,6 @@ from src.services.file_access import assert_can_reference_files
 
 
 class UserService:
-
     def __init__(self, db: AsyncSession):
         self.repo = BaseRepository(db, User)
         self.db = db
@@ -29,13 +28,12 @@ class UserService:
     async def count_users(self) -> int:
         return await self.repo.count()
 
-    async def create_user(
-        self, payload: UserCreate, current_user: User
-    ) -> User:
+    async def create_user(self, payload: UserCreate, current_user: User) -> User:
         # Defense-in-depth: validate file references so future route-access
         # changes don't accidentally open a vector for forged file UUIDs.
         await assert_can_reference_files(
-            self.db, current_user,
+            self.db,
+            current_user,
             [payload.photo_path],
         )
 
@@ -56,7 +54,8 @@ class UserService:
         # Defense-in-depth: validate file references at write time.
         if payload.photo_path is not None:
             await assert_can_reference_files(
-                self.db, current_user,
+                self.db,
+                current_user,
                 [payload.photo_path],
             )
 
@@ -78,5 +77,3 @@ class UserService:
 
     async def delete_user(self, user_id: uuid.UUID) -> bool:
         return await self.repo.delete(user_id)
-
-

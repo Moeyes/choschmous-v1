@@ -90,7 +90,9 @@ async def create_user(
     db_service: UserService = Depends(get_user_service),
     current_user: User = Depends(require_superadmin),
 ):
-    await create_user_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await create_user_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     """
     **Register a new Administrative User.**
 

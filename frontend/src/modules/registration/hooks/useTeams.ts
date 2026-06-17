@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teamHttpAdapter } from '../adapters/teamHttpAdapter';
-import type { TeamPayload, TeamDetail, TeamItem, TeamListResponse } from '../types/team';
+import type { TeamPayload, TeamDetail, TeamListResponse } from '../types/team';
 
 export function useTeams(event_id?: number, org_id?: number) {
     return useQuery<TeamListResponse>({

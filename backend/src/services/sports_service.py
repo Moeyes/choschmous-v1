@@ -6,13 +6,11 @@ from sqlalchemy import select
 from src.database.base_repository import BaseRepository
 from src.models.sport import Sport
 from src.models.events import Events
-from src.models.events import Events
 from src.schemas.sport import SportCreate, SportUpdate
 from src.models.category import category as CategoryModel
 
 
 class SportService:
-
     async def get_category_by_id(self, category_id: int):
         query = (
             select(
@@ -93,15 +91,16 @@ class SportService:
     async def add_category_to_sport(
         self, event_id: int | None, sport_id: int, category_name: str, gender
     ):
-        filters = [CategoryModel.sports_id == sport_id, CategoryModel.category == category_name]
+        filters = [
+            CategoryModel.sports_id == sport_id,
+            CategoryModel.category == category_name,
+        ]
         if event_id is not None:
             filters.append(CategoryModel.events_id == event_id)
         if gender is not None:
             filters.append(CategoryModel.gender == gender)
 
-        check = await self.db.execute(
-            select(CategoryModel).where(*filters)
-        )
+        check = await self.db.execute(select(CategoryModel).where(*filters))
         if check.scalars().first():
             raise HTTPException(
                 status_code=400,

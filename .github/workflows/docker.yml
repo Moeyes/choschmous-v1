@@ -1,0 +1,83 @@
+name: Docker
+
+# Builds the production images that actually ship (docker-compose deploy path).
+# A broken Dockerfile — WeasyPrint native libs, the corepack/pnpm setup, the
+# baked API proxy target — would otherwise only surface at deploy time.
+#
+#   * Pull requests        → build only (validation), no push.
+#   * Push to main / tags  → build AND push to GHCR. This is the CD foundation:
+#                            the deploy host just pulls these tags.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/docker.yml"
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }} image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # push to GHCR via the built-in GITHUB_TOKEN — no extra secrets
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: backend
+            target: production
+          - name: frontend
+            context: frontend
+            target: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Only authenticate when we intend to push (not on PRs from forks, which
+      # cannot receive a write token anyway).
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.name }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          target: ${{ matrix.target }}
+          # The frontend bakes the API proxy destination at build time; the
+          # compose default (service name `backend`) is correct for the image.
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

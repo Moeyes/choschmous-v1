@@ -36,7 +36,9 @@ async def get_dashboard_stats(db: AsyncSession, org_id: Optional[int] = None) ->
     participants_q = select(func.count(athlete_participation.id))
     athletes_q = select(func.count(func.distinct(athlete_participation.athletes_id)))
     if org_id is not None:
-        participants_q = participants_q.where(athlete_participation.organization_id == org_id)
+        participants_q = participants_q.where(
+            athlete_participation.organization_id == org_id
+        )
         athletes_q = athletes_q.where(athlete_participation.organization_id == org_id)
 
     stmt = select(
@@ -55,7 +57,9 @@ async def get_dashboard_stats(db: AsyncSession, org_id: Optional[int] = None) ->
     return result
 
 
-async def get_dashboard_events(db: AsyncSession, limit: int = 10, org_id: Optional[int] = None) -> List[Events]:
+async def get_dashboard_events(
+    db: AsyncSession, limit: int = 10, org_id: Optional[int] = None
+) -> List[Events]:
     stmt = (
         select(Events).order_by(desc(Events.created_at), desc(Events.id)).limit(limit)
     )
@@ -63,7 +67,9 @@ async def get_dashboard_events(db: AsyncSession, limit: int = 10, org_id: Option
     return list(result.scalars().all())
 
 
-async def get_dashboard_sports(db: AsyncSession, limit: int = 10, org_id: Optional[int] = None) -> List[Sport]:
+async def get_dashboard_sports(
+    db: AsyncSession, limit: int = 10, org_id: Optional[int] = None
+) -> List[Sport]:
     stmt = select(Sport).order_by(desc(Sport.created_at), desc(Sport.id)).limit(limit)
     result = await db.execute(stmt)
     return list(result.scalars().all())
@@ -98,6 +104,7 @@ async def get_dashboard_top_organizations(
     await cache_set(cache_key, [list(r) for r in rows], DASHBOARD_CACHE_TTL)
     return rows
 
+
 async def get_dashboard_recent_enrollments(
     db: AsyncSession, limit: int = 10
 ) -> List[Enroll]:
@@ -120,7 +127,9 @@ async def get_dashboard_gender_distribution(
         stmt = (
             select(Enroll.gender, func.count(Enroll.id))
             .join(athletes, athletes.enroll_id == Enroll.id)
-            .join(athlete_participation, athlete_participation.athletes_id == athletes.id)
+            .join(
+                athlete_participation, athlete_participation.athletes_id == athletes.id
+            )
             .where(athlete_participation.organization_id == org_id)
             .group_by(Enroll.gender)
         )
@@ -137,5 +146,3 @@ async def get_dashboard_gender_distribution(
 
     await cache_set(cache_key, distribution, DASHBOARD_CACHE_TTL)
     return distribution
-
-

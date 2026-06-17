@@ -21,9 +21,7 @@ from src.schemas.organization import (
 router = APIRouter()
 
 
-@router.post(
-    "", response_model=OrganizationPublic, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=OrganizationPublic, status_code=status.HTTP_201_CREATED)
 async def create_organization(
     request: Request,
     response: Response,

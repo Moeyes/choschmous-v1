@@ -42,7 +42,9 @@ logger = logging.getLogger(__name__)
 # Matches a managed file reference: "/api/files/{uuid}". Free-form values
 # (external https URLs, legacy /uploads paths, None) are not managed refs and
 # are left untouched — they are never served by the authenticated files route.
-_FILE_REF_RE = re.compile(r"/api/files/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})")
+_FILE_REF_RE = re.compile(
+    r"/api/files/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+)
 
 
 def extract_file_id(path: Optional[str]) -> Optional[uuid.UUID]:
@@ -119,10 +121,12 @@ async def assert_can_reference_files(
         if not await user_can_access_file(db, user, record):
             logger.warning(
                 "Blocked file reference: user=%s role=%s tried to reference file=%s",
-                user.id, getattr(user.role, "value", user.role), file_id,
+                user.id,
+                getattr(user.role, "value", user.role),
+                file_id,
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You may only reference files you uploaded or that belong "
-                       "to your organization/sport.",
+                "to your organization/sport.",
             )

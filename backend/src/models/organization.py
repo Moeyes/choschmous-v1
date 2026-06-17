@@ -19,7 +19,9 @@ class Organization(Base):
         Enum(instituteType, name="institute_type"), nullable=False
     )
     code: Mapped[str] = mapped_column(
-        String(36), unique=True, nullable=False,
+        String(36),
+        unique=True,
+        nullable=False,
         default=lambda: str(uuid.uuid4()),
     )
     created_at: Mapped[datetime] = mapped_column(

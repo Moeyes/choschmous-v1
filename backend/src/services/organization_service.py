@@ -8,7 +8,6 @@ from src.schemas.organization import OrganizationCreate, OrganizationUpdate
 
 
 class OrganizationService:
-
     def __init__(self, db: AsyncSession):
         self.repo = BaseRepository(db, Organization)
         self.db = db

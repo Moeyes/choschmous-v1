@@ -138,7 +138,7 @@ export function SurveyForm({ showHeader = true }: SurveyFormProps = {}) {
     };
     load();
     return () => { isMounted = false; };
-  }, [watchedEventId]);
+  }, [watchedEventId, form]);
 
   const goToStep = useCallback(
     (idx: number) => {

@@ -40,35 +40,67 @@ api_router.include_router(v1_root.router, prefix=V1 + "/root", tags=["root"])
 api_router.include_router(v1_auth.router, prefix=V1 + "/auth", tags=["auth"])
 
 # Protected — require valid access_token cookie
-api_router.include_router(v1_users.router, prefix=V1 + "/users", tags=["users"], dependencies=_auth)
 api_router.include_router(
-    v1_reregister.router, prefix=V1 + "/registration", tags=["registration"], dependencies=_auth
+    v1_users.router, prefix=V1 + "/users", tags=["users"], dependencies=_auth
+)
+api_router.include_router(
+    v1_reregister.router,
+    prefix=V1 + "/registration",
+    tags=["registration"],
+    dependencies=_auth,
 )
 
 # Sports & Events
-api_router.include_router(v1_sports.router, prefix=V1 + "/sports", tags=["sports"], dependencies=_auth)
-api_router.include_router(v1_events.router, prefix=V1 + "/events", tags=["events"], dependencies=_auth)
+api_router.include_router(
+    v1_sports.router, prefix=V1 + "/sports", tags=["sports"], dependencies=_auth
+)
+api_router.include_router(
+    v1_events.router, prefix=V1 + "/events", tags=["events"], dependencies=_auth
+)
 # Public events (no auth) for SSR/metadata
-api_router.include_router(v1_public_events.router, prefix=V1 + "/public/events", tags=["public-events"])
-api_router.include_router(v1_public_sports.router, prefix=V1 + "/public/sports", tags=["public-sports"])
 api_router.include_router(
-    v1_organization.router, prefix=V1 + "/organization", tags=["organization"], dependencies=_auth
-)
-api_router.include_router(v1_sports_events.router, prefix=V1 + "/sports-events", tags=["sports-events"], dependencies=_auth)
-api_router.include_router(
-    v1_category_survey.router, prefix=V1 + "/surveys", tags=["surveys"], dependencies=_auth
+    v1_public_events.router, prefix=V1 + "/public/events", tags=["public-events"]
 )
 api_router.include_router(
-    v1_open_survey.router, prefix=V1 + "/surveys/open", tags=["open-survey"], dependencies=_auth
+    v1_public_sports.router, prefix=V1 + "/public/sports", tags=["public-sports"]
+)
+api_router.include_router(
+    v1_organization.router,
+    prefix=V1 + "/organization",
+    tags=["organization"],
+    dependencies=_auth,
+)
+api_router.include_router(
+    v1_sports_events.router,
+    prefix=V1 + "/sports-events",
+    tags=["sports-events"],
+    dependencies=_auth,
+)
+api_router.include_router(
+    v1_category_survey.router,
+    prefix=V1 + "/surveys",
+    tags=["surveys"],
+    dependencies=_auth,
+)
+api_router.include_router(
+    v1_open_survey.router,
+    prefix=V1 + "/surveys/open",
+    tags=["open-survey"],
+    dependencies=_auth,
 )
 
 # Dashboard / Analytics
 api_router.include_router(
-    v1_dashboard.router, prefix=V1 + "/dashboard", tags=["dashboard"], dependencies=_auth
+    v1_dashboard.router,
+    prefix=V1 + "/dashboard",
+    tags=["dashboard"],
+    dependencies=_auth,
 )
 
 # Excel Download
-api_router.include_router(v1_excel.router, prefix=V1 + "/excel", tags=["excel"], dependencies=_auth)
+api_router.include_router(
+    v1_excel.router, prefix=V1 + "/excel", tags=["excel"], dependencies=_auth
+)
 
 # Card Generation
 api_router.include_router(v1_card.router, prefix=V1, tags=["card"], dependencies=_auth)
@@ -98,7 +130,10 @@ api_router.include_router(
 
 # Cloudinary Presign
 api_router.include_router(
-    v1_cloudinary.router, prefix=V1 + "/cloudinary", tags=["cloudinary"], dependencies=_auth
+    v1_cloudinary.router,
+    prefix=V1 + "/cloudinary",
+    tags=["cloudinary"],
+    dependencies=_auth,
 )
 
 # Database-backed file storage (athlete photos / ID documents), keyed by UUID
@@ -114,6 +149,3 @@ if settings.ENVIRONMENT == "local":
         tags=["maintenance"],
         dependencies=_auth,
     )
-
-
-

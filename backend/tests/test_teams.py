@@ -1,7 +1,7 @@
 """Tests for Phase 3 — Teams CRUD, membership, scoping, and team-gated registration."""
 
-from src.models.enum.event import SportMode, PhaseStatus
-from src.models.enum.user import UserRole, genderEnum
+from src.models.enum.event import SportMode
+from src.models.enum.user import UserRole
 from tests.conftest import make_user
 from tests.factories import (
     link_org_sport,
@@ -20,7 +20,6 @@ async def _register_athlete(
 ):
     """Helper: register an athlete for team membership tests."""
     from src.schemas.enroll import FullRegistrationRequest
-    from datetime import date
 
     payload = FullRegistrationRequest(
         eventId=event.id,
@@ -43,11 +42,14 @@ async def _register_athlete(
     )
     from src.database.deps import get_current_user
     from main import app
+
     api_reg_url = "/api/registration"
     prev = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = lambda: user
     try:
-        resp = await client.post(api_reg_url, json=payload.model_dump(by_alias=True, mode="json"))
+        resp = await client.post(
+            api_reg_url, json=payload.model_dump(by_alias=True, mode="json")
+        )
     finally:
         if prev is not None:
             app.dependency_overrides[get_current_user] = prev
@@ -60,7 +62,7 @@ async def test_create_team_success(client, db_session, as_user):
     event = await make_event(db_session)
     sport = await make_sport(db_session)
     org = await make_org(db_session)
-    se = await make_sports_event(db_session, event, sport, mode=SportMode.TEAM)
+    await make_sports_event(db_session, event, sport, mode=SportMode.TEAM)
     await link_org_sport(db_session, event, sport, org)
 
     admin = make_user(UserRole.ADMIN)
@@ -161,7 +163,7 @@ async def test_team_member_add_remove(client, db_session, as_user):
     sport = await make_sport(db_session)
     org = await make_org(db_session)
     cat = await make_category(db_session, event, sport)
-    se = await make_sports_event(
+    await make_sports_event(
         db_session, event, sport, mode=SportMode.TEAM, team_size_max=5
     )
     await link_org_sport(db_session, event, sport, org)
@@ -283,7 +285,9 @@ async def test_list_teams_with_filters(client, db_session, as_user):
         },
     )
 
-    list_resp = await client.get(f"{TEAMS_URL}?event_id={event.id}&organization_id={org.id}")
+    list_resp = await client.get(
+        f"{TEAMS_URL}?event_id={event.id}&organization_id={org.id}"
+    )
     assert list_resp.status_code == 200
     assert list_resp.json()["count"] == 2
 
@@ -301,15 +305,19 @@ async def test_org_user_only_sees_own_teams(client, db_session, as_user):
     await client.post(
         TEAMS_URL,
         json={
-            "event_id": event.id, "sport_id": sport.id,
-            "org_id": org1.id, "name": "Org1 Team",
+            "event_id": event.id,
+            "sport_id": sport.id,
+            "org_id": org1.id,
+            "name": "Org1 Team",
         },
     )
     await client.post(
         TEAMS_URL,
         json={
-            "event_id": event.id, "sport_id": sport.id,
-            "org_id": org2.id, "name": "Org2 Team",
+            "event_id": event.id,
+            "sport_id": sport.id,
+            "org_id": org2.id,
+            "name": "Org2 Team",
         },
     )
 
@@ -335,8 +343,10 @@ async def test_delete_team_detaches_members(client, db_session, as_user):
     team_resp = await client.post(
         TEAMS_URL,
         json={
-            "event_id": event.id, "sport_id": sport.id,
-            "org_id": org.id, "name": "Del Team",
+            "event_id": event.id,
+            "sport_id": sport.id,
+            "org_id": org.id,
+            "name": "Del Team",
         },
     )
     team_id = team_resp.json()["id"]

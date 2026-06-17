@@ -77,7 +77,9 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None
-    password: str | None = None  # validated for min_length in user_service before hashing
+    password: str | None = (
+        None  # validated for min_length in user_service before hashing
+    )
 
 
 class UserPublic(BaseModel):

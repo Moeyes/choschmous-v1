@@ -15,7 +15,6 @@ class RoleEnum(str, PyEnum):
 
 
 class FullRegistrationRequest(BaseModel):
-
     userId: Optional[uuid.UUID] = Field(None, alias="userId")
 
     eventId: int
@@ -198,7 +197,7 @@ class ParticipantDetailResponse(BaseModel):
     role: str
     # Address
     address: Optional[str] = None
-    
+
     # Document URLs
     photoUrl: Optional[str] = None
     nationalityDocumentUrl: Optional[str] = None

@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/Badge';
-import { cn } from '@/shared/utils/cn';
 import { useTranslations } from 'next-intl';
 import { ReportGenerateModal } from './ReportGenerateModal';
 

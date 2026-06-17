@@ -111,9 +111,7 @@ async def make_category(
     name: str = "U18 បុរស",
     gender: genderEnum = genderEnum.MALE,
 ) -> category:
-    cat = category(
-        events_id=event.id, sports_id=sport.id, category=name, gender=gender
-    )
+    cat = category(events_id=event.id, sports_id=sport.id, category=name, gender=gender)
     db.add(cat)
     await db.flush()
     return cat

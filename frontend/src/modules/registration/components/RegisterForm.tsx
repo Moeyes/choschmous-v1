@@ -231,7 +231,18 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     }
 
     if (isValid && stepIndex < FORM_STEPS.length - 1) goToStep(stepIndex + 1);
-  }, [currentStep, form, FORM_STEPS, stepIndex, goToStep, sportMode, selectedTeam, t]);
+  }, [
+    currentStep,
+    form,
+    FORM_STEPS,
+    stepIndex,
+    goToStep,
+    sportMode,
+    selectedTeam,
+    rosterValid,
+    selectedSport?.team_size_min,
+    t,
+  ]);
 
   const handleBack = useCallback(() => {
     if (stepIndex > 0) goToStep(stepIndex - 1);
@@ -247,7 +258,7 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     [maxReached, FORM_STEPS],
   );
 
-  const handleEditMember = useCallback((enrollId: number) => {
+  const handleEditMember = useCallback(() => {
     setMemberRegistered(false);
     setCurrentStep("personal");
   }, []);

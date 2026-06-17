@@ -1,4 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status, Body
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+    Body,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
@@ -32,7 +41,6 @@ from src.schemas.sports_event_org import (
     EventOrgNamesPublic,
     SportEventOrgOnly,
     SportsEventOrgPublic,
-    SportsEventOrgPublicList,
     SportsEventOrgReviewList,
 )
 from src.schemas.report import SurveyStatusResponse
@@ -233,9 +241,7 @@ async def list_event_sports(event_id: int, db: AsyncSession = Depends(get_db)):
     return await service.get_event_sports(event_id)
 
 
-@router.get(
-    "/{event_id}/my-eligible-sports", response_model=list[EligibleSportPublic]
-)
+@router.get("/{event_id}/my-eligible-sports", response_model=list[EligibleSportPublic])
 async def list_my_eligible_sports(
     event_id: int,
     organization_id: int | None = Query(
@@ -369,6 +375,7 @@ async def list_sport_org_submissions(
     from src.models.organization import Organization
     from src.models.sport import Sport
     from src.models.events import Events
+
     query = (
         sa_select(
             SeoModel.id,
@@ -395,6 +402,7 @@ async def list_sport_org_submissions(
     rows = result.mappings().all()
     return {"data": [dict(r) for r in rows], "count": len(rows)}
 
+
 @router.patch("/sport-org/{id}/review", response_model=SportsEventOrgPublic)
 async def review_sport_org(
     id: int,
@@ -420,6 +428,7 @@ async def review_sport_org(
     await db.commit()
     await db.refresh(obj)
     return obj
+
 
 @router.delete("/delete-event-sport-org-link", status_code=status.HTTP_200_OK)
 async def delete_event_sport_org_link(
@@ -479,9 +488,7 @@ async def list_unique_orgs_in_event(event_id: int, db: AsyncSession = Depends(ge
     return await service.get_organizations_in_event(event_id)
 
 
-@router.delete(
-    "/remove-org-completely-from-event", status_code=status.HTTP_200_OK
-)
+@router.delete("/remove-org-completely-from-event", status_code=status.HTTP_200_OK)
 async def remove_org_completely_from_event(
     body: RemoveOrgCompletelyFromEventBody = Body(...),
     db: AsyncSession = Depends(get_db),

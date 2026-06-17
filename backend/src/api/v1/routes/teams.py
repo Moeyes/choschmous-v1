@@ -7,7 +7,6 @@ from src.database.deps import (
     get_current_user,
     get_effective_org_id,
     enforce_org_access,
-    require_staff,
 )
 from src.models.user import User
 from src.schemas.team import (
@@ -42,7 +41,9 @@ async def create_team(
     overridden). Validates the sport's mode allows teams, and checks the
     per-org team quota.
     """
-    await sports_event_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await sports_event_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     effective_org_id = get_effective_org_id(current_user, payload.org_id)
     if effective_org_id is None:
         raise HTTPException(status_code=400, detail="org_id is required")
@@ -142,7 +143,9 @@ async def delete_team(
 
     Org users may only delete their own org's teams.
     """
-    await sports_event_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await sports_event_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     service = TeamService(db)
     team = await service.get_team(team_id)
     if not team:
@@ -170,7 +173,9 @@ async def add_team_member(
     Validates the athlete is registered in the same event/sport/org as the
     team, the team is not full, and the athlete is not already on another team.
     """
-    await sports_event_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await sports_event_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     service = TeamService(db)
     team = await service.get_team(team_id)
     if not team:
@@ -198,7 +203,9 @@ async def finalize_team(
     is skipped when no minimum is configured. Org users may only finalize their
     own org's teams.
     """
-    await sports_event_write_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await sports_event_write_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     service = TeamService(db)
     team = await service.get_team(team_id)
     if not team:

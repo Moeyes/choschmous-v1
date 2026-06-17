@@ -90,7 +90,9 @@ async def require_staff(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-def get_effective_org_id(current_user: User, client_org_id: Optional[int]) -> Optional[int]:
+def get_effective_org_id(
+    current_user: User, client_org_id: Optional[int]
+) -> Optional[int]:
     """
     Return the organization_id that a query should be filtered by.
 

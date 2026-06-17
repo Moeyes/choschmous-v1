@@ -23,9 +23,16 @@ from tests.factories import make_org, make_sport
 async def _user_row(db, role, *, org_id=None, sport_id=None) -> User:
     """A persisted user (so uploaded_by -> org/sport resolves)."""
     u = User(
-        kh_family_name="x", kh_given_name="x", en_family_name="x", en_given_name="x",
-        email=f"{uuid.uuid4().hex}@t.local", username=uuid.uuid4().hex[:14],
-        hashed_password="x", role=role, organization_id=org_id, sport_id=sport_id,
+        kh_family_name="x",
+        kh_given_name="x",
+        en_family_name="x",
+        en_given_name="x",
+        email=f"{uuid.uuid4().hex}@t.local",
+        username=uuid.uuid4().hex[:14],
+        hashed_password="x",
+        role=role,
+        organization_id=org_id,
+        sport_id=sport_id,
     )
     db.add(u)
     await db.flush()
@@ -33,24 +40,36 @@ async def _user_row(db, role, *, org_id=None, sport_id=None) -> User:
 
 
 async def _file(db, uploader_id) -> UploadedFile:
-    f = UploadedFile(content_type="image/png", size=3, data=b"abc", uploaded_by=uploader_id)
+    f = UploadedFile(
+        content_type="image/png", size=3, data=b"abc", uploaded_by=uploader_id
+    )
     db.add(f)
     await db.flush()
     return f
 
 
 def _inmem_user(role, *, uid=None, org_id=None, sport_id=None) -> User:
-    return User(id=uid or uuid.uuid4(), role=role, organization_id=org_id, sport_id=sport_id)
+    return User(
+        id=uid or uuid.uuid4(), role=role, organization_id=org_id, sport_id=sport_id
+    )
 
 
 # ── ALLOWED ────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_admin_can_access_any_file(db_session):
-    uploader = await _user_row(db_session, UserRole.ORGANIZATION, org_id=(await make_org(db_session)).id)
+    uploader = await _user_row(
+        db_session, UserRole.ORGANIZATION, org_id=(await make_org(db_session)).id
+    )
     f = await _file(db_session, uploader.id)
-    assert await user_can_access_file(db_session, _inmem_user(UserRole.ADMIN), f) is True
-    assert await user_can_access_file(db_session, _inmem_user(UserRole.SUPER_ADMIN), f) is True
+    assert (
+        await user_can_access_file(db_session, _inmem_user(UserRole.ADMIN), f) is True
+    )
+    assert (
+        await user_can_access_file(db_session, _inmem_user(UserRole.SUPER_ADMIN), f)
+        is True
+    )
 
 
 @pytest.mark.asyncio
@@ -80,6 +99,7 @@ async def test_same_sport_federation_can_access(db_session):
 
 # ── DENIED ─────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_different_org_denied(db_session):
     org_a, org_b = await make_org(db_session), await make_org(db_session)
@@ -100,25 +120,45 @@ async def test_different_sport_denied(db_session):
 
 @pytest.mark.asyncio
 async def test_org_user_without_org_denied(db_session):
-    uploader = await _user_row(db_session, UserRole.ORGANIZATION, org_id=(await make_org(db_session)).id)
+    uploader = await _user_row(
+        db_session, UserRole.ORGANIZATION, org_id=(await make_org(db_session)).id
+    )
     f = await _file(db_session, uploader.id)
-    assert await user_can_access_file(db_session, _inmem_user(UserRole.ORGANIZATION, org_id=None), f) is False
+    assert (
+        await user_can_access_file(
+            db_session, _inmem_user(UserRole.ORGANIZATION, org_id=None), f
+        )
+        is False
+    )
 
 
 @pytest.mark.asyncio
 async def test_orphan_file_denied_to_non_admin(db_session):
     f = await _file(db_session, None)  # no uploader recorded
-    assert await user_can_access_file(db_session, _inmem_user(UserRole.ORGANIZATION, org_id=1), f) is False
-    assert await user_can_access_file(db_session, _inmem_user(UserRole.ADMIN), f) is True
+    assert (
+        await user_can_access_file(
+            db_session, _inmem_user(UserRole.ORGANIZATION, org_id=1), f
+        )
+        is False
+    )
+    assert (
+        await user_can_access_file(db_session, _inmem_user(UserRole.ADMIN), f) is True
+    )
 
 
 @pytest.mark.asyncio
 async def test_unknown_uploader_denied(db_session):
     f = await _file(db_session, uuid.uuid4())  # uploaded_by points to no real user
-    assert await user_can_access_file(db_session, _inmem_user(UserRole.ORGANIZATION, org_id=1), f) is False
+    assert (
+        await user_can_access_file(
+            db_session, _inmem_user(UserRole.ORGANIZATION, org_id=1), f
+        )
+        is False
+    )
 
 
 # ── Reference validation (registration / update / organizer) ────────────
+
 
 @pytest.mark.asyncio
 async def test_reference_validation_allows_owned_and_freeform(db_session):
@@ -127,12 +167,15 @@ async def test_reference_validation_allows_owned_and_freeform(db_session):
     f = await _file(db_session, uploader.id)
     # Owner referencing own managed file + external/legacy/None all pass.
     await assert_can_reference_files(
-        db_session, uploader,
+        db_session,
+        uploader,
         [f"/api/files/{f.id}", "https://example.com/x.jpg", "/uploads/y.jpg", None],
     )
     # Same-org colleague may also reference it.
     await assert_can_reference_files(
-        db_session, _inmem_user(UserRole.ORGANIZATION, org_id=org.id), [f"/api/files/{f.id}"]
+        db_session,
+        _inmem_user(UserRole.ORGANIZATION, org_id=org.id),
+        [f"/api/files/{f.id}"],
     )
 
 
@@ -140,7 +183,9 @@ async def test_reference_validation_allows_owned_and_freeform(db_session):
 async def test_reference_validation_rejects_forged_uuid(db_session):
     caller = _inmem_user(UserRole.ORGANIZATION, org_id=1)
     with pytest.raises(HTTPException) as e:
-        await assert_can_reference_files(db_session, caller, [f"/api/files/{uuid.uuid4()}"])
+        await assert_can_reference_files(
+            db_session, caller, [f"/api/files/{uuid.uuid4()}"]
+        )
     assert e.value.status_code == 400
 
 
@@ -156,6 +201,7 @@ async def test_reference_validation_rejects_stolen_file(db_session):
 
 
 # ── Cross-role boundary checks ──────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_org_user_cannot_access_federation_file(db_session):
@@ -192,6 +238,7 @@ async def test_federation_user_without_sport_denied(db_session):
 
 # ── User-service write-time reference validation ──────────────────────
 
+
 @pytest.mark.asyncio
 async def test_user_create_rejects_stolen_file_ref(db_session):
     """UserService.create_user must reject a photo_path that references a file
@@ -203,11 +250,15 @@ async def test_user_create_rejects_stolen_file_ref(db_session):
 
     svc = UserService(db_session)
     payload = UserCreate(
-        kh_family_name="a", kh_given_name="b",
-        en_family_name="c", en_given_name="d",
-        email="test@example.org", username="testuser",
+        kh_family_name="a",
+        kh_given_name="b",
+        en_family_name="c",
+        en_given_name="d",
+        email="test@example.org",
+        username="testuser",
         password="Str0ng!Pass",
-        role=UserRole.ORGANIZATION, organization_id=org_b.id,
+        role=UserRole.ORGANIZATION,
+        organization_id=org_b.id,
         photo_path=f"/api/files/{f.id}",
     )
     with pytest.raises(HTTPException) as e:
@@ -222,9 +273,12 @@ async def test_user_create_rejects_forged_uuid(db_session):
     svc = UserService(db_session)
     admin = _inmem_user(UserRole.SUPER_ADMIN)
     payload = UserCreate(
-        kh_family_name="a", kh_given_name="b",
-        en_family_name="c", en_given_name="d",
-        email="test2@example.org", username="testuser2",
+        kh_family_name="a",
+        kh_given_name="b",
+        en_family_name="c",
+        en_given_name="d",
+        email="test2@example.org",
+        username="testuser2",
         password="Str0ng!Pass",
         role=UserRole.SUPER_ADMIN,
         photo_path=f"/api/files/{uuid.uuid4()}",
@@ -241,9 +295,12 @@ async def test_user_create_allows_external_url(db_session):
     svc = UserService(db_session)
     admin = _inmem_user(UserRole.SUPER_ADMIN)
     payload = UserCreate(
-        kh_family_name="a", kh_given_name="b",
-        en_family_name="c", en_given_name="d",
-        email="test3@example.org", username="testuser3",
+        kh_family_name="a",
+        kh_given_name="b",
+        en_family_name="c",
+        en_given_name="d",
+        email="test3@example.org",
+        username="testuser3",
         password="Str0ng!Pass",
         role=UserRole.SUPER_ADMIN,
         photo_path="https://example.com/photo.jpg",
@@ -259,9 +316,12 @@ async def test_user_create_allows_own_file_ref(db_session):
     f = await _file(db_session, admin.id)
     svc = UserService(db_session)
     payload = UserCreate(
-        kh_family_name="a", kh_given_name="b",
-        en_family_name="c", en_given_name="d",
-        email="test4@example.org", username="testuser4",
+        kh_family_name="a",
+        kh_given_name="b",
+        en_family_name="c",
+        en_given_name="d",
+        email="test4@example.org",
+        username="testuser4",
         password="Str0ng!Pass",
         role=UserRole.SUPER_ADMIN,
         photo_path=f"/api/files/{f.id}",
@@ -289,6 +349,7 @@ async def test_user_update_rejects_stolen_file_ref(db_session):
 
 # ── Self-reference bypass (re-audit confirmation) ──────────────────────
 
+
 @pytest.mark.asyncio
 async def test_self_reference_bypass_should_be_denied(db_session):
     """The original security finding: forging an enrollment that references a
@@ -307,14 +368,21 @@ async def test_self_reference_bypass_should_be_denied(db_session):
     # Create an enrollment in the attacker's org that references the victim's file.
     from src.models.enroll import Enroll
     from src.models.athletes import athletes as Athlete
-    from src.models.athlete_participation import athlete_participation as AthleteParticipation
+    from src.models.athlete_participation import (
+        athlete_participation as AthleteParticipation,
+    )
     from src.models.enum.user import IdDocumentType, genderEnum
     from datetime import date
 
     enroll = Enroll(
-        kh_family_name="x", kh_given_name="x", en_family_name="x", en_given_name="x",
-        phonenumber="012345678", gender=genderEnum.MALE,
-        date_of_birth=date(2000, 1, 1), id_document_type=list(IdDocumentType)[0],
+        kh_family_name="x",
+        kh_given_name="x",
+        en_family_name="x",
+        en_given_name="x",
+        phonenumber="012345678",
+        gender=genderEnum.MALE,
+        date_of_birth=date(2000, 1, 1),
+        id_document_type=list(IdDocumentType)[0],
         national_id_path=f"/api/files/{f.id}",
     )
     db_session.add(enroll)
@@ -322,7 +390,9 @@ async def test_self_reference_bypass_should_be_denied(db_session):
     ath = Athlete(enroll_id=enroll.id)
     db_session.add(ath)
     await db_session.flush()
-    ap = AthleteParticipation(athletes_id=ath.id, organization_id=org_attacker.id, sports_id=sport.id)
+    ap = AthleteParticipation(
+        athletes_id=ath.id, organization_id=org_attacker.id, sports_id=sport.id
+    )
     db_session.add(ap)
     await db_session.flush()
 

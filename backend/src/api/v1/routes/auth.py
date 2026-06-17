@@ -129,7 +129,10 @@ async def get_session(
     - `403 Forbidden`: Cannot view another user's profile.
     - `404 Not Found`: User not found.
     """
-    if current_user.id != user_id and current_user.role not in (UserRole.ADMIN, UserRole.SUPER_ADMIN):
+    if current_user.id != user_id and current_user.role not in (
+        UserRole.ADMIN,
+        UserRole.SUPER_ADMIN,
+    ):
         raise HTTPException(status_code=403, detail="Access denied")
     user = await db_service.get_user(user_id)
     return user

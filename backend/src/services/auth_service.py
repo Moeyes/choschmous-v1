@@ -35,19 +35,19 @@ _DUMMY_PASSWORD_HASH: str | None = None
 def _dummy_hash() -> str:
     global _DUMMY_PASSWORD_HASH
     if _DUMMY_PASSWORD_HASH is None:
-        _DUMMY_PASSWORD_HASH = hash_password("constant-time-equalizer-not-a-real-password")
+        _DUMMY_PASSWORD_HASH = hash_password(
+            "constant-time-equalizer-not-a-real-password"
+        )
     return _DUMMY_PASSWORD_HASH
 
 
 class AuthService:
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
     def _set_auth_cookies(
         self, response: Response, access_token: str, refresh_token: str
     ):
-
         access_max_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
         refresh_max_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
 
@@ -107,9 +107,19 @@ class AuthService:
         hashed = user.hashed_password if user else _dummy_hash()
         password_ok = verify_password(password, hashed)
 
-        if user and user.locked_until and user.locked_until > datetime.now(timezone.utc):
-            remaining = int((user.locked_until - datetime.now(timezone.utc)).total_seconds())
-            logger.warning("Login attempt on locked account %s (%ds remaining)", username, remaining)
+        if (
+            user
+            and user.locked_until
+            and user.locked_until > datetime.now(timezone.utc)
+        ):
+            remaining = int(
+                (user.locked_until - datetime.now(timezone.utc)).total_seconds()
+            )
+            logger.warning(
+                "Login attempt on locked account %s (%ds remaining)",
+                username,
+                remaining,
+            )
             raise HTTPException(
                 status_code=401,
                 detail="Invalid credentials",
@@ -196,7 +206,6 @@ class AuthService:
         return {"detail": "Logged out"}
 
     async def refresh_tokens(self, refresh_token: str | None, response: Response):
-
         if not refresh_token:
             raise HTTPException(status_code=401, detail="Refresh token missing")
 
@@ -236,9 +245,7 @@ class AuthService:
             )
 
         if record.token_hash != hash_token_value(refresh_token):
-            raise HTTPException(
-                status_code=401, detail="Refresh token hash mismatch"
-            )
+            raise HTTPException(status_code=401, detail="Refresh token hash mismatch")
 
         # revoke old token
         record.revoked = True

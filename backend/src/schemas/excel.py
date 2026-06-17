@@ -25,9 +25,6 @@ class OrgSportParticipantExcelResponse(BaseModel):
     data: list[SportParticipantCount]
 
 
-from datetime import datetime
-
-
 class AttendedCategory(BaseModel):
     category: str
     gender: str | None = None

@@ -1,7 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
-from src.models.enum.user import genderEnum
 
 
 class CategoryPublic(BaseModel):

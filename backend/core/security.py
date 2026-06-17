@@ -30,7 +30,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def _build_payload(sub: str, role: str, token_type: str, expires_delta: timedelta, jti: str | None = None) -> Dict[str, Any]:
+def _build_payload(
+    sub: str,
+    role: str,
+    token_type: str,
+    expires_delta: timedelta,
+    jti: str | None = None,
+) -> Dict[str, Any]:
     now = datetime.now(timezone.utc)
     exp = now + expires_delta
     payload: Dict[str, Any] = {
@@ -47,24 +53,36 @@ def _build_payload(sub: str, role: str, token_type: str, expires_delta: timedelt
 
 def create_access_token(sub: str, role: str) -> str:
     expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    claims = _build_payload(sub=sub, role=role, token_type="access", expires_delta=expires)
+    claims = _build_payload(
+        sub=sub, role=role, token_type="access", expires_delta=expires
+    )
     return jwt.encode(claims, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
-def create_refresh_token(sub: str, role: str, jti: str | None = None) -> tuple[str, str]:
+def create_refresh_token(
+    sub: str, role: str, jti: str | None = None
+) -> tuple[str, str]:
     refresh_jti = jti or str(uuid.uuid4())
     expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    claims = _build_payload(sub=sub, role=role, token_type="refresh", expires_delta=expires, jti=refresh_jti)
-    encoded = jwt.encode(claims, settings.JWT_REFRESH_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    claims = _build_payload(
+        sub=sub, role=role, token_type="refresh", expires_delta=expires, jti=refresh_jti
+    )
+    encoded = jwt.encode(
+        claims, settings.JWT_REFRESH_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+    )
     return encoded, refresh_jti
 
 
 def decode_access_token(token: str) -> Dict[str, Any]:
-    return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    return jwt.decode(
+        token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+    )
 
 
 def decode_refresh_token(token: str) -> Dict[str, Any]:
-    return jwt.decode(token, settings.JWT_REFRESH_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    return jwt.decode(
+        token, settings.JWT_REFRESH_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+    )
 
 
 def decode_token(token: str) -> Dict[str, Any]:

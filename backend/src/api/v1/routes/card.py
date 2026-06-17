@@ -24,6 +24,7 @@ class PaginatedCardsResponse(BaseModel):
     cards: List[CardResponse]
     total: int
 
+
 @router.get(
     "/card/{p_id}/{org_id}/{event_id}",
     summary="Retrieve card by participant ID, organization, and event",

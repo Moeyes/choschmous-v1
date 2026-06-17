@@ -1,0 +1,78 @@
+name: Migrations
+
+# Exercises the migration tooling against a fresh database, following this
+# project's documented bootstrap design (NOT a plain `alembic upgrade` from
+# empty — that fails by design, because the schema is created via
+# `create_all` and Alembic only carries deltas on top of a stamped baseline).
+#
+#   1. create_all (scripts/init_db_schema.py)  → builds every table from models
+#   2. alembic stamp head                       → baselines that schema
+#   3. alembic upgrade head                     → must be a clean no-op; this is
+#                                                 what catches a newly-added
+#                                                 migration that is broken
+#   4. alembic check (ADVISORY)                 → model/metadata drift. Non-
+#                                                 blocking: autogenerate currently
+#                                                 reports a cosmetic enum
+#                                                 `schema='public'` diff on
+#                                                 users.role. Flip to a hard gate
+#                                                 once that noise is resolved.
+
+on:
+  pull_request:
+    paths:
+      - "backend/src/models/**"
+      - "backend/alembic/**"
+      - "backend/scripts/init_db_schema.py"
+      - ".github/workflows/migrations.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/src/models/**"
+      - "backend/alembic/**"
+
+concurrency:
+  group: migrations-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  alembic:
+    name: Bootstrap + migration smoke
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: moeys_migrations
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: moeys_migrations
+      ENVIRONMENT: local
+      JWT_SECRET_KEY: ci-test-secret-key-not-for-production-0001
+      JWT_REFRESH_SECRET_KEY: ci-test-refresh-secret-not-for-prod-0002
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Sync dependencies
+        run: uv sync --frozen
+      - name: Bootstrap schema (create_all)
+        run: uv run python scripts/init_db_schema.py
+      - name: Baseline with Alembic
+        run: uv run alembic stamp head
+      - name: alembic upgrade head (must be a clean no-op)
+        run: uv run alembic upgrade head
+      - name: alembic check (model/metadata drift)
+        run: uv run alembic check
+        continue-on-error: true # advisory — see header note (cosmetic enum diff)

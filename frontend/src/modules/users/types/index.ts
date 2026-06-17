@@ -1,4 +1,3 @@
-import type { User } from '@/core/auth';
 import { UserRole } from '@/core/auth';
 
 /**
@@ -21,9 +20,4 @@ export interface UserCreate {
 export interface UserUpdate extends Partial<UserCreate> {
   id: string;
   is_active?: boolean;
-}
-
-interface UserListResponse {
-  users: User[];
-  total: number;
 }

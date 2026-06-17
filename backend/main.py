@@ -35,10 +35,12 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 if settings.SENTRY_DSN and settings.ENVIRONMENT.lower() != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
 
+
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
     await close_redis()
+
 
 # Only expose the OpenAPI schema + interactive docs in local/dev. In production
 # the full API surface should not be publicly enumerable.
@@ -90,7 +92,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 403:
         logger.warning(
             "Access denied [%s] %s: %s",
-            request.method, request.url.path, exc.detail,
+            request.method,
+            request.url.path,
+            exc.detail,
         )
     if exc.status_code >= 500:
         logger.exception("Server error %s: %s", exc.status_code, exc.detail)

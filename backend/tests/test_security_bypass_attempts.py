@@ -5,7 +5,6 @@ Trust nothing from prior passes: every test here attempts a real bypass and only
 are tracked and will flip to xpass when fixed.
 """
 
-import asyncio
 import types
 import uuid
 from datetime import date
@@ -17,7 +16,9 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 from core import ratelimit
 from core.ratelimit import RateLimiter
 from src.api.v1.routes import reports as reports_route
-from src.models.athlete_participation import athlete_participation as AthleteParticipation
+from src.models.athlete_participation import (
+    athlete_participation as AthleteParticipation,
+)
 from src.models.athletes import athletes as Athlete
 from src.models.enroll import Enroll
 from src.models.enum.user import IdDocumentType, UserRole, genderEnum
@@ -39,26 +40,31 @@ _ID_DOC = list(IdDocumentType)[0]
 # 1. SSRF — try to bypass the WeasyPrint url_fetcher allowlist
 # ════════════════════════════════════════════════════════════════════════
 
+
 @pytest.mark.parametrize(
     "url",
     [
-        "FILE:///etc/passwd",                  # uppercase scheme
-        "file:/etc/passwd",                    # single-slash form
-        "file:////etc/passwd",                 # extra slashes
-        "fIlE:///etc/shadow",                  # mixed case
-        "http://0x7f000001/",                  # hex-encoded 127.0.0.1
-        "http://2130706433/",                  # decimal-encoded 127.0.0.1
-        "http://017700000001/",                # octal-encoded
-        "http://127.0.0.1.nip.io/",            # public name resolving to loopback
-        "http://[::ffff:169.254.169.254]/",    # ipv6-mapped metadata IP
+        "FILE:///etc/passwd",  # uppercase scheme
+        "file:/etc/passwd",  # single-slash form
+        "file:////etc/passwd",  # extra slashes
+        "fIlE:///etc/shadow",  # mixed case
+        "http://0x7f000001/",  # hex-encoded 127.0.0.1
+        "http://2130706433/",  # decimal-encoded 127.0.0.1
+        "http://017700000001/",  # octal-encoded
+        "http://127.0.0.1.nip.io/",  # public name resolving to loopback
+        "http://[::ffff:169.254.169.254]/",  # ipv6-mapped metadata IP
         "http://169.254.169.254/latest/meta-data/",
         "http://[::1]/",
-        "http://10.1.2.3/", "http://192.168.0.1/", "http://172.16.5.5/",
-        "http://localhost/", "https://metadata.google.internal/",
-        "http://example.com/track.png",        # public host: still denied (no remote)
-        "//evil.example/x",                    # scheme-relative
-        "jar:file:///etc/passwd",              # nested scheme
-        "ftp://evil/x", "gopher://evil/x",
+        "http://10.1.2.3/",
+        "http://192.168.0.1/",
+        "http://172.16.5.5/",
+        "http://localhost/",
+        "https://metadata.google.internal/",
+        "http://example.com/track.png",  # public host: still denied (no remote)
+        "//evil.example/x",  # scheme-relative
+        "jar:file:///etc/passwd",  # nested scheme
+        "ftp://evil/x",
+        "gopher://evil/x",
     ],
 )
 def test_ssrf_fetcher_blocks_every_evasion(url):
@@ -91,7 +97,7 @@ def test_weasyprint_actually_routes_resources_through_fetcher():
         url_fetcher=spy,
     ).write_pdf()
 
-    assert "http://169.254.169.254/latest/meta-data/" in seen   # routed through fetcher
+    assert "http://169.254.169.254/latest/meta-data/" in seen  # routed through fetcher
     assert "http://169.254.169.254/latest/meta-data/" in blocked  # and blocked
 
 
@@ -99,8 +105,11 @@ def test_weasyprint_actually_routes_resources_through_fetcher():
 # 2. File authorization — try to bypass object-level access control
 # ════════════════════════════════════════════════════════════════════════
 
+
 async def _make_file(db, uploader_id):
-    f = UploadedFile(content_type="image/png", size=3, data=b"abc", uploaded_by=uploader_id)
+    f = UploadedFile(
+        content_type="image/png", size=3, data=b"abc", uploaded_by=uploader_id
+    )
     db.add(f)
     await db.flush()
     return f
@@ -108,9 +117,14 @@ async def _make_file(db, uploader_id):
 
 async def _make_enroll_referencing(db, file_id, *, org_id, sport_id):
     enroll = Enroll(
-        kh_family_name="ស", kh_given_name="ដ", en_family_name="S", en_given_name="D",
-        phonenumber="012345678", gender=genderEnum.MALE,
-        date_of_birth=date(2000, 1, 1), id_document_type=_ID_DOC,
+        kh_family_name="ស",
+        kh_given_name="ដ",
+        en_family_name="S",
+        en_given_name="D",
+        phonenumber="012345678",
+        gender=genderEnum.MALE,
+        date_of_birth=date(2000, 1, 1),
+        id_document_type=_ID_DOC,
         national_id_path=f"/api/files/{file_id}",
     )
     db.add(enroll)
@@ -118,14 +132,18 @@ async def _make_enroll_referencing(db, file_id, *, org_id, sport_id):
     ath = Athlete(enroll_id=enroll.id)
     db.add(ath)
     await db.flush()
-    ap = AthleteParticipation(athletes_id=ath.id, organization_id=org_id, sports_id=sport_id)
+    ap = AthleteParticipation(
+        athletes_id=ath.id, organization_id=org_id, sports_id=sport_id
+    )
     db.add(ap)
     await db.flush()
     return enroll
 
 
 def _user(role, *, uid=None, org_id=None, sport_id=None):
-    return User(id=uid or uuid.uuid4(), role=role, organization_id=org_id, sport_id=sport_id)
+    return User(
+        id=uid or uuid.uuid4(), role=role, organization_id=org_id, sport_id=sport_id
+    )
 
 
 @pytest.mark.asyncio
@@ -152,16 +170,24 @@ async def test_self_reference_bypass_is_denied(db_session):
 
     # Victim's file, uploaded by a real victim-org user (persisted so its org resolves).
     victim = User(
-        kh_family_name="v", kh_given_name="v", en_family_name="v", en_given_name="v",
-        email=f"{uuid.uuid4().hex}@t.local", username=uuid.uuid4().hex[:14],
-        hashed_password="x", role=UserRole.ORGANIZATION, organization_id=org_victim.id,
+        kh_family_name="v",
+        kh_given_name="v",
+        en_family_name="v",
+        en_given_name="v",
+        email=f"{uuid.uuid4().hex}@t.local",
+        username=uuid.uuid4().hex[:14],
+        hashed_password="x",
+        role=UserRole.ORGANIZATION,
+        organization_id=org_victim.id,
     )
     db_session.add(victim)
     await db_session.flush()
     f = await _make_file(db_session, victim.id)
 
     # Attacker forges an enrollment in THEIR org referencing the victim's file.
-    await _make_enroll_referencing(db_session, f.id, org_id=org_attacker.id, sport_id=sport.id)
+    await _make_enroll_referencing(
+        db_session, f.id, org_id=org_attacker.id, sport_id=sport.id
+    )
     attacker = _user(UserRole.ORGANIZATION, org_id=org_attacker.id)
 
     # The self-reference is ignored — denied.
@@ -171,6 +197,7 @@ async def test_self_reference_bypass_is_denied(db_session):
 # ════════════════════════════════════════════════════════════════════════
 # 3. Redis fallback — try to break graceful degradation
 # ════════════════════════════════════════════════════════════════════════
+
 
 @pytest.fixture
 def real_rate_limiter(monkeypatch):
@@ -197,7 +224,7 @@ async def test_fallback_when_pipeline_creation_raises(monkeypatch, real_rate_lim
     lim = RateLimiter(max_requests=2, window_seconds=60, prefix="rl:adv:pipe")
     await lim.check(_req())
     await lim.check(_req())
-    with pytest.raises(HTTPException) as e:   # memory fallback still enforces
+    with pytest.raises(HTTPException) as e:  # memory fallback still enforces
         await lim.check(_req())
     assert e.value.status_code == 429
 
@@ -216,6 +243,7 @@ async def test_fallback_when_get_redis_itself_raises(monkeypatch, real_rate_limi
 # ════════════════════════════════════════════════════════════════════════
 # 4. Report throttling + render isolation — try to exhaust workers
 # ════════════════════════════════════════════════════════════════════════
+
 
 def test_report_limiter_is_tight():
     assert reports_route.report_limiter.max_requests <= 10
@@ -245,6 +273,7 @@ async def test_render_offload_times_out(monkeypatch):
 
     def slow_render(*_a):
         import time
+
         time.sleep(1.0)
         return b"never"
 

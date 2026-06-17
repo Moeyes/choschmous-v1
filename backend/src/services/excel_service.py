@@ -5,7 +5,6 @@ from src.models.events import Events
 
 
 class ExcelService:
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -129,15 +128,23 @@ class ExcelService:
         leader_rows = (await self.db.execute(leader_query)).all()
 
         grand_totals = {
-            "delegate_male": 0, "delegate_female": 0,
-            "manager_male": 0, "manager_female": 0,
-            "coach_male": 0, "coach_female": 0,
-            "athlete_male": 0, "athlete_female": 0,
-            "total_male": 0, "total_female": 0, "total": 0,
+            "delegate_male": 0,
+            "delegate_female": 0,
+            "manager_male": 0,
+            "manager_female": 0,
+            "coach_male": 0,
+            "coach_female": 0,
+            "athlete_male": 0,
+            "athlete_female": 0,
+            "total_male": 0,
+            "total_female": 0,
+            "total": 0,
         }
 
         data = []
-        _gender_key = lambda g: g.value.lower() if hasattr(g, "value") else str(g).lower()
+
+        def _gender_key(g):
+            return g.value.lower() if hasattr(g, "value") else str(g).lower()
 
         for sport_id, sport_name in sports.items():
             # Aggregate athletes for this sport
@@ -153,9 +160,12 @@ class ExcelService:
                 LeaderRole.COACH: "coach",
             }
             role_counts = {
-                "delegate_male": 0, "delegate_female": 0,
-                "manager_male": 0, "manager_female": 0,
-                "coach_male": 0, "coach_female": 0,
+                "delegate_male": 0,
+                "delegate_female": 0,
+                "manager_male": 0,
+                "manager_female": 0,
+                "coach_male": 0,
+                "coach_female": 0,
             }
             for sid, role, gender, cnt in leader_rows:
                 if sid == sport_id:
@@ -185,16 +195,18 @@ class ExcelService:
             grand_totals["total_female"] += total_female
             grand_totals["total"] += total
 
-            data.append({
-                "sport_id": sport_id,
-                "sport_name": sport_name,
-                **role_counts,
-                "athlete_male": athlete_counts["male"],
-                "athlete_female": athlete_counts["female"],
-                "total_male": total_male,
-                "total_female": total_female,
-                "total": total,
-            })
+            data.append(
+                {
+                    "sport_id": sport_id,
+                    "sport_name": sport_name,
+                    **role_counts,
+                    "athlete_male": athlete_counts["male"],
+                    "athlete_female": athlete_counts["female"],
+                    "total_male": total_male,
+                    "total_female": total_female,
+                    "total": total,
+                }
+            )
 
         data.append({"sport_id": None, "sport_name": "សរុប", **grand_totals})
 

@@ -50,7 +50,9 @@ async def check_idempotency(request: Request) -> Optional[dict]:
                 return JSONResponse(status_code=body.get("_status", 200), content=body)
             return hashed
         except (RedisError, ConnectionError, OSError) as exc:
-            logger.warning("Idempotency check degraded to in-memory (Redis down): %s", exc)
+            logger.warning(
+                "Idempotency check degraded to in-memory (Redis down): %s", exc
+            )
 
     # In-memory fallback (per-process; acceptable degradation when Redis is down).
     _prune_memory(time.time())
@@ -63,8 +65,12 @@ async def store_idempotency_result(key_hash: str, status_code: int, body: dict):
     redis = await get_redis()
     if redis is not None:
         try:
-            await redis.setex(f"idempotency:{key_hash}", IDEMPOTENCY_TTL, json.dumps(body))
+            await redis.setex(
+                f"idempotency:{key_hash}", IDEMPOTENCY_TTL, json.dumps(body)
+            )
             return
         except (RedisError, ConnectionError, OSError) as exc:
-            logger.warning("Idempotency store degraded to in-memory (Redis down): %s", exc)
+            logger.warning(
+                "Idempotency store degraded to in-memory (Redis down): %s", exc
+            )
     _used_keys[key_hash] = body

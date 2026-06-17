@@ -24,8 +24,9 @@ from src.services.report_renderers import (
 
 # ── Injection: dynamic content is HTML-escaped ─────────────────────────
 
+
 def test_build_report_html_escapes_cell_values():
-    rows = [{"no": 1, "name": '<img src=x onerror=alert(1)>'}]
+    rows = [{"no": 1, "name": "<img src=x onerror=alert(1)>"}]
     html = build_report_html("Title", "Sub", ["No", "Name"], rows, ["no", "name"])
     assert "<img src=x" not in html
     assert "&lt;img src=x onerror=alert(1)&gt;" in html
@@ -55,6 +56,7 @@ def test_render_pdf_with_malicious_name_does_not_crash_and_produces_pdf():
 
 # ── SSRF / local-file-read: url_fetcher allowlist ──────────────────────
 
+
 @pytest.mark.parametrize(
     "url",
     [
@@ -62,14 +64,14 @@ def test_render_pdf_with_malicious_name_does_not_crash_and_produces_pdf():
         "file:///etc/shadow",
         "ftp://attacker.example/x",
         "gopher://attacker.example/x",
-        "http://169.254.169.254/latest/meta-data/",   # cloud metadata
-        "http://127.0.0.1:8000/internal",             # loopback
-        "http://localhost/internal",                  # loopback name
-        "http://10.0.0.5/internal",                   # private
-        "http://192.168.1.1/internal",                # private
-        "http://172.16.0.1/internal",                 # private
-        "http://[::1]/internal",                      # ipv6 loopback
-        "https://metadata.google.internal/x",         # GCP metadata
+        "http://169.254.169.254/latest/meta-data/",  # cloud metadata
+        "http://127.0.0.1:8000/internal",  # loopback
+        "http://localhost/internal",  # loopback name
+        "http://10.0.0.5/internal",  # private
+        "http://192.168.1.1/internal",  # private
+        "http://172.16.0.1/internal",  # private
+        "http://[::1]/internal",  # ipv6 loopback
+        "https://metadata.google.internal/x",  # GCP metadata
     ],
 )
 def test_secure_url_fetcher_blocks_dangerous_urls(url):
@@ -90,6 +92,7 @@ def test_secure_url_fetcher_allows_bundled_font():
 
 
 # ── Excel/CSV formula injection ────────────────────────────────────────
+
 
 @pytest.mark.parametrize(
     "raw,expected",

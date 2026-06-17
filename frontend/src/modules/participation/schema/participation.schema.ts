@@ -33,11 +33,7 @@ export const participationSchema = z.object({
     participant_name: z.string().optional(),
 }).strict();
 
-type ParticipationParsed = z.infer<typeof participationSchema>;
-
 export const participationListSchema = z.object({
     data: participationSchema.array(),
     count: z.number().int().nonnegative(),
 }).strict();
-
-type ParticipationListParsed = z.infer<typeof participationListSchema>;

@@ -59,16 +59,51 @@ SPORT_NAMES = [
 # Demo org accounts: (username, email, org_index, kh_family, kh_given, en_family, en_given)
 # org_index refers to position in the orgs list seeded below (0-based)
 DEMO_ORG_ACCOUNTS = [
-    ("phnom_penh", "phnom.penh@sport.gov.kh", 0,
-     "ហែម", "សុវណ្ណ", "Hem", "Sovann"),        # រាជធានីភ្នំពេញ
-    ("siem_reap", "siem.reap@sport.gov.kh", 20,
-     "សុខ", "រាជ", "Sok", "Reach"),             # សៀមរាប (index 20)
-    ("battambang", "battambang@sport.gov.kh", 2,
-     "ចិន", "វិច្ឆិកា", "Chin", "Vicheka"),    # បាត់ដំបង (index 2)
-    ("moeys_org", "moeys@sport.gov.kh", 25,
-     "មាស", "សីហា", "Meas", "Seyha"),           # ក្រសួងអប់រំ (index 25, first ministry)
-    ("kandal", "kandal@sport.gov.kh", 8,
-     "គង់", "ឧត្តម", "Kong", "Odom"),           # កណ្ដាល (index 8)
+    (
+        "phnom_penh",
+        "phnom.penh@sport.gov.kh",
+        0,
+        "ហែម",
+        "សុវណ្ណ",
+        "Hem",
+        "Sovann",
+    ),  # រាជធានីភ្នំពេញ
+    (
+        "siem_reap",
+        "siem.reap@sport.gov.kh",
+        20,
+        "សុខ",
+        "រាជ",
+        "Sok",
+        "Reach",
+    ),  # សៀមរាប (index 20)
+    (
+        "battambang",
+        "battambang@sport.gov.kh",
+        2,
+        "ចិន",
+        "វិច្ឆិកា",
+        "Chin",
+        "Vicheka",
+    ),  # បាត់ដំបង (index 2)
+    (
+        "moeys_org",
+        "moeys@sport.gov.kh",
+        25,
+        "មាស",
+        "សីហា",
+        "Meas",
+        "Seyha",
+    ),  # ក្រសួងអប់រំ (index 25, first ministry)
+    (
+        "kandal",
+        "kandal@sport.gov.kh",
+        8,
+        "គង់",
+        "ឧត្តម",
+        "Kong",
+        "Odom",
+    ),  # កណ្ដាល (index 8)
 ]
 
 # Demo federation accounts: (username, email, sport_index, kh_family, kh_given, en_family, en_given)
@@ -76,10 +111,24 @@ DEMO_ORG_ACCOUNTS = [
 # bound to exactly one sport via users.sport_id and may only manage that sport's
 # categories — e.g. the volleyball federation never sees football categories.
 DEMO_FEDERATION_ACCOUNTS = [
-    ("football_fed", "football.fed@sport.gov.kh", 0,
-     "ឈួន", "ពិសិដ្ឋ", "Chhoun", "Piseth"),    # បាល់ទាត់ (Football)
-    ("volleyball_fed", "volleyball.fed@sport.gov.kh", 1,
-     "នួន", "សុធា", "Nuon", "Sotha"),           # បាល់ទះ (Volleyball)
+    (
+        "football_fed",
+        "football.fed@sport.gov.kh",
+        0,
+        "ឈួន",
+        "ពិសិដ្ឋ",
+        "Chhoun",
+        "Piseth",
+    ),  # បាល់ទាត់ (Football)
+    (
+        "volleyball_fed",
+        "volleyball.fed@sport.gov.kh",
+        1,
+        "នួន",
+        "សុធា",
+        "Nuon",
+        "Sotha",
+    ),  # បាល់ទះ (Volleyball)
 ]
 
 
@@ -89,18 +138,22 @@ async def seed_data():
 
     async with SessionLocal() as session:
         from core.security import hash_password
+
         _seed_password = os.environ.get("SEED_DEFAULT_PASSWORD")
         if not _seed_password:
             print("ERROR: SEED_DEFAULT_PASSWORD env var is required.", file=sys.stderr)
             print("       Set a strong password before running seed:", file=sys.stderr)
-            print("       SEED_DEFAULT_PASSWORD='<strong-password>' python seed.py", file=sys.stderr)
+            print(
+                "       SEED_DEFAULT_PASSWORD='<strong-password>' python seed.py",
+                file=sys.stderr,
+            )
             sys.exit(1)
         _pw = hash_password(_seed_password)
 
         # 1. Organizations — 25 provinces + 3 ministries (28 total, real names)
         orgs = []
         for i, name in enumerate(PROVINCES):
-            code = f"PRV{i+1:02d}"
+            code = f"PRV{i + 1:02d}"
             o = Organization(name_kh=name, type=instituteType.PROVINCE, code=code)
             session.add(o)
             orgs.append(o)
@@ -132,8 +185,10 @@ async def seed_data():
                 username="superadmin",
                 email="superadmin@sport.gov.kh",
                 role=UserRole.SUPER_ADMIN,
-                kh_family_name="ហែម", kh_given_name="សុពណ៌",
-                en_family_name="Hem", en_given_name="Sophorn",
+                kh_family_name="ហែម",
+                kh_given_name="សុពណ៌",
+                en_family_name="Hem",
+                en_given_name="Sophorn",
                 is_superuser=True,
                 organization_id=None,
             ),
@@ -141,8 +196,10 @@ async def seed_data():
                 username="admin",
                 email="admin@sport.gov.kh",
                 role=UserRole.ADMIN,
-                kh_family_name="សុខ", kh_given_name="ដារ៉ា",
-                en_family_name="Sok", en_given_name="Dara",
+                kh_family_name="សុខ",
+                kh_given_name="ដារ៉ា",
+                en_family_name="Sok",
+                en_given_name="Dara",
                 is_superuser=False,
                 organization_id=None,
             ),
@@ -169,7 +226,15 @@ async def seed_data():
             session.add(u)
 
         # 6. Demo federation accounts — each bound to a single sport
-        for username, email, sport_idx, kh_f, kh_g, en_f, en_g in DEMO_FEDERATION_ACCOUNTS:
+        for (
+            username,
+            email,
+            sport_idx,
+            kh_f,
+            kh_g,
+            en_f,
+            en_g,
+        ) in DEMO_FEDERATION_ACCOUNTS:
             u = User(
                 username=username,
                 email=email,
@@ -193,9 +258,13 @@ async def seed_data():
         print(f"superadmin / {_pw_display}  → super_admin")
         print(f"admin      / {_pw_display}  → admin")
         for username, _, org_idx, *_ in DEMO_ORG_ACCOUNTS:
-            print(f"{username:<15} / {_pw_display}  → organization ({PROVINCES[org_idx] if org_idx < 25 else MINISTRIES[org_idx-25][0]})")
+            print(
+                f"{username:<15} / {_pw_display}  → organization ({PROVINCES[org_idx] if org_idx < 25 else MINISTRIES[org_idx - 25][0]})"
+            )
         for username, _, sport_idx, *_ in DEMO_FEDERATION_ACCOUNTS:
-            print(f"{username:<15} / {_pw_display}  → federation ({SPORT_NAMES[sport_idx][0]})")
+            print(
+                f"{username:<15} / {_pw_display}  → federation ({SPORT_NAMES[sport_idx][0]})"
+            )
 
 
 if __name__ == "__main__":

@@ -29,7 +29,9 @@ async def get_presigned_url(
     folder: str = "domrov-pictures",
     current_user: User = Depends(get_current_user),
 ):
-    await cloudinary_limiter.check(request, key_suffix=str(current_user.id), response=response)
+    await cloudinary_limiter.check(
+        request, key_suffix=str(current_user.id), response=response
+    )
     if folder not in _ALLOWED_FOLDERS:
         raise HTTPException(
             status_code=400,

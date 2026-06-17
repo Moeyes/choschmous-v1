@@ -53,5 +53,4 @@ export type GenderDistribution = z.infer<typeof genderDistributionSchema>;
 export type TopOrganization = z.infer<typeof topOrganizationSchema>;
 export type RecentEnrollment = z.infer<typeof recentEnrollmentSchema>;
 export type DashboardData = z.infer<typeof dashboardDataSchema>;
-type DashboardResponse = z.infer<typeof dashboardResponseSchema>;
 export type DashboardQueryParams = z.input<typeof dashboardQueryParamsSchema>;
