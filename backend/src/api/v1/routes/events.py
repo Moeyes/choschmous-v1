@@ -367,7 +367,7 @@ async def list_sport_org_submissions(
     from sqlalchemy import select as sa_select
     from src.models.sports_event_org import sports_event_org as SeoModel
     from src.models.organization import Organization
-    from src.models.sports import Sport
+    from src.models.sport import Sport
     from src.models.events import Events
     query = (
         sa_select(
