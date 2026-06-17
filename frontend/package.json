@@ -2,7 +2,7 @@
   "name": "choschmous",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@11.6.0",
+  "packageManager": "pnpm@11.7.0",
   "scripts": {
     "dev": "next dev -p 3003",
     "build": "next build --webpack",
@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.7",
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
