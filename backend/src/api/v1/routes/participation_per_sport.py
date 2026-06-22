@@ -191,7 +191,10 @@ async def review_participation_bulk_by_org(
         updated = await service.review_bulk_by_org(org_id, action, note)
     except ParticipationReviewError as exc:
         raise HTTPException(status_code=exc.code, detail=str(exc))
-    return {"updated": updated, "status": "APPROVED" if action == "approve" else "REJECTED"}
+    return {
+        "updated": updated,
+        "status": "APPROVED" if action == "approve" else "REJECTED",
+    }
 
 
 @router.delete("/{id}", response_model=ParticipationPerSportPublic)

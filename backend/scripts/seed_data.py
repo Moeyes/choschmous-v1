@@ -160,28 +160,116 @@ SPORTS = [
 ]
 
 KH_FAMILY = [
-    "សុខ", "ចាន់", "លី", "ហេង", "គឹម", "ពៅ", "រស់", "ឈួន", "នី", "ម៉ៅ",
-    "សៀង", "ទេព", "វង់", "ប៊ុន", "ខៀវ", "សាន", "ឌួង", "ផល", "ងួន", "យ៉េ",
+    "សុខ",
+    "ចាន់",
+    "លី",
+    "ហេង",
+    "គឹម",
+    "ពៅ",
+    "រស់",
+    "ឈួន",
+    "នី",
+    "ម៉ៅ",
+    "សៀង",
+    "ទេព",
+    "វង់",
+    "ប៊ុន",
+    "ខៀវ",
+    "សាន",
+    "ឌួង",
+    "ផល",
+    "ងួន",
+    "យ៉េ",
 ]
 EN_FAMILY = [
-    "Sok", "Chan", "Ly", "Heng", "Kim", "Pov", "Ros", "Chhoun", "Ny", "Mao",
-    "Sieng", "Tep", "Vong", "Bun", "Kheav", "San", "Duong", "Phal", "Nguon", "Ye",
+    "Sok",
+    "Chan",
+    "Ly",
+    "Heng",
+    "Kim",
+    "Pov",
+    "Ros",
+    "Chhoun",
+    "Ny",
+    "Mao",
+    "Sieng",
+    "Tep",
+    "Vong",
+    "Bun",
+    "Kheav",
+    "San",
+    "Duong",
+    "Phal",
+    "Nguon",
+    "Ye",
 ]
 KH_GIVEN_M = [
-    "សុភ័ក្ត្រ", "រតនៈ", "ពិសិដ្ឋ", "ដារា", "សំណាង", "វិសាល", "ចំរើន", "សុវណ្ណ",
-    "ប៊ុនធឿន", "រ៉ាវី", "សុខា", "ពិសី", "វុទ្ធី", "កុសល", "សិរីបុត្រ",
+    "សុភ័ក្ត្រ",
+    "រតនៈ",
+    "ពិសិដ្ឋ",
+    "ដារា",
+    "សំណាង",
+    "វិសាល",
+    "ចំរើន",
+    "សុវណ្ណ",
+    "ប៊ុនធឿន",
+    "រ៉ាវី",
+    "សុខា",
+    "ពិសី",
+    "វុទ្ធី",
+    "កុសល",
+    "សិរីបុត្រ",
 ]
 EN_GIVEN_M = [
-    "Sopheak", "Rattanak", "Piseth", "Dara", "Samnang", "Visal", "Chamroeun", "Sovann",
-    "Bunthoeun", "Ravy", "Sokha", "Pisey", "Vuthy", "Kosal", "Sereyboth",
+    "Sopheak",
+    "Rattanak",
+    "Piseth",
+    "Dara",
+    "Samnang",
+    "Visal",
+    "Chamroeun",
+    "Sovann",
+    "Bunthoeun",
+    "Ravy",
+    "Sokha",
+    "Pisey",
+    "Vuthy",
+    "Kosal",
+    "Sereyboth",
 ]
 KH_GIVEN_F = [
-    "សុភា", "ស្រីពេជ្រ", "ច័ន្ទថា", "លីដា", "សុគន្ធា", "ដាវី", "រស្មី", "សុជាតា",
-    "ច័ន្ទនី", "ពេជ្រា", "នារី", "សោភ័ណ", "ស្រីនិច", "កញ្ញា", "ធីតា",
+    "សុភា",
+    "ស្រីពេជ្រ",
+    "ច័ន្ទថា",
+    "លីដា",
+    "សុគន្ធា",
+    "ដាវី",
+    "រស្មី",
+    "សុជាតា",
+    "ច័ន្ទនី",
+    "ពេជ្រា",
+    "នារី",
+    "សោភ័ណ",
+    "ស្រីនិច",
+    "កញ្ញា",
+    "ធីតា",
 ]
 EN_GIVEN_F = [
-    "Sophea", "Sreypich", "Chantha", "Lida", "Sokunthea", "Davy", "Raksmey", "Sochéata",
-    "Channy", "Pichara", "Neary", "Sophorn", "Sreynich", "Kanha", "Thida",
+    "Sophea",
+    "Sreypich",
+    "Chantha",
+    "Lida",
+    "Sokunthea",
+    "Davy",
+    "Raksmey",
+    "Sochéata",
+    "Channy",
+    "Pichara",
+    "Neary",
+    "Sophorn",
+    "Sreynich",
+    "Kanha",
+    "Thida",
 ]
 
 ID_DOC_CHOICES = [
@@ -190,21 +278,57 @@ ID_DOC_CHOICES = [
     IdDocumentType.CAM_FAMILY_BOOK,
     IdDocumentType.CAM_PASSPORT,
 ]
-PHONE_PREFIXES = ["010", "011", "012", "015", "016", "017", "069", "070",
-                  "077", "078", "085", "086", "087", "088", "089", "092",
-                  "093", "095", "096", "097", "098", "099"]
+PHONE_PREFIXES = [
+    "010",
+    "011",
+    "012",
+    "015",
+    "016",
+    "017",
+    "069",
+    "070",
+    "077",
+    "078",
+    "085",
+    "086",
+    "087",
+    "088",
+    "089",
+    "092",
+    "093",
+    "095",
+    "096",
+    "097",
+    "098",
+    "099",
+]
 LEADER_ROLES = list(LeaderRole)
 REVIEW_DONE = ["APPROVED", "APPROVED", "APPROVED", "SUBMITTED", "FLAGGED"]
 
 ALL_TABLES = [
-    "refresh_tokens", "pii_access_logs", "uploaded_files",
-    "open_survey_responses", "open_survey_fields",
-    "organizer_participation", "organizer_roles",
-    "medals", "athlete_participation", "leader_participation",
-    "athletes", "leaders", "enrollments",
-    "participation_per_sport", "category_survey_review",
-    "sports_event_org", "sports_event", "teams", "categories",
-    "events", "users", "sports", "organizations",
+    "refresh_tokens",
+    "pii_access_logs",
+    "uploaded_files",
+    "open_survey_responses",
+    "open_survey_fields",
+    "organizer_participation",
+    "organizer_roles",
+    "medals",
+    "athlete_participation",
+    "leader_participation",
+    "athletes",
+    "leaders",
+    "enrollments",
+    "participation_per_sport",
+    "category_survey_review",
+    "sports_event_org",
+    "sports_event",
+    "teams",
+    "categories",
+    "events",
+    "users",
+    "sports",
+    "organizations",
 ]
 
 _used_usernames: set[str] = set()
@@ -223,7 +347,9 @@ def slug(name_en: str) -> str:
 
 
 def rand_phone() -> str:
-    return random.choice(PHONE_PREFIXES) + "".join(random.choice("0123456789") for _ in range(6))
+    return random.choice(PHONE_PREFIXES) + "".join(
+        random.choice("0123456789") for _ in range(6)
+    )
 
 
 def dob_for_event(ev_type: eventType, age_mode: AgeMode, lo: int, hi: int) -> date:
@@ -271,9 +397,13 @@ async def reset(session) -> None:
 
 async def main(do_reset: bool) -> None:
     async with SessionLocal() as session:
-        existing = (await session.execute(text("SELECT count(*) FROM organizations"))).scalar()
+        existing = (
+            await session.execute(text("SELECT count(*) FROM organizations"))
+        ).scalar()
         if existing and not do_reset:
-            print(f"organizations already has {existing} rows. Re-run with --reset to wipe & reseed.")
+            print(
+                f"organizations already has {existing} rows. Re-run with --reset to wipe & reseed."
+            )
             return
         if do_reset:
             await reset(session)
@@ -284,13 +414,21 @@ async def main(do_reset: bool) -> None:
         provinces: list[Organization] = []
         ministries: list[Organization] = []
         for kh, en in PROVINCES:
-            o = Organization(name_kh=kh, name_en=en, type=instituteType.PROVINCE,
-                             code=str(uuid.uuid4()))
+            o = Organization(
+                name_kh=kh,
+                name_en=en,
+                type=instituteType.PROVINCE,
+                code=str(uuid.uuid4()),
+            )
             provinces.append(o)
             session.add(o)
         for kh, en in MINISTRIES:
-            o = Organization(name_kh=kh, name_en=en, type=instituteType.MINISTRY,
-                             code=str(uuid.uuid4()))
+            o = Organization(
+                name_kh=kh,
+                name_en=en,
+                type=instituteType.MINISTRY,
+                code=str(uuid.uuid4()),
+            )
             ministries.append(o)
             session.add(o)
         orgs = provinces + ministries
@@ -302,7 +440,7 @@ async def main(do_reset: bool) -> None:
         team_sport_ids: set[int] = set()
         for kh, en, stype, is_team in SPORTS:
             s = Sport(name_kh=kh, sport_type=stype)
-            s._en = en          # transient helper for naming
+            s._en = en  # transient helper for naming
             s._stype = stype
             s._is_team = is_team
             sports.append(s)
@@ -315,22 +453,45 @@ async def main(do_reset: bool) -> None:
         # 3) Users ────────────────────────────────────────────────────────────
         users: list[User] = []
 
-        def add_user(kh_fam, kh_giv, en_fam, en_giv, username, role,
-                     org_id=None, sport_id=None, superuser=False):
+        def add_user(
+            kh_fam,
+            kh_giv,
+            en_fam,
+            en_giv,
+            username,
+            role,
+            org_id=None,
+            sport_id=None,
+            superuser=False,
+        ):
             u = User(
-                kh_family_name=kh_fam, kh_given_name=kh_giv,
-                en_family_name=en_fam, en_given_name=en_giv,
+                kh_family_name=kh_fam,
+                kh_given_name=kh_giv,
+                en_family_name=en_fam,
+                en_given_name=en_giv,
                 full_name=f"{en_giv} {en_fam}",
-                email=f"{username}@moeys.gov.kh", username=username,
-                hashed_password=pwd_hash, role=role, is_active=True,
-                is_superuser=superuser, organization_id=org_id, sport_id=sport_id,
+                email=f"{username}@moeys.gov.kh",
+                username=username,
+                hashed_password=pwd_hash,
+                role=role,
+                is_active=True,
+                is_superuser=superuser,
+                organization_id=org_id,
+                sport_id=sport_id,
             )
             users.append(u)
             session.add(u)
             return u
 
-        add_user("អ៊ុក", "សុវត្ថិ", "Ouk", "Sovathy", "superadmin",
-                 UserRole.SUPER_ADMIN, superuser=True)
+        add_user(
+            "អ៊ុក",
+            "សុវត្ថិ",
+            "Ouk",
+            "Sovathy",
+            "superadmin",
+            UserRole.SUPER_ADMIN,
+            superuser=True,
+        )
         add_user("ឆាយ", "វិចិត្រ", "Chhay", "Vichet", "admin1", UserRole.ADMIN)
         add_user("ម៉ម", "សុធារ៉ា", "Mom", "Sothara", "admin2", UserRole.ADMIN)
 
@@ -339,17 +500,36 @@ async def main(do_reset: bool) -> None:
             g = random.choice([genderEnum.MALE, genderEnum.FEMALE])
             kf, kg, ef, eg = make_person(g)
             prefix = "prov" if o.type == instituteType.PROVINCE else "min"
-            u = add_user(kf, kg, ef, eg, f"{prefix}_{slug(o.name_en)}",
-                         UserRole.ORGANIZATION, org_id=o.id)
+            u = add_user(
+                kf,
+                kg,
+                ef,
+                eg,
+                f"{prefix}_{slug(o.name_en)}",
+                UserRole.ORGANIZATION,
+                org_id=o.id,
+            )
             org_user_by_org[o.id] = u
 
         # A few federation users, each scoped to a popular sport.
-        for s in [sp for sp in sports if sp._en in ("Football", "Volleyball",
-                  "Athletics", "Kun Khmer", "Taekwondo", "Swimming")]:
+        for s in [
+            sp
+            for sp in sports
+            if sp._en
+            in (
+                "Football",
+                "Volleyball",
+                "Athletics",
+                "Kun Khmer",
+                "Taekwondo",
+                "Swimming",
+            )
+        ]:
             g = random.choice([genderEnum.MALE, genderEnum.FEMALE])
             kf, kg, ef, eg = make_person(g)
-            add_user(kf, kg, ef, eg, f"fed_{slug(s._en)}",
-                     UserRole.FEDERATION, sport_id=s.id)
+            add_user(
+                kf, kg, ef, eg, f"fed_{slug(s._en)}", UserRole.FEDERATION, sport_id=s.id
+            )
         await session.flush()
 
         # 4) Events ───────────────────────────────────────────────────────────
@@ -358,8 +538,13 @@ async def main(do_reset: bool) -> None:
             win_open = TODAY - timedelta(days=20)
             win_close = TODAY + timedelta(days=120)
             d = {}
-            for ph in ("survey_category", "survey_sport", "survey_number",
-                       "survey_open", "registration"):
+            for ph in (
+                "survey_category",
+                "survey_sport",
+                "survey_number",
+                "survey_open",
+                "registration",
+            ):
                 forced = (ph == "registration" and reg_open) or open_all
                 d[f"{ph}_status"] = PhaseStatus.OPEN if forced else PhaseStatus.AUTO
                 d[f"{ph}_open_date"] = win_open
@@ -367,42 +552,76 @@ async def main(do_reset: bool) -> None:
             return d
 
         events_spec = [
-            dict(name_kh="មហោស្រពកីឡាជាតិលើកទី១៥ ឆ្នាំ២០២៦", type=eventType.NATIONAL,
-                 start=date(2026, 11, 20), end=date(2026, 12, 5),
-                 location="ពហុកីឡដ្ឋានជាតិមរតកតេជោ ភ្នំពេញ",
-                 desc="ការប្រកួតកីឡាជាតិប្រចាំឆ្នាំ ប្រមូលផ្តុំរាជធានី-ខេត្ត និងក្រសួង។",
-                 age_mode=AgeMode.EXACT_AGE, age_min=16, age_max=40, cap=12000,
-                 ph=phases(open_all=True, reg_open=True), n_sports=22),
-            dict(name_kh="កីឡាឧត្តមសិក្សា និងបច្ចេកទេសថ្នាក់ជាតិ ឆ្នាំ២០២៦",
-                 type=eventType.UNIVERSITY,
-                 start=date(2026, 8, 10), end=date(2026, 8, 20),
-                 location="សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញ",
-                 desc="ការប្រកួតកីឡារវាងសាកលវិទ្យាល័យ និងវិទ្យាស្ថានបច្ចេកទេស។",
-                 age_mode=AgeMode.EXACT_AGE, age_min=18, age_max=25, cap=4000,
-                 ph=phases(open_all=False, reg_open=True), n_sports=14),
-            dict(name_kh="កីឡាសិស្សមធ្យមសិក្សាថ្នាក់ជាតិ ឆ្នាំ២០២៦",
-                 type=eventType.HIGH_SCHOOL,
-                 start=date(2026, 9, 15), end=date(2026, 9, 25),
-                 location="ខេត្តសៀមរាប",
-                 desc="ការប្រកួតកីឡាសម្រាប់សិស្សវិទ្យាល័យទូទាំងប្រទេស។",
-                 age_mode=AgeMode.BIRTH_YEAR, age_min=2008, age_max=2011, cap=3500,
-                 ph=phases(open_all=False, reg_open=False), n_sports=12),
-            dict(name_kh="កីឡាសិស្សបឋមសិក្សាថ្នាក់ជាតិ ឆ្នាំ២០២៦",
-                 type=eventType.PRIMARY_SCHOOL,
-                 start=date(2026, 7, 1), end=date(2026, 7, 10),
-                 location="ខេត្តបាត់ដំបង",
-                 desc="ការប្រកួតកីឡាសម្រាប់សិស្សបឋមសិក្សា លើកកម្ពស់សុខភាពកុមារ។",
-                 age_mode=AgeMode.BIRTH_YEAR, age_min=2014, age_max=2017, cap=2500,
-                 ph=phases(open_all=False, reg_open=False), n_sports=9),
+            dict(
+                name_kh="មហោស្រពកីឡាជាតិលើកទី១៥ ឆ្នាំ២០២៦",
+                type=eventType.NATIONAL,
+                start=date(2026, 11, 20),
+                end=date(2026, 12, 5),
+                location="ពហុកីឡដ្ឋានជាតិមរតកតេជោ ភ្នំពេញ",
+                desc="ការប្រកួតកីឡាជាតិប្រចាំឆ្នាំ ប្រមូលផ្តុំរាជធានី-ខេត្ត និងក្រសួង។",
+                age_mode=AgeMode.EXACT_AGE,
+                age_min=16,
+                age_max=40,
+                cap=12000,
+                ph=phases(open_all=True, reg_open=True),
+                n_sports=22,
+            ),
+            dict(
+                name_kh="កីឡាឧត្តមសិក្សា និងបច្ចេកទេសថ្នាក់ជាតិ ឆ្នាំ២០២៦",
+                type=eventType.UNIVERSITY,
+                start=date(2026, 8, 10),
+                end=date(2026, 8, 20),
+                location="សាកលវិទ្យាល័យភូមិន្ទភ្នំពេញ",
+                desc="ការប្រកួតកីឡារវាងសាកលវិទ្យាល័យ និងវិទ្យាស្ថានបច្ចេកទេស។",
+                age_mode=AgeMode.EXACT_AGE,
+                age_min=18,
+                age_max=25,
+                cap=4000,
+                ph=phases(open_all=False, reg_open=True),
+                n_sports=14,
+            ),
+            dict(
+                name_kh="កីឡាសិស្សមធ្យមសិក្សាថ្នាក់ជាតិ ឆ្នាំ២០២៦",
+                type=eventType.HIGH_SCHOOL,
+                start=date(2026, 9, 15),
+                end=date(2026, 9, 25),
+                location="ខេត្តសៀមរាប",
+                desc="ការប្រកួតកីឡាសម្រាប់សិស្សវិទ្យាល័យទូទាំងប្រទេស។",
+                age_mode=AgeMode.BIRTH_YEAR,
+                age_min=2008,
+                age_max=2011,
+                cap=3500,
+                ph=phases(open_all=False, reg_open=False),
+                n_sports=12,
+            ),
+            dict(
+                name_kh="កីឡាសិស្សបឋមសិក្សាថ្នាក់ជាតិ ឆ្នាំ២០២៦",
+                type=eventType.PRIMARY_SCHOOL,
+                start=date(2026, 7, 1),
+                end=date(2026, 7, 10),
+                location="ខេត្តបាត់ដំបង",
+                desc="ការប្រកួតកីឡាសម្រាប់សិស្សបឋមសិក្សា លើកកម្ពស់សុខភាពកុមារ។",
+                age_mode=AgeMode.BIRTH_YEAR,
+                age_min=2014,
+                age_max=2017,
+                cap=2500,
+                ph=phases(open_all=False, reg_open=False),
+                n_sports=9,
+            ),
         ]
         events: list[Events] = []
         for spec in events_spec:
             e = Events(
-                name_kh=spec["name_kh"], type=spec["type"],
-                start_date=spec["start"], end_date=spec["end"],
-                description=spec["desc"], location=spec["location"],
-                age_mode=spec["age_mode"], age_min=spec["age_min"],
-                age_max=spec["age_max"], participant_cap=spec["cap"],
+                name_kh=spec["name_kh"],
+                type=spec["type"],
+                start_date=spec["start"],
+                end_date=spec["end"],
+                description=spec["desc"],
+                location=spec["location"],
+                age_mode=spec["age_mode"],
+                age_min=spec["age_min"],
+                age_max=spec["age_max"],
+                participant_cap=spec["cap"],
                 **spec["ph"],
             )
             e._spec = spec
@@ -425,7 +644,9 @@ async def main(do_reset: bool) -> None:
                 if s._en in ("Tennis", "Table Tennis", "Badminton"):
                     mode = SportMode.BOTH
                 se = SportsEvent(
-                    events_id=e.id, sports_id=s.id, mode=mode,
+                    events_id=e.id,
+                    sports_id=s.id,
+                    mode=mode,
                     team_size_min=(5 if is_team else None),
                     team_size_max=(18 if is_team else None),
                     quota_athletes_per_org=random.choice([8, 12, 16, 20]),
@@ -436,19 +657,31 @@ async def main(do_reset: bool) -> None:
                 # categories: division × gender
                 clist: list[Category] = []
                 for div in divisions_for(s._stype):
-                    for g, glabel in ((genderEnum.MALE, "Male"), (genderEnum.FEMALE, "Female")):
-                        c = Category(sports_id=s.id, events_id=e.id,
-                                     category=f"{div} {glabel}", gender=g)
+                    for g, glabel in (
+                        (genderEnum.MALE, "Male"),
+                        (genderEnum.FEMALE, "Female"),
+                    ):
+                        c = Category(
+                            sports_id=s.id,
+                            events_id=e.id,
+                            category=f"{div} {glabel}",
+                            gender=g,
+                        )
                         session.add(c)
                         clist.append(c)
                 cats_by_es[(e.id, s.id)] = clist
         await session.flush()
 
         # category_survey_review: one per (event, sport) declared
-        for (eid, sid) in sport_event_rows:
-            session.add(CategorySurveyReview(events_id=eid, sports_id=sid,
-                                             status=random.choice(REVIEW_DONE),
-                                             reviewed_at=datetime.utcnow()))
+        for eid, sid in sport_event_rows:
+            session.add(
+                CategorySurveyReview(
+                    events_id=eid,
+                    sports_id=sid,
+                    status=random.choice(REVIEW_DONE),
+                    reviewed_at=datetime.utcnow(),
+                )
+            )
 
         # 6) sports_event_org + participation_per_sport (by-number) ───────────
         # Decide which orgs participate in which event, and which sports each fields.
@@ -461,19 +694,26 @@ async def main(do_reset: bool) -> None:
             if e.type == eventType.NATIONAL:
                 part_orgs = list(orgs)
             else:
-                k = {eventType.UNIVERSITY: 20, eventType.HIGH_SCHOOL: 18,
-                     eventType.PRIMARY_SCHOOL: 16}[e.type]
+                k = {
+                    eventType.UNIVERSITY: 20,
+                    eventType.HIGH_SCHOOL: 18,
+                    eventType.PRIMARY_SCHOOL: 16,
+                }[e.type]
                 part_orgs = random.sample(provinces, k) + [moeys]
             ev_org_sports[e.id] = {}
             for o in part_orgs:
-                fielded = random.sample(programme, min(len(programme),
-                                                       random.randint(5, 9)))
+                fielded = random.sample(
+                    programme, min(len(programme), random.randint(5, 9))
+                )
                 ev_org_sports[e.id][o.id] = fielded
                 for s in fielded:
-                    seo = SportsEventOrg(events_id=e.id, sports_id=s.id,
-                                         organization_id=o.id,
-                                         status=random.choice(REVIEW_DONE),
-                                         reviewed_at=datetime.utcnow())
+                    seo = SportsEventOrg(
+                        events_id=e.id,
+                        sports_id=s.id,
+                        organization_id=o.id,
+                        status=random.choice(REVIEW_DONE),
+                        reviewed_at=datetime.utcnow(),
+                    )
                     session.add(seo)
                     seo._org_id = o.id
                     seo_rows.append(seo)
@@ -482,13 +722,18 @@ async def main(do_reset: bool) -> None:
         for seo in seo_rows:
             am = random.randint(3, 14)
             af = random.randint(2, 12)
-            session.add(ParticipationPerSport(
-                sports_Events_id=seo.id, org_id=seo._org_id,
-                athlete_male_count=am, athlete_female_count=af,
-                leader_male_count=random.randint(1, 3),
-                leader_female_count=random.randint(0, 2),
-                status=random.choice(REVIEW_DONE), reviewed_at=datetime.utcnow(),
-            ))
+            session.add(
+                ParticipationPerSport(
+                    sports_Events_id=seo.id,
+                    org_id=seo._org_id,
+                    athlete_male_count=am,
+                    athlete_female_count=af,
+                    leader_male_count=random.randint(1, 3),
+                    leader_female_count=random.randint(0, 2),
+                    status=random.choice(REVIEW_DONE),
+                    reviewed_at=datetime.utcnow(),
+                )
+            )
 
         # 7) Teams (for team-mode sports each org fields) ─────────────────────
         # (event_id, sport_id, org_id) -> [Team,...]
@@ -503,9 +748,13 @@ async def main(do_reset: bool) -> None:
                     tlist = []
                     for n in range(random.randint(1, 2)):
                         cat = random.choice(cats)
-                        t = Team(event_id=e.id, sport_id=s.id, org_id=org_id,
-                                 category_id=cat.id,
-                                 name=f"{org.name_en} {s._en} {chr(65 + n)}")
+                        t = Team(
+                            event_id=e.id,
+                            sport_id=s.id,
+                            org_id=org_id,
+                            category_id=cat.id,
+                            name=f"{org.name_en} {s._en} {chr(65 + n)}",
+                        )
                         session.add(t)
                         tlist.append(t)
                     teams_idx[(e.id, s.id, org_id)] = tlist
@@ -540,11 +789,16 @@ async def main(do_reset: bool) -> None:
                     kf, kg, ef, eg = make_person(g)
                     prov_en = next(o for o in orgs if o.id == org_id).name_en
                     enr = Enroll(
-                        kh_family_name=kf, kh_given_name=kg,
-                        en_family_name=ef, en_given_name=eg,
-                        phonenumber=rand_phone(), gender=g, nationality="Cambodian",
-                        date_of_birth=dob_for_event(e.type, spec["age_mode"],
-                                                    spec["age_min"], spec["age_max"]),
+                        kh_family_name=kf,
+                        kh_given_name=kg,
+                        en_family_name=ef,
+                        en_given_name=eg,
+                        phonenumber=rand_phone(),
+                        gender=g,
+                        nationality="Cambodian",
+                        date_of_birth=dob_for_event(
+                            e.type, spec["age_mode"], spec["age_min"], spec["age_max"]
+                        ),
                         id_document_type=random.choice(ID_DOC_CHOICES),
                         address=f"ភូមិ{random.randint(1, 9)}, {prov_en}, Cambodia",
                         user_id=creator.id,
@@ -557,8 +811,9 @@ async def main(do_reset: bool) -> None:
                     n_enroll += 1
                     n_ath += 1
                     # 1–2 sport participations
-                    for s in random.sample(fielded, min(len(fielded),
-                                                        random.randint(1, 2))):
+                    for s in random.sample(
+                        fielded, min(len(fielded), random.randint(1, 2))
+                    ):
                         cands = [c for c in cats_by_es[(e.id, s.id)] if c.gender == g]
                         cat = random.choice(cands) if cands else None
                         team_id = None
@@ -567,9 +822,12 @@ async def main(do_reset: bool) -> None:
                             if tl:
                                 team_id = random.choice(tl).id
                         ap = AthleteParticipation(
-                            athletes_id=ath.id, events_id=e.id, sports_id=s.id,
+                            athletes_id=ath.id,
+                            events_id=e.id,
+                            sports_id=s.id,
                             category_id=(cat.id if cat else None),
-                            organization_id=org_id, team_id=team_id,
+                            organization_id=org_id,
+                            team_id=team_id,
                         )
                         session.add(ap)
                         athlete_parts.append(ap)
@@ -580,27 +838,40 @@ async def main(do_reset: bool) -> None:
                     kf, kg, ef, eg = make_person(g)
                     prov_en = next(o for o in orgs if o.id == org_id).name_en
                     enr = Enroll(
-                        kh_family_name=kf, kh_given_name=kg,
-                        en_family_name=ef, en_given_name=eg,
-                        phonenumber=rand_phone(), gender=g, nationality="Cambodian",
-                        date_of_birth=date(random.randint(1975, 1998),
-                                           random.randint(1, 12), random.randint(1, 28)),
+                        kh_family_name=kf,
+                        kh_given_name=kg,
+                        en_family_name=ef,
+                        en_given_name=eg,
+                        phonenumber=rand_phone(),
+                        gender=g,
+                        nationality="Cambodian",
+                        date_of_birth=date(
+                            random.randint(1975, 1998),
+                            random.randint(1, 12),
+                            random.randint(1, 28),
+                        ),
                         id_document_type=IdDocumentType.CAM_NID,
                         address=f"ភូមិ{random.randint(1, 9)}, {prov_en}, Cambodia",
                         user_id=creator.id,
                     )
                     session.add(enr)
                     await session.flush()
-                    ld = Leader(LeaderRole=random.choice(LEADER_ROLES), enroll_id=enr.id)
+                    ld = Leader(
+                        LeaderRole=random.choice(LEADER_ROLES), enroll_id=enr.id
+                    )
                     session.add(ld)
                     await session.flush()
                     n_enroll += 1
                     n_lead += 1
                     for s in random.sample(fielded, min(len(fielded), 2)):
-                        session.add(LeaderParticipation(
-                            leaders_id=ld.id, events_id=e.id, sports_id=s.id,
-                            organization_id=org_id,
-                        ))
+                        session.add(
+                            LeaderParticipation(
+                                leaders_id=ld.id,
+                                events_id=e.id,
+                                sports_id=s.id,
+                                organization_id=org_id,
+                            )
+                        )
             await session.flush()
             print(f"  · {spec['type'].name}: enrolled so far {n_enroll} people")
 
@@ -610,20 +881,40 @@ async def main(do_reset: bool) -> None:
         n_medals = 0
         for ap in random.sample(nat_parts, min(180, len(nat_parts))):
             mt = random.choices(
-                [medal_typeEnum.GOLD, medal_typeEnum.SILVER,
-                 medal_typeEnum.BRONZE, medal_typeEnum.none],
-                weights=[2, 2, 3, 4])[0]
-            session.add(Medal(athlete_participation_id=ap.id, medal_type=mt,
-                              key_performance=random.choice(
-                                  ["New national record", "Personal best",
-                                   "Final round", "Semi-final", ""]) or None))
+                [
+                    medal_typeEnum.GOLD,
+                    medal_typeEnum.SILVER,
+                    medal_typeEnum.BRONZE,
+                    medal_typeEnum.none,
+                ],
+                weights=[2, 2, 3, 4],
+            )[0]
+            session.add(
+                Medal(
+                    athlete_participation_id=ap.id,
+                    medal_type=mt,
+                    key_performance=random.choice(
+                        [
+                            "New national record",
+                            "Personal best",
+                            "Final round",
+                            "Semi-final",
+                            "",
+                        ]
+                    )
+                    or None,
+                )
+            )
             n_medals += 1
 
         # 10) Organizer roles + roster ───────────────────────────────────────
         ORG_ROLES = [
-            ("អាជ្ញាកណ្ដាល", "Referee"), ("មន្ត្រីបច្ចេកទេស", "Technical Official"),
-            ("បុគ្គលិកពេទ្យ", "Medical Staff"), ("អ្នកស្ម័គ្រចិត្ត", "Volunteer"),
-            ("អ្នកគ្រប់គ្រងទីលាន", "Venue Manager"), ("អ្នកកត់ត្រាលទ្ធផល", "Result Operator"),
+            ("អាជ្ញាកណ្ដាល", "Referee"),
+            ("មន្ត្រីបច្ចេកទេស", "Technical Official"),
+            ("បុគ្គលិកពេទ្យ", "Medical Staff"),
+            ("អ្នកស្ម័គ្រចិត្ត", "Volunteer"),
+            ("អ្នកគ្រប់គ្រងទីលាន", "Venue Manager"),
+            ("អ្នកកត់ត្រាលទ្ធផល", "Result Operator"),
         ]
         org_roles = [OrganizerRole(name_kh=kh, name_en=en) for kh, en in ORG_ROLES]
         for r in org_roles:
@@ -635,20 +926,32 @@ async def main(do_reset: bool) -> None:
                 g = random.choice([genderEnum.MALE, genderEnum.FEMALE])
                 kf, kg, ef, eg = make_person(g)
                 enr = Enroll(
-                    kh_family_name=kf, kh_given_name=kg, en_family_name=ef,
-                    en_given_name=eg, phonenumber=rand_phone(), gender=g,
+                    kh_family_name=kf,
+                    kh_given_name=kg,
+                    en_family_name=ef,
+                    en_given_name=eg,
+                    phonenumber=rand_phone(),
+                    gender=g,
                     nationality="Cambodian",
-                    date_of_birth=date(random.randint(1980, 2000),
-                                       random.randint(1, 12), random.randint(1, 28)),
+                    date_of_birth=date(
+                        random.randint(1980, 2000),
+                        random.randint(1, 12),
+                        random.randint(1, 28),
+                    ),
                     id_document_type=IdDocumentType.CAM_NID,
-                    address="ភ្នំពេញ, Cambodia", user_id=an_admin.id,
+                    address="ភ្នំពេញ, Cambodia",
+                    user_id=an_admin.id,
                 )
                 session.add(enr)
                 await session.flush()
-                session.add(OrganizerParticipation(
-                    enroll_id=enr.id, event_id=e.id, organization_id=moeys.id,
-                    organizer_role_id=random.choice(org_roles).id,
-                ))
+                session.add(
+                    OrganizerParticipation(
+                        enroll_id=enr.id,
+                        event_id=e.id,
+                        organization_id=moeys.id,
+                        organizer_role_id=random.choice(org_roles).id,
+                    )
+                )
                 n_enroll += 1
                 n_org_part += 1
 
@@ -656,27 +959,47 @@ async def main(do_reset: bool) -> None:
         n_resp = 0
         for e in events:
             fields = [
-                OpenSurveyField(event_id=e.id, label_kh="ថ្ងៃមកដល់", label_en="Arrival date",
-                                field_type="date", sort_order=1),
-                OpenSurveyField(event_id=e.id, label_kh="ចំនួនយានជំនិះ",
-                                label_en="Number of vehicles", field_type="number",
-                                sort_order=2),
-                OpenSurveyField(event_id=e.id, label_kh="តម្រូវការកន្លែងស្នាក់នៅ",
-                                label_en="Accommodation needs", field_type="text",
-                                sort_order=3, required=False),
+                OpenSurveyField(
+                    event_id=e.id,
+                    label_kh="ថ្ងៃមកដល់",
+                    label_en="Arrival date",
+                    field_type="date",
+                    sort_order=1,
+                ),
+                OpenSurveyField(
+                    event_id=e.id,
+                    label_kh="ចំនួនយានជំនិះ",
+                    label_en="Number of vehicles",
+                    field_type="number",
+                    sort_order=2,
+                ),
+                OpenSurveyField(
+                    event_id=e.id,
+                    label_kh="តម្រូវការកន្លែងស្នាក់នៅ",
+                    label_en="Accommodation needs",
+                    field_type="text",
+                    sort_order=3,
+                    required=False,
+                ),
             ]
             for f in fields:
                 session.add(f)
             await session.flush()
-            responder_orgs = random.sample(list(ev_org_sports[e.id].keys()),
-                                           min(10, len(ev_org_sports[e.id])))
+            responder_orgs = random.sample(
+                list(ev_org_sports[e.id].keys()), min(10, len(ev_org_sports[e.id]))
+            )
             for org_id in responder_orgs:
-                vals = [f"2026-{random.randint(7,11):02d}-{random.randint(1,28):02d}",
-                        str(random.randint(1, 6)),
-                        random.choice(["Hotel near venue", "Dormitory", "Self-arranged"])]
+                vals = [
+                    f"2026-{random.randint(7, 11):02d}-{random.randint(1, 28):02d}",
+                    str(random.randint(1, 6)),
+                    random.choice(["Hotel near venue", "Dormitory", "Self-arranged"]),
+                ]
                 for f, v in zip(fields, vals):
-                    session.add(OpenSurveyResponse(field_id=f.id, organization_id=org_id,
-                                                   value=v))
+                    session.add(
+                        OpenSurveyResponse(
+                            field_id=f.id, organization_id=org_id, value=v
+                        )
+                    )
                     n_resp += 1
 
         # 12) Uploaded files (tiny 1x1 PNG) ──────────────────────────────────
@@ -685,43 +1008,91 @@ async def main(do_reset: bool) -> None:
             "890000000a49444154789c6360000002000154a24f3f0000000049454e44ae426082"
         )
         for i in range(10):
-            session.add(UploadedFile(filename=f"athlete_photo_{i+1}.png",
-                                     content_type="image/png", size=len(PNG_1x1),
-                                     data=PNG_1x1, uploaded_by=an_admin.id))
+            session.add(
+                UploadedFile(
+                    filename=f"athlete_photo_{i + 1}.png",
+                    content_type="image/png",
+                    size=len(PNG_1x1),
+                    data=PNG_1x1,
+                    uploaded_by=an_admin.id,
+                )
+            )
 
         # 13) PII access logs (audit) + refresh-token records ────────────────
-        enroll_ids = (await session.execute(
-            text("SELECT id FROM enrollments ORDER BY random() LIMIT 20"))).scalars().all()
+        enroll_ids = (
+            (
+                await session.execute(
+                    text("SELECT id FROM enrollments ORDER BY random() LIMIT 20")
+                )
+            )
+            .scalars()
+            .all()
+        )
         for eid in enroll_ids:
-            session.add(PiiAccessLog(actor_user_id=an_admin.id, actor_role="admin",
-                                     target_enroll_id=eid, fields="phone"))
+            session.add(
+                PiiAccessLog(
+                    actor_user_id=an_admin.id,
+                    actor_role="admin",
+                    target_enroll_id=eid,
+                    fields="phone",
+                )
+            )
         for _ in range(3):
-            session.add(RefreshToken(
-                jti=uuid.uuid4().hex, token_hash=uuid.uuid4().hex,
-                user_id=an_admin.id,
-                expires_at=datetime.now(timezone.utc) - timedelta(days=1), revoked=True))
+            session.add(
+                RefreshToken(
+                    jti=uuid.uuid4().hex,
+                    token_hash=uuid.uuid4().hex,
+                    user_id=an_admin.id,
+                    expires_at=datetime.now(timezone.utc) - timedelta(days=1),
+                    revoked=True,
+                )
+            )
 
         await session.commit()
 
         # Summary ─────────────────────────────────────────────────────────────
         async def cnt(t):
             return (await session.execute(text(f"SELECT count(*) FROM {t}"))).scalar()
+
         print("\n✅ Seed complete. Row counts:")
-        for t in ["organizations", "sports", "users", "events", "categories",
-                  "sports_event", "sports_event_org", "participation_per_sport",
-                  "category_survey_review", "teams", "enrollments", "athletes",
-                  "leaders", "athlete_participation", "leader_participation",
-                  "medals", "organizer_roles", "organizer_participation",
-                  "open_survey_fields", "open_survey_responses", "uploaded_files",
-                  "pii_access_logs", "refresh_tokens"]:
+        for t in [
+            "organizations",
+            "sports",
+            "users",
+            "events",
+            "categories",
+            "sports_event",
+            "sports_event_org",
+            "participation_per_sport",
+            "category_survey_review",
+            "teams",
+            "enrollments",
+            "athletes",
+            "leaders",
+            "athlete_participation",
+            "leader_participation",
+            "medals",
+            "organizer_roles",
+            "organizer_participation",
+            "open_survey_fields",
+            "open_survey_responses",
+            "uploaded_files",
+            "pii_access_logs",
+            "refresh_tokens",
+        ]:
             print(f"   {t:28s} {await cnt(t)}")
         print(f"\nLogin: any seeded username / password '{SEED_PASSWORD}'")
-        print("  e.g.  superadmin · admin1 · prov_battambang · min_interior · fed_football")
+        print(
+            "  e.g.  superadmin · admin1 · prov_battambang · min_interior · fed_football"
+        )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--reset", action="store_true",
-                        help="TRUNCATE all seeded tables before inserting")
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="TRUNCATE all seeded tables before inserting",
+    )
     args = parser.parse_args()
     asyncio.run(main(args.reset))

@@ -169,4 +169,7 @@ async def review_category_submissions_bulk_by_sport(
         updated = await service.review_bulk_by_sport(sports_id, action, event_id, note)
     except CategoryReviewError as exc:
         raise HTTPException(status_code=exc.code, detail=str(exc))
-    return {"updated": updated, "status": "APPROVED" if action == "approve" else "REJECTED"}
+    return {
+        "updated": updated,
+        "status": "APPROVED" if action == "approve" else "REJECTED",
+    }
