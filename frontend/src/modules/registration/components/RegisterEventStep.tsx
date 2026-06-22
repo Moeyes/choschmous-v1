@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { Trophy, CalendarDays, Building2, Medal, LayoutGrid, AlertCircle } from 'lucide-react';
 import { RegisterFormData, RegisterFormInput } from '../schema/registration.schema';
 import type { CascadingDataLoaded, EligibleSport } from '@/core/api/referenceData';
-import { useEventSports } from '../hooks/useEventSports';
 import { Card, CardHeader, CardTitle, CardContent, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectableGrid } from '@/shared';
 import type { SelectableGridOption } from '@/shared';
 
@@ -30,32 +29,16 @@ export function RegisterEventStep({ form, cascadingData, eligibleSports, isAdmin
   const eventTypes = cascadingData?.eventTypes ?? [];
   const events = eventType ? (cascadingData?.events ?? []).filter((e) => e.type === eventType) : [];
   const orgs = cascadingData?.organizations ?? [];
-  const allSports = cascadingData?.sports ?? [];
 
   const selectedEvent = events.find((e) => e.id === eventId);
   const selectedOrg = orgs.find((o) => o.id === Number(organizationId));
 
-  const { data: eventSportsRaw = [] } = useEventSports(eventId);
-
-  // /api/events/{id}/sports returns sports_event.id (join table), not sports.id.
-  // Cross-reference by name against allSports to get the real sports.id,
-  // which is what the category and other downstream endpoints expect.
-  const eventSports = eventSportsRaw.map((es) => {
-    const matched = allSports.find((s) => s.name_kh === es.name_kh);
-    return matched ? { ...es, id: matched.id } : es;
-  });
-
-  const sportOptions: SelectableGridOption[] = !eventId
+  const sportOptions: SelectableGridOption[] = !eventId || !organizationId
     ? []
-    : eligibleSports && eligibleSports.length > 0
-      ? eligibleSports.map((s) => ({
-          value: String(s.sports_id),
-          label: s.name_kh || s.name_en || 'Sport',
-        }))
-      : eventSports.map((s) => ({
-          value: String(s.id),
-          label: s.name_kh || s.name_en || 'Sport',
-        }));
+    : (eligibleSports ?? []).map((s) => ({
+        value: String(s.sports_id),
+        label: s.name_kh || s.name_en || 'Sport',
+      }));
 
   return (
     <Card>
@@ -76,6 +59,7 @@ export function RegisterEventStep({ form, cascadingData, eligibleSports, isAdmin
               onValueChange={(id) => {
                 setValue('eventType', id, { shouldValidate: true });
                 setValue('eventId', null);
+                setValue('sportId', null);
                 setValue('categoryId', null);
               }}
             >
@@ -137,7 +121,14 @@ export function RegisterEventStep({ form, cascadingData, eligibleSports, isAdmin
                 {t('fields.organization')}
                 <span className="ml-1 text-destructive">*</span>
               </label>
-              <Select value={organizationId ?? ''} onValueChange={(id) => setValue('organizationId', id, { shouldValidate: true })}>
+              <Select
+                value={organizationId ?? ''}
+                onValueChange={(id) => {
+                  setValue('organizationId', id, { shouldValidate: true });
+                  setValue('sportId', null);
+                  setValue('categoryId', null);
+                }}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={t('fields.selectOrganization')}>{selectedOrg ? selectedOrg.name_kh || selectedOrg.name_en : null}</SelectValue>
                 </SelectTrigger>

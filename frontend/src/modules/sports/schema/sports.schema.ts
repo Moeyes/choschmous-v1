@@ -55,18 +55,28 @@ const sportParticipantSchema = z
         date_of_birth:  z.string().nullable().optional(),
         photoUrl:       z.string().nullable().optional(),
         role:           z.union([z.literal('athlete'), z.literal('leader')]),
-        sport:          z.object({ id: z.number().int(), name: z.string() }).nullable().optional(),
-        organization:   z.object({ id: z.number().int(), name: z.string() }).nullable().optional(),
+        // name is nullable: the backend builds these from outer joins, so the
+        // label can be absent even when the id resolves.
+        sport:          z.object({ id: z.number().int(), name: z.string().nullable().optional() }).nullable().optional(),
+        organization:   z.object({ id: z.number().int(), name: z.string().nullable().optional() }).nullable().optional(),
         event_id:       z.number().int().nullable().optional(),
-        category:       z.object({ id: z.number().int(), name: z.string() }).nullable().optional(),
+        category:       z.object({ id: z.number().int(), name: z.string().nullable().optional() }).nullable().optional(),
         leader_role:    z.string().nullable().optional(),
     })
     .strict();
 
 export const sportParticipantsPublicSchema = z
     .object({
-        data:  sportParticipantSchema.array(),
-        count: z.number().int().nonnegative(),
+        status: z.string(),
+        data:   sportParticipantSchema.array(),
+        count:  z.number().int().nonnegative(),
+        // Pagination metadata get_participants() returns; listed so the strict
+        // parse accepts the real envelope instead of throwing.
+        total_pages: z.number().int().optional(),
+        has_next:    z.boolean().optional(),
+        has_prev:    z.boolean().optional(),
+        page:        z.number().int().optional(),
+        page_size:   z.number().int().optional(),
     })
     .strict();
 

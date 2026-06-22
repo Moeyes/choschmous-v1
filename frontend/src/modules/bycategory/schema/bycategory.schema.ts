@@ -42,7 +42,6 @@ export const byCategorySchema = z.object({
 });
 
 export type Event = z.infer<typeof eventSchema>;
-export type Sport = z.infer<typeof sportSchema>;
 export type CategoryRow = z.infer<typeof categoryRowSchema>;
 export type CategorySurveyEntry = z.infer<typeof categorySurveyEntrySchema>;
 export type ByCategoryFormInput = z.input<typeof byCategorySchema>;

@@ -42,3 +42,10 @@ export const categorySubmissionListSchema = z
         count: z.number().int().nonnegative(),
     })
     .strict();
+
+export const categoryBulkReviewResultSchema = z
+    .object({
+        updated: z.number().int().nonnegative(),
+        status: z.string(),
+    })
+    .strict();

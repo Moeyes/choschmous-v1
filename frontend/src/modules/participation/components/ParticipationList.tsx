@@ -5,8 +5,7 @@ import { useParticipations, useParticipationMutation } from '../hooks';
 import { useAuth, usePermissions, CAPABILITIES } from '@/core/auth';
 import { Trash2, Trophy, Building2, User, Plus } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
-import { Input } from '@/shared/ui/input';
-import { DataTable, SectionHeader, Badge, PageErrorState, useConfirm } from '@/shared';
+import { DataTable, SectionHeader, Badge, PageErrorState, useConfirm, FilterToolbar } from '@/shared';
 import { useTranslations } from 'next-intl';
 import type { ParticipationPerSport, ParticipationStatus } from '../types';
 
@@ -14,8 +13,16 @@ const STATUS_OPTIONS: ParticipationStatus[] = [
     'SUBMITTED', 'APPROVED', 'REJECTED', 'FLAGGED', 'REVISION_REQUESTED', 'DRAFT',
 ];
 
-const badgeVariant = (status: ParticipationStatus) =>
-    status.toLowerCase() as 'submitted' | 'approved' | 'rejected' | 'flagged' | 'revision_requested' | 'draft';
+const STATUS_VARIANT: Record<ParticipationStatus, "info" | "success" | "error" | "warning" | "muted"> = {
+    SUBMITTED: "info",
+    APPROVED: "success",
+    REJECTED: "error",
+    FLAGGED: "warning",
+    REVISION_REQUESTED: "warning",
+    DRAFT: "muted",
+};
+
+const badgeVariant = (status: ParticipationStatus) => STATUS_VARIANT[status];
 
 interface ParticipationListProps {
     onSelect?: (submission: ParticipationPerSport) => void;
@@ -62,25 +69,25 @@ export function ParticipationList({ onSelect }: ParticipationListProps) {
     return (
         <div className="space-y-4">
             {/* Filter bar */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="flex-1">
-                    <Input
-                        placeholder={tReview('search')}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as 'all' | ParticipationStatus)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm leading-relaxed focus:border-primary focus:ring-1 focus:ring-ring sm:w-56"
-                >
-                    <option value="all">{tReview('allStatuses')}</option>
-                    {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>{tStatus(s)}</option>
-                    ))}
-                </select>
-            </div>
+            <FilterToolbar
+                search={{
+                    value: search,
+                    onChange: setSearch,
+                    placeholder: tReview('search'),
+                }}
+                filters={[
+                    {
+                        key: 'status',
+                        value: statusFilter,
+                        onChange: (value) => setStatusFilter(value as 'all' | ParticipationStatus),
+                        options: [
+                            { value: 'all', label: tReview('allStatuses') },
+                            ...STATUS_OPTIONS.map((s) => ({ value: s, label: tStatus(s) })),
+                        ],
+                    },
+                ]}
+                onClear={() => { setSearch(''); setStatusFilter('all'); }}
+            />
 
             <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <SectionHeader title={t('records.title')} subtitle={t('records.subtitle')} icon={Trophy}
@@ -89,6 +96,7 @@ export function ParticipationList({ onSelect }: ParticipationListProps) {
                 <DataTable
                     isLoading={isLoading}
                     data={filtered}
+                    rowKey={(item: ParticipationPerSport) => item.id}
                     onRowClick={onSelect ? (p) => onSelect(p) : undefined}
                     columns={[
                         {

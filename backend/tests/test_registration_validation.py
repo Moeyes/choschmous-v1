@@ -2,8 +2,9 @@
 ParticipantService.register_participant (POST /api/registration)."""
 
 from src.models.athlete_participation import athlete_participation
+from src.models.enroll import Enroll
 from src.models.enum.event import AgeMode, PhaseStatus
-from src.models.enum.user import UserRole
+from src.models.enum.user import IdDocumentType, UserRole
 from tests.conftest import make_user
 from tests.factories import (
     link_org_sport,
@@ -60,6 +61,24 @@ async def test_happy_path_athlete(client, db_session, as_user):
     resp = await client.post(REG_URL, json=_athlete_body(event, sport, org, category))
     assert resp.status_code == 201, resp.text
     assert resp.json()["status"] == "success"
+
+
+async def test_registration_accepts_frontend_normalized_document_type(
+    client, db_session, as_user
+):
+    event, sport, org, category = await _valid_setup(db_session)
+    as_user(make_user(UserRole.ORGANIZATION, organization_id=org.id))
+
+    body = _athlete_body(event, sport, org, category)
+    body["idDocType"] = "IDCARD"
+    body["nationality"] = "Khmer"
+
+    resp = await client.post(REG_URL, json=body)
+    assert resp.status_code == 201, resp.text
+
+    enroll = await db_session.get(Enroll, resp.json()["enroll_id"])
+    assert enroll.id_document_type == IdDocumentType.CAM_NID
+    assert enroll.nationality == "Khmer"
 
 
 async def test_registration_closed(client, db_session, as_user):

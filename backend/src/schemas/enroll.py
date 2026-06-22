@@ -94,9 +94,13 @@ class FullRegistrationRequest(BaseModel):
         """Maps Frontend labels to actual DB Enum values."""
         mapping = {
             "IDCard": "CAM_NID",
+            "IDCARD": "CAM_NID",
             "Passport": "CAM_PASSPORT",
+            "PASSPORT": "CAM_PASSPORT",
             "BirthCertificate": "CAM_BIRTH_CERT",
+            "BIRTHCERTIFICATE": "CAM_BIRTH_CERT",
             "FamilyBook": "CAM_FAMILY_BOOK",
+            "FAMILYBOOK": "CAM_FAMILY_BOOK",
         }
         target = mapping.get(v, "OTHER" if isinstance(v, str) else v)
         return target

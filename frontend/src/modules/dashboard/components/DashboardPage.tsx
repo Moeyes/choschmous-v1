@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { LayoutDashboard, Plus, ArrowRight } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { useAuth, useRequireAuth, UserRole } from '@/core/auth';
-import { PageShell, PageHeader, PageErrorState, SkeletonCard } from '@/shared';
+import { PageShell, PageHeader, PageErrorState, SkeletonCard, PageStats } from '@/shared';
 import { useDashboard } from '../hooks/useDashboard';
 import { GenderChart } from './GenderChart';
 import { RecentEnrollments } from './RecentEnrollments';
@@ -67,11 +67,7 @@ export function DashboardPage() {
 
             {isLoading ? (
                 <div className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <SkeletonCard key={i} />
-                        ))}
-                    </div>
+                    <PageStats items={[]} loading />
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                         <div className="lg:col-span-1">
                             <SkeletonCard className="h-[400px]" />

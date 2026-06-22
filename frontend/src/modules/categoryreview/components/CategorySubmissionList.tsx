@@ -13,8 +13,16 @@ const STATUS_OPTIONS: CategorySubmissionStatus[] = [
     'SUBMITTED', 'APPROVED', 'REJECTED', 'FLAGGED', 'REVISION_REQUESTED', 'DRAFT',
 ];
 
-const badgeVariant = (status: CategorySubmissionStatus) =>
-    status.toLowerCase() as 'submitted' | 'approved' | 'rejected' | 'flagged' | 'revision_requested' | 'draft';
+const STATUS_VARIANT: Record<CategorySubmissionStatus, "info" | "success" | "error" | "warning" | "muted"> = {
+    SUBMITTED: "info",
+    APPROVED: "success",
+    REJECTED: "error",
+    FLAGGED: "warning",
+    REVISION_REQUESTED: "warning",
+    DRAFT: "muted",
+};
+
+const badgeVariant = (status: CategorySubmissionStatus) => STATUS_VARIANT[status];
 
 interface CategorySubmissionListProps {
     onSelect: (submission: CategorySubmission) => void;
@@ -72,6 +80,7 @@ export function CategorySubmissionList({ onSelect }: CategorySubmissionListProps
                 <DataTable
                     isLoading={isLoading}
                     data={pageRows}
+                    rowKey={(item: CategorySubmission) => item.id}
                     onRowClick={(s) => onSelect(s)}
                     columns={[
                         {

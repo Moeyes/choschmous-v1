@@ -351,6 +351,18 @@
       "noResults": "No participants match these filters.",
       "revealPhone": "Show phone",
       "revealing": "Revealing…",
+      "yearsUnit": "yrs",
+      "emptyTitle": "No participants yet",
+      "emptyHint": "No one has registered for this category yet.",
+      "filteredEmptyTitle": "No matches",
+      "filteredEmptyHint": "No participants match the current filters.",
+      "stats": {
+        "total": "Total",
+        "athletes": "Athletes",
+        "leaders": "Leaders",
+        "male": "Male",
+        "female": "Female"
+      },
       "types": {
         "all": "All",
         "athlete": "Athlete",
@@ -387,6 +399,70 @@
     "columns": {
       "orgName": "Organization Name",
       "type": "Type"
+    },
+    "detail": {
+      "backToOrgs": "Back to organizations",
+      "notFound": "Organization not found",
+      "filterLabel": "Filter by event",
+      "allEvents": "All events",
+      "revealPhone": "Reveal phone",
+      "revealing": "Revealing…",
+      "nRegistered": "{count} registered",
+      "noParticipants": "No participants registered yet",
+      "participantsTotal": "{count} participants",
+      "genderSplit": "{male} male · {female} female",
+      "genderCount": "{male} male, {female} female",
+      "showingCount": "{count} shown",
+      "nPending": "{count} pending",
+      "nApproved": "{count} approved",
+      "nRejected": "{count} rejected",
+      "tabs": {
+        "bySport": "By sport",
+        "surveyStatus": "Survey status",
+        "category": "Category"
+      },
+      "stats": {
+        "events": "Events",
+        "sports": "Sports",
+        "athletes": "Athletes",
+        "leaders": "Leaders"
+      },
+      "sections": {
+        "bySport": {
+          "title": "Participation by sport",
+          "subtitle": "Registered athlete and leader counts per sport. Click a row to view the roster.",
+          "empty": "No participation recorded for this organization."
+        },
+        "surveyStatus": {
+          "title": "By-sport survey status",
+          "subtitle": "Sports this organization submitted for each event and their review status.",
+          "empty": "No sport survey submissions."
+        },
+        "category": {
+          "title": "Category survey",
+          "subtitle": "Category declarations for the events and sports this organization takes part in.",
+          "empty": "No category submissions for this organization's sports."
+        }
+      },
+      "columns": {
+        "sport": "Sport",
+        "event": "Event",
+        "athletes": "Athletes",
+        "leaders": "Leaders",
+        "categories": "Categories",
+        "status": "Status",
+        "participant": "Participant",
+        "type": "Type",
+        "role": "Role"
+      },
+      "statuses": {
+        "DRAFT": "Draft",
+        "SUBMITTED": "Submitted",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "FLAGGED": "Flagged",
+        "REVISION_REQUESTED": "Revision requested"
+      }
     }
   },
   "users": {
@@ -688,14 +764,49 @@
       "actionSuccess": "Status updated",
       "actionFailed": "Action failed",
       "cancel": "Cancel"
-    }
+    },
+    "orgsSubmitted": "organizations submitted",
+    "orgRecords": {
+      "title": "Submitting Organizations",
+      "subtitle": "One row per organization — open one to review its submissions"
+    },
+    "orgSubmissions": {
+      "title": "Submissions",
+      "subtitle": "Click a submission to review it individually"
+    },
+    "orgColumns": {
+      "submissions": "Submissions",
+      "breakdown": "Status",
+      "status": "Status"
+    },
+    "nEvents": "{count} events",
+    "nSubmissions": "{count} submissions",
+    "nPending": "{count} pending",
+    "nApproved": "{count} approved",
+    "nRejected": "{count} rejected",
+    "participantsSummary": "{athletes} athletes · {leaders} leaders",
+    "backToOrgs": "Back to organizations",
+    "bulkPrompt": "{count} pending submission(s) for this organization.",
+    "approveAll": "Approve all",
+    "rejectAll": "Reject all",
+    "orgActionSuccess": "{count} submission(s) updated",
+    "orgActionFailed": "Action failed"
   },
   "sportReview": {
     "queueTitle": "By-Sport Submissions Review",
-    "queueSubtitle": "Review and decide on organization sport selections",
+    "queueSubtitle": "Review submissions grouped by organization",
     "search": "Search...",
     "allStatuses": "All statuses",
     "failedToLoad": "Failed to load submissions",
+    "orgsSubmitted": "organizations submitted",
+    "orgRecords": {
+      "title": "Submitting Organizations",
+      "subtitle": "One row per organization — open one to review its sports"
+    },
+    "orgSports": {
+      "title": "Submitted Sports",
+      "subtitle": "Click a sport to review it individually"
+    },
     "records": {
       "title": "Sport Submissions",
       "subtitle": "Organization declarations of intent to participate, by sport"
@@ -703,12 +814,24 @@
     "columns": {
       "organization": "Organization",
       "sport": "Sport",
+      "sports": "Sports",
       "event": "Event",
+      "breakdown": "Status",
       "status": "Status",
       "submitted": "Submitted"
     },
+    "nSports": "{count} sports",
+    "nEvents": "{count} events",
+    "nPending": "{count} pending",
+    "nApproved": "{count} approved",
+    "nRejected": "{count} rejected",
+    "backToOrgs": "Back to organizations",
+    "bulkPrompt": "{count} pending submission(s) for this organization.",
+    "approveAll": "Approve all",
+    "rejectAll": "Reject all",
     "declaration": "Sport declaration",
     "actionSuccess": "Status updated",
+    "orgActionSuccess": "{count} submission(s) updated",
     "actionFailed": "Action failed"
   },
   "categoryReview": {
@@ -738,7 +861,30 @@
       "MIXED": "Mixed"
     },
     "actionSuccess": "Status updated",
-    "actionFailed": "Action failed"
+    "actionFailed": "Action failed",
+    "sportsSubmitted": "sports submitted",
+    "sportRecords": {
+      "title": "Submitting Sports",
+      "subtitle": "One row per sport — open one to review its events"
+    },
+    "sportSubmissions": {
+      "title": "Submitted Events",
+      "subtitle": "Click an event to review it individually"
+    },
+    "sportColumns": {
+      "submissions": "Submissions",
+      "breakdown": "Status"
+    },
+    "nEvents": "{count} events",
+    "nSubmissions": "{count} submissions",
+    "nPending": "{count} pending",
+    "nApproved": "{count} approved",
+    "nRejected": "{count} rejected",
+    "backToSports": "Back to sports",
+    "bulkPrompt": "{count} pending submission(s) for this sport.",
+    "approveAll": "Approve all",
+    "rejectAll": "Reject all",
+    "sportActionSuccess": "{count} submission(s) updated"
   },
   "cards": {
     "title": "Participant Cards",
@@ -1045,5 +1191,13 @@
     "active": "Active",
     "inactive": "Inactive",
     "actions": "Actions"
+  },
+  "statuses": {
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "flagged": "Flagged",
+    "revision_requested": "Revision Requested"
   }
 }

@@ -1,6 +1,6 @@
 import apiClient from '@/core/api/client';
 import { API } from '@/core/api/endpoints';
-import type { ParticipationPerSportPayload, ParticipationReviewPayload } from '../types';
+import type { ParticipationPerSportPayload, ParticipationReviewPayload, ParticipationOrgReviewPayload } from '../types';
 
 export async function apiCreateParticipation(payload: ParticipationPerSportPayload) {
     const { data } = await apiClient.post(`${API.participation.base}`, payload);
@@ -29,5 +29,10 @@ export async function apiDeleteParticipation(id: number) {
 
 export async function apiReviewParticipation(id: number, payload: ParticipationReviewPayload) {
     const { data } = await apiClient.patch(API.participation.review(id), payload);
+    return data;
+}
+
+export async function apiReviewParticipationOrg(orgId: number, payload: ParticipationOrgReviewPayload) {
+    const { data } = await apiClient.patch(API.participation.reviewOrg(orgId), payload);
     return data;
 }

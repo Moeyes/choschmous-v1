@@ -12,7 +12,21 @@ _INSECURE_JWT_SECRETS = {
     "change-me-too",
     "change-me-change-me-change-me-change-me",
     "change-me-too-change-me-too-change-me-too",
+    # Known-compromised dev secret: it was committed to git via
+    # backend/.env.example (commit 53f27a3) and is >=32 chars, so without this
+    # entry it would silently pass the length + placeholder guards. Block it so
+    # any non-local environment that reuses it refuses to start.
+    "dev-secret-aB3xK9mP2qR7nL5wT8vY1cF4hJ6kD0sG",
+    # New obvious placeholder shipped in backend/.env.example after scrubbing the
+    # value above — reject it too so a copied-but-unedited .env fails fast.
+    "REPLACE_ME_WITH_A_32_CHAR_RANDOM_SECRET",
 }
+
+# The app signs/verifies with a shared secret (HMAC). Restrict JWT_ALGORITHM to
+# the symmetric HS family so a misconfiguration can never select "none"
+# (unsigned tokens) or an asymmetric alg whose verification semantics would not
+# match how tokens are signed here.
+_ALLOWED_JWT_ALGORITHMS = {"HS256", "HS384", "HS512"}
 
 
 class Settings(BaseSettings):
@@ -81,6 +95,12 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _require_secure_jwt_secrets(self) -> "Settings":
+        if self.JWT_ALGORITHM not in _ALLOWED_JWT_ALGORITHMS:
+            raise ValueError(
+                f"JWT_ALGORITHM must be one of {sorted(_ALLOWED_JWT_ALGORITHMS)} "
+                f"(got {self.JWT_ALGORITHM!r}). Refusing to start with an "
+                "unsupported or unsafe signing algorithm."
+            )
         key = self.JWT_SECRET_KEY.strip()
         refresh_key = self.JWT_REFRESH_SECRET_KEY.strip()
         if len(key) < 32:

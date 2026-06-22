@@ -24,7 +24,7 @@ export async function apiGetEventById(eventId: number) {
 export async function apiGetPublicEventById(eventId: number) {
     const base =
         typeof window === 'undefined'
-            ? (process.env.API_URL ?? 'http://localhost:8000')
+            ? (process.env.API_PROXY_TARGET ?? 'http://localhost:8000')
             : '';
     const { data } = await apiClient.get<unknown>(`${base}${API.events.publicById(eventId)}`);
     return data;

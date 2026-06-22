@@ -9,10 +9,12 @@ import { OrgForm } from './OrgForm';
 import { Modal, Badge, ListPage, useConfirm } from '@/shared';
 import { Button } from '@/shared/ui/button';
 import { usePermissions, CAPABILITIES } from '@/core/auth';
-import { Edit2, Trash2, Plus, Building2, Landmark, GraduationCap, Shield } from 'lucide-react';
+import { Edit2, Trash2, Plus, Building2, Landmark, GraduationCap, Shield, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 export function OrgList() {
+    const router = useRouter();
     const getQueryParams = useOrganizationsFiltersStore((s) => s.getQueryParams);
     const params = useMemo(() => getQueryParams(), [getQueryParams]);
 
@@ -43,6 +45,8 @@ export function OrgList() {
                 errorTitle={t('failedToLoad')}
                 isLoading={isLoading}
                 data={orgs || []}
+                rowKey={(org) => org.id}
+                onRowClick={(org) => router.push(`/organizations/${org.id}`)}
                 columns={[
                     {
                         header: t('columns.orgName'),
@@ -58,11 +62,15 @@ export function OrgList() {
                         header: tCommon('actions'), align: 'right' as const,
                         accessor: (org: OrganizationPublic) => (
                             <div className="flex items-center justify-end gap-2">
-                                <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(org)}><Edit2 className="w-4 h-4" /></Button>
-                                <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(org.id)} className="text-error hover:text-error hover:bg-error/5"><Trash2 className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); handleEdit(org); }}><Edit2 className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); handleDelete(org.id); }} className="text-error hover:text-error hover:bg-error/5"><Trash2 className="w-4 h-4" /></Button>
+                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
                             </div>
                         ),
-                    }] : []),
+                    }] : [{
+                        header: '', align: 'right' as const,
+                        accessor: () => <ChevronRight className="w-4 h-4 text-muted-foreground" />,
+                    }]),
                 ]}
             />
             {isAdmin && (

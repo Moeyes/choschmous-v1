@@ -115,7 +115,7 @@ export function useRegisterForm(
                 return;
             }
             const payload = formDataToPayload(data, user.id);
-            await mutation.mutateAsync(payload);
+            await mutation.mutateAsync(payload).catch(() => undefined);
         },
         [mutation, user, form]
     );

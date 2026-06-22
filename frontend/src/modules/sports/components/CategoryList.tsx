@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Category, Gender } from '../types';
 import { useCategories, useDeleteCategory } from '../hooks';
 import { CategoryForm } from './CategoryForm';
@@ -58,7 +58,8 @@ export function CategoryList({ sportId }: CategoryListProps) {
                         {categories?.map((cat) => {
                             const isSelected = selectedCategory?.id === cat.id;
                             return (
-                            <tr key={cat.id}
+                            <Fragment key={cat.id}>
+                            <tr
                                 onClick={canViewParticipants ? () => toggleSelect(cat) : undefined}
                                 className={`transition-colors ${canViewParticipants ? 'cursor-pointer' : ''} ${isSelected ? 'bg-primary/5' : 'hover:bg-muted/30'}`}>
                                 <td className="p-4 text-sm font-medium">
@@ -77,6 +78,14 @@ export function CategoryList({ sportId }: CategoryListProps) {
                                     </td>
                                 )}
                             </tr>
+                            {canViewParticipants && isSelected && (
+                                <tr className="bg-primary/[0.02]">
+                                    <td colSpan={isAdmin ? 3 : 2} className="p-3 sm:p-4">
+                                        <CategoryParticipants sportId={sportId} category={cat} />
+                                    </td>
+                                </tr>
+                            )}
+                            </Fragment>
                             );
                         })}
                         {categories?.length === 0 && (
@@ -86,9 +95,6 @@ export function CategoryList({ sportId }: CategoryListProps) {
                 </table>
             </div>
 
-            {canViewParticipants && selectedCategory && (
-                <CategoryParticipants sportId={sportId} category={selectedCategory} />
-            )}
             {isAdmin && (
                 <Modal isOpen={isModalOpen} onClose={closeModal} title={editingCategory ? t('editCategory') : t('addCategory')}>
                     <CategoryForm sportId={sportId} category={editingCategory} onSuccess={closeModal} onCancel={closeModal} />

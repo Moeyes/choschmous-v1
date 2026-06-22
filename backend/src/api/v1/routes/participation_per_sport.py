@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.participation_per_sport_service import (
     ParticipationPerSportService,
@@ -172,6 +172,26 @@ async def review_participation_per_sport(
     if not obj:
         raise HTTPException(status_code=404, detail="Not found")
     return obj
+
+
+@router.patch("/org/{org_id}/review")
+async def review_participation_bulk_by_org(
+    org_id: int,
+    action: str = Body(..., embed=True),
+    note: str | None = Body(None, embed=True),
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """**Bulk approve/reject all of an organization's pending submissions** (admin
+    only). Only SUBMITTED rows are affected — already-decided rows (approved /
+    rejected / flagged / revision-requested) are left untouched. ``action``:
+    approve | reject. Returns the number of rows updated."""
+    service = ParticipationPerSportService(db)
+    try:
+        updated = await service.review_bulk_by_org(org_id, action, note)
+    except ParticipationReviewError as exc:
+        raise HTTPException(status_code=exc.code, detail=str(exc))
+    return {"updated": updated, "status": "APPROVED" if action == "approve" else "REJECTED"}
 
 
 @router.delete("/{id}", response_model=ParticipationPerSportPublic)

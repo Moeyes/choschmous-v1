@@ -99,9 +99,14 @@ export interface EligibleSport {
     athletes_used: number;
 }
 
-export async function fetchEligibleSports(eventId: number): Promise<EligibleSport[]> {
+export async function fetchEligibleSports(
+    eventId: number,
+    organizationId?: number
+): Promise<EligibleSport[]> {
     try {
-        const response = await apiClient.get(`/api/events/${eventId}/my-eligible-sports`);
+        const response = await apiClient.get(`/api/events/${eventId}/my-eligible-sports`, {
+            params: organizationId ? { organization_id: organizationId } : undefined,
+        });
         return Array.isArray(response.data) ? response.data : [];
     } catch {
         return [];

@@ -34,6 +34,9 @@ class ParticipationPerSportPublic(BaseModel):
     org_id: int
     org_name: str | None = None
     event_name: str | None = None
+    event_id: int | None = None
+    sport_id: int | None = None
+    sport_name: str | None = None
     sports_events_id: int | None = Field(None, alias="sports_Events_id")
     athlete_female_count: int | None
     leader_female_count: int | None

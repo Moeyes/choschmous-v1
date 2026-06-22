@@ -11,11 +11,6 @@ export async function apiFetchCategories(eventId: number, sportId: number) {
   return response.data;
 }
 
-export async function apiFetchPreviousCategories(eventId: number, sportId: number) {
-  const response = await apiClient.get(API.bycategory.categories(eventId, sportId));
-  return response.data;
-}
-
 export async function apiSubmitCategories(body: Record<string, unknown>) {
   const response = await apiClient.post(API.bycategory.upsert, body);
   return response.data;

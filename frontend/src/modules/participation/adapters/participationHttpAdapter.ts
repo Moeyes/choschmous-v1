@@ -1,10 +1,10 @@
 import type { IParticipationRepository } from '../ports/IParticipationRepository';
-import { participationSchema, participationListSchema } from '../schema/participation.schema';
+import { participationSchema, participationListSchema, participationBulkReviewResultSchema } from '../schema/participation.schema';
 import {
     apiCreateParticipation, apiGetParticipations, apiGetParticipation,
-    apiUpdateParticipation, apiDeleteParticipation, apiReviewParticipation,
+    apiUpdateParticipation, apiDeleteParticipation, apiReviewParticipation, apiReviewParticipationOrg,
 } from '../api';
-import type { ParticipationPerSport, ParticipationPerSportPayload, ParticipationPerSportListResponse, ParticipationReviewPayload } from '../types';
+import type { ParticipationPerSport, ParticipationPerSportPayload, ParticipationPerSportListResponse, ParticipationReviewPayload, ParticipationOrgReviewPayload, ParticipationBulkReviewResult } from '../types';
 
 export const participationHttpAdapter: IParticipationRepository = {
     create: async (payload: ParticipationPerSportPayload) => {
@@ -30,5 +30,9 @@ export const participationHttpAdapter: IParticipationRepository = {
     review: async (id: number, payload: ParticipationReviewPayload) => {
         const parsed = participationSchema.parse(await apiReviewParticipation(id, payload));
         return parsed as unknown as ParticipationPerSport;
+    },
+    reviewOrg: async (orgId: number, payload: ParticipationOrgReviewPayload) => {
+        const parsed = participationBulkReviewResultSchema.parse(await apiReviewParticipationOrg(orgId, payload));
+        return parsed as unknown as ParticipationBulkReviewResult;
     },
 };

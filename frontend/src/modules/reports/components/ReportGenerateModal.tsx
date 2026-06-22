@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Calendar, Building2, CheckCircle2, Download, FileSpreadsheet, FileText, ToggleLeft, ToggleRight } from 'lucide-react';
-import { Modal } from '@/shared/ui/Modal';
+import { ModalV2 } from '@/shared/ui/ModalV2';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
 import { useTranslations } from 'next-intl';
@@ -67,8 +67,43 @@ export function ReportGenerateModal({
         });
     };
 
+    const renderSuccessFooter = (
+        <div className="flex w-full gap-3">
+            <Button variant="outline" className="flex-1" onClick={handleClose}>
+                {tCommon('close')}
+            </Button>
+            <Button className="flex-1 gap-2" onClick={handleGenerate}>
+                <Download className="h-4 w-4" />
+                {t('downloadAgain')}
+            </Button>
+        </div>
+    );
+
+    const renderFormFooter = (
+        <div className="flex w-full gap-3">
+            <Button variant="outline" className="flex-1" onClick={handleClose}>
+                {tCommon('close')}
+            </Button>
+            <Button
+                className="flex-1 gap-2"
+                onClick={handleGenerate}
+                loading={isGenerating}
+                disabled={!eventId || isGenerating}
+            >
+                {!isGenerating && <Download className="h-4 w-4" />}
+                {isGenerating ? t('generating') : t('generate')}
+            </Button>
+        </div>
+    );
+
     return (
-        <Modal isOpen={isOpen} onClose={handleClose} title={reportTitle}>
+        <ModalV2
+            isOpen={isOpen}
+            onClose={handleClose}
+            title={reportTitle}
+            size="md"
+            footer={isDone ? renderSuccessFooter : renderFormFooter}
+        >
             {isDone ? (
                 <div className="flex flex-col items-center gap-5 py-4 text-center">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
@@ -77,15 +112,6 @@ export function ReportGenerateModal({
                     <div>
                         <p className="text-base font-semibold leading-snug text-foreground">{t('generated')}</p>
                         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t('generatedDesc')}</p>
-                    </div>
-                    <div className="flex w-full gap-3">
-                        <Button variant="outline" className="flex-1" onClick={handleClose}>
-                            {tCommon('close')}
-                        </Button>
-                        <Button className="flex-1 gap-2" onClick={handleGenerate}>
-                            <Download className="h-4 w-4" />
-                            {t('downloadAgain')}
-                        </Button>
                     </div>
                 </div>
             ) : (
@@ -191,23 +217,8 @@ export function ReportGenerateModal({
                             </div>
                         </div>
                     )}
-
-                    <div className="flex gap-3 border-t border-border pt-4">
-                        <Button variant="outline" className="flex-1" onClick={handleClose}>
-                            {tCommon('close')}
-                        </Button>
-                        <Button
-                            className={cn('flex-1 gap-2')}
-                            onClick={handleGenerate}
-                            loading={isGenerating}
-                            disabled={!eventId || isGenerating}
-                        >
-                            {!isGenerating && <Download className="h-4 w-4" />}
-                            {isGenerating ? t('generating') : t('generate')}
-                        </Button>
-                    </div>
                 </div>
             )}
-        </Modal>
+        </ModalV2>
     );
 }

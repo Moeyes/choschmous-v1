@@ -37,3 +37,8 @@ export const participationListSchema = z.object({
     data: participationSchema.array(),
     count: z.number().int().nonnegative(),
 }).strict();
+
+export const participationBulkReviewResultSchema = z.object({
+    updated: z.number().int().nonnegative(),
+    status: z.string(),
+}).strict();

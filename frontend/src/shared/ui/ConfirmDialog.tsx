@@ -9,18 +9,20 @@ import {
 } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { useTranslations } from "next-intl";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, HelpCircle } from "lucide-react";
 
 import { Button } from "./button";
 import { cn } from "@/shared/utils/cn";
 
-type ConfirmFn = (options?: {
+interface ConfirmOptions {
   title?: string;
   message?: string;
   confirmText?: string;
   cancelText?: string;
   variant?: "destructive" | "default";
-}) => Promise<boolean>;
+}
+
+type ConfirmFn = (options?: ConfirmOptions) => Promise<boolean>;
 
 const ConfirmContext = createContext<ConfirmFn | null>(null);
 
@@ -39,13 +41,7 @@ export function ConfirmDialogProvider({
 }) {
   const t = useTranslations("common.confirmDelete");
   const [open, setOpen] = useState(false);
-  const [options, setOptions] = useState<{
-    title?: string;
-    message?: string;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: "destructive" | "default";
-  }>({});
+  const [options, setOptions] = useState<ConfirmOptions>({});
   const resolverRef = useRef<((value: boolean) => void) | null>(null);
 
   const confirm = useCallback<ConfirmFn>((opts) => {
@@ -98,13 +94,17 @@ export function ConfirmDialogProvider({
             <div className="flex items-start gap-4">
               <div
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                  "flex size-10 shrink-0 items-center justify-center rounded-full",
                   variant === "destructive"
                     ? "bg-destructive/10 text-destructive"
                     : "bg-accent text-primary",
                 )}
               >
-                <AlertTriangle className="h-5 w-5" />
+                {variant === "destructive" ? (
+                  <AlertTriangle className="size-5" />
+                ) : (
+                  <HelpCircle className="size-5" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <Dialog.Title className="text-base font-semibold leading-snug text-foreground">
@@ -117,13 +117,17 @@ export function ConfirmDialogProvider({
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => settle(false)}>
+              <Button
+                variant="secondary"
+                onClick={() => settle(false)}
+                autoFocus={variant === "destructive"}
+              >
                 {options.cancelText ?? t("cancel")}
               </Button>
               <Button
                 variant={variant === "destructive" ? "destructive" : "default"}
                 onClick={() => settle(true)}
-                autoFocus
+                autoFocus={variant !== "destructive"}
               >
                 {options.confirmText ?? t("confirm")}
               </Button>

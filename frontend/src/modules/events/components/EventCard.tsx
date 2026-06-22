@@ -21,10 +21,10 @@ function statusOf(event: Event): Status {
 }
 
 // Inactive/past states stay quiet (draft = muted); only the live state pops.
-const STATUS_VARIANT: Record<Status, "info" | "success" | "draft"> = {
+const STATUS_VARIANT: Record<Status, "info" | "success" | "muted"> = {
   upcoming: "info",
   ongoing: "success",
-  completed: "draft",
+  completed: "muted",
 };
 
 /**

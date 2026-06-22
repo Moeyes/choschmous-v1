@@ -9,8 +9,8 @@
  * 1234         -> *** *** 234
  * 12           -> ***
  */
-export function maskPhone(phone: string): string {
-    const digits = (phone ?? '').replace(/\D/g, '');
-    if (digits.length < 4) return '***';
-    return `*** *** ${digits.slice(-3)}`;
+export function maskPhone(phone: string | null | undefined): string {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  if (digits.length < 4) return "***";
+  return `*** *** ${digits.slice(-3)}`;
 }

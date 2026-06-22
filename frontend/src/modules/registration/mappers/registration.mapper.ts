@@ -1,6 +1,14 @@
 import type { RegisterFormData } from '../schema/registration.schema';
 import type { RegisterPayload, ApiErrorResponse } from '../types';
 
+const documentTypeByFormValue: Record<string, string> = {
+    IDCARD: 'IDCard',
+    BIRTHCERTIFICATE: 'BirthCertificate',
+    PASSPORT: 'Passport',
+    FAMILYBOOK: 'FamilyBook',
+    OTHER: 'Other',
+};
+
 export function formDataToPayload(data: RegisterFormData, userId: string): RegisterPayload {
     return {
         userId,
@@ -18,7 +26,7 @@ export function formDataToPayload(data: RegisterFormData, userId: string): Regis
         phone: data.phone,
         gender: data.gender,
         dateOfBirth: data.dateOfBirth,
-        idDocType: data.idDocumentType,
+        idDocType: documentTypeByFormValue[data.idDocumentType] ?? data.idDocumentType,
         address: data.address,
         nationality: data.nationality,
 

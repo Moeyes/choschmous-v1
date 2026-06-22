@@ -57,6 +57,9 @@ export const sportsHttpAdapter: ISportsRepository = {
                 sport_id: sportId,
                 event_id: eventId,
                 organization_id: organizationId,
+                // Ask for the richer per-row projection (category/gender/org/event)
+                // the by-category participant table renders.
+                detailed: true,
                 limit: limit ?? 200,
             }),
         );

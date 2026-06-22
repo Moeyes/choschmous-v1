@@ -10,7 +10,7 @@ import { z } from 'zod';
 // picker defensively drop events whose open-survey phase is not live (the request
 // is already filtered server-side via ?survey_open_open=true). Kept nullish so a
 // future/absent flag never nukes the whole list.
-export const openSurveyEventSchema = z.object({
+const openSurveyEventSchema = z.object({
   id: z.number(),
   name_kh: z.string(),
   type: z.string().nullish(),
@@ -31,7 +31,7 @@ export const openSurveyEventListResponseSchema = z.object({
 // field has none). The response is untrusted regardless, so it is still `.parse`d.
 // Rows arrive ordered by (sort_order, id); we re-sort defensively in the data
 // layer (see `sortOpenSurveyFields`).
-export const openSurveyFieldSchema = z.object({
+const openSurveyFieldSchema = z.object({
   id: z.number(), // response-row id; 0 when this org has not answered yet
   field_id: z.number(), // the field id — the key used on submit
   organization_id: z.number(),
@@ -53,7 +53,7 @@ export const openSurveyFillViewSchema = z.object({
 });
 
 // POST /api/surveys/open/responses returns list[OpenSurveyResponsePublic].
-export const openSurveyResponseSchema = z.object({
+const openSurveyResponseSchema = z.object({
   id: z.number(),
   field_id: z.number(),
   organization_id: z.number(),

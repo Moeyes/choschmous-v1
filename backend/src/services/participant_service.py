@@ -5,6 +5,7 @@ from sqlalchemy import (
     delete as sa_delete,
     desc,
     func,
+    Integer,
     literal,
     select,
     String,
@@ -79,13 +80,13 @@ class ParticipantService:
             used_total = (
                 await self.db.execute(
                     select(func.count()).select_from(
-                        select(AthleteParticipation.c.id)
+                        select(AthleteParticipation.id)
                         .where(
-                            AthleteParticipation.c.events_id == data.eventId,
+                            AthleteParticipation.events_id == data.eventId,
                         )
                         .union_all(
-                            select(LeaderParticipation.c.id).where(
-                                LeaderParticipation.c.events_id == data.eventId,
+                            select(LeaderParticipation.id).where(
+                                LeaderParticipation.events_id == data.eventId,
                             )
                         )
                         .subquery()
@@ -336,6 +337,7 @@ class ParticipantService:
                 en_given_name=data.en_given_name,
                 phonenumber=data.phone,
                 gender=data.gender,
+                nationality=data.nationality or "Cambodian",
                 date_of_birth=data.date_of_birth,
                 id_document_type=data.id_document_type,
                 address=data.address,
@@ -444,7 +446,9 @@ class ParticipantService:
             query = query.filter(Enroll.search_text.ilike(term))
         return query
 
-    async def get_participants(self, params: ParticipantFilterParams):
+    async def get_participants(
+        self, params: ParticipantFilterParams, detailed: bool = False
+    ):
         query, count_query = self._build_list_query(params)
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0
@@ -452,7 +456,10 @@ class ParticipantService:
         page_query = query.order_by(desc("created_at"))
         page_query = page_query.limit(params.limit).offset(params.offset)
         result = await self.db.execute(page_query)
-        rows = [self._format_list_row(r, r["role"]) for r in result.mappings().all()]
+        # The sport-detail participant panel needs category/gender/org/event per
+        # row; the default registrations list stays lean (data minimization).
+        format_row = self._format_sport_row if detailed else self._format_list_row
+        rows = [format_row(r, r["role"]) for r in result.mappings().all()]
 
         limit = params.limit or 20
         total_pages = max(1, (total + limit - 1) // limit) if limit > 0 else 1
@@ -521,6 +528,8 @@ class ParticipantService:
         athlete_q = _apply_filters(
             select(
                 *common_cols,
+                CategoryModel.id.label("category_id"),
+                CategoryModel.category.label("category_name"),
                 cast(None, String).label("leader_role"),
                 literal("athlete").label("role"),
                 AthleteParticipation.events_id,
@@ -531,13 +540,20 @@ class ParticipantService:
             .outerjoin(
                 Organization, Organization.id == AthleteParticipation.organization_id
             )
-            .outerjoin(Events, Events.id == AthleteParticipation.events_id),
+            .outerjoin(Events, Events.id == AthleteParticipation.events_id)
+            .outerjoin(
+                CategoryModel, CategoryModel.id == AthleteParticipation.category_id
+            ),
             AthleteParticipation,
         )
 
         leader_q = _apply_filters(
             select(
                 *common_cols,
+                # Leaders aren't category-scoped; emit typed NULLs so this branch
+                # lines up column-for-column with the athlete branch for UNION.
+                cast(None, Integer).label("category_id"),
+                cast(None, String).label("category_name"),
                 # Cast the enum to text so this branch's leader_role column type
                 # matches the athlete branch's CAST(NULL AS VARCHAR); Postgres
                 # refuses to UNION the `leader_role` enum with varchar otherwise.
@@ -998,6 +1014,63 @@ class ParticipantService:
             "sport_name": r.get("sport_name"),
             "event_name": r.get("event_name"),
             "role": role,
+            "leader_role": (
+                None
+                if role == "athlete"
+                else (
+                    leader_role.value if hasattr(leader_role, "value") else leader_role
+                )
+            ),
+        }
+
+    def _format_sport_row(self, r: dict, role: str) -> dict:
+        """Richer projection for the sport-detail participant panel.
+
+        Carries the category / gender / organization / event fields the
+        by-category participant table renders. Phone stays out — it is
+        Restricted-PII, revealed only on demand via the audited endpoint
+        (data-governance §2). Keys mirror the frontend SportParticipant shape.
+        """
+        dob = r.get("date_of_birth")
+        gender = r.get("gender")
+        leader_role = r.get("leader_role")
+        sport_id = r.get("sport_id")
+        org_id = r.get("org_id")
+        category_id = r.get("category_id")
+        name_kh = " ".join(
+            p for p in (r.get("kh_family_name"), r.get("kh_given_name")) if p
+        ).strip()
+        name_en = " ".join(
+            p for p in (r.get("en_family_name"), r.get("en_given_name")) if p
+        ).strip()
+        return {
+            "participant_id": r["participant_id"],
+            "name_kh": name_kh,
+            "name_en": name_en,
+            "gender": (
+                (gender.value if hasattr(gender, "value") else str(gender))
+                if gender is not None
+                else ""
+            ),
+            "date_of_birth": dob.isoformat() if dob is not None else None,
+            "photoUrl": r.get("photoUrl"),
+            "role": role,
+            "sport": (
+                {"id": sport_id, "name": r.get("sport_name")}
+                if sport_id is not None
+                else None
+            ),
+            "organization": (
+                {"id": org_id, "name": r.get("org_name")}
+                if org_id is not None
+                else None
+            ),
+            "event_id": r.get("events_id"),
+            "category": (
+                {"id": category_id, "name": r.get("category_name")}
+                if role == "athlete" and category_id is not None
+                else None
+            ),
             "leader_role": (
                 None
                 if role == "athlete"

@@ -3,14 +3,21 @@
 node_modules
 .next
 .git
+Dockerfile
+.dockerignore
+
+# Local env only — keep committed .env / .env.production for Next build-time vars
 .env.local
 .env*.local
+
+# Source archives — never ship these into the build context
+*.zip
 
 # Test / tooling artifacts
 e2e/.auth
 e2e/screenshots
 e2e/test-results
 e2e/playwright-report
+coverage
 *.tsbuildinfo
 npm-debug.log*
-coverage

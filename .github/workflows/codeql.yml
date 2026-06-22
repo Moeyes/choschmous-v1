@@ -29,23 +29,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - language: javascript-typescript
-            paths: frontend
-          - language: python
-            paths: backend
+        language: [javascript-typescript, python]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
-          language: ${{ matrix.language }}
+          # `languages` (plural) is the correct input; `build-mode: none` skips
+          # the build step — both languages here are interpreted (no compilation).
+          languages: ${{ matrix.language }}
+          build-mode: none
           # `security-and-quality` is broader than the default `security`; drop
           # to `security-extended` if quality findings prove too noisy.
           queries: security-and-quality
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"

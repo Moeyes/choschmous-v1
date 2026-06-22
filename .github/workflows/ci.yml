@@ -24,9 +24,9 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
       - name: Sync dependencies
         run: uv sync --frozen
       - name: Ruff lint
@@ -69,9 +69,9 @@ jobs:
       JWT_SECRET_KEY: ci-test-secret-key-not-for-production-0001
       JWT_REFRESH_SECRET_KEY: ci-test-refresh-secret-not-for-prod-0002
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
       - name: Sync dependencies
         run: uv sync --frozen
       - name: Bootstrap database schema
@@ -86,17 +86,17 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # Read the pinned pnpm from the `packageManager` field in
       # frontend/package.json (currently pnpm@11.7.0) — the same version corepack
       # installs in the Dockerfile. `package_json_file` is required because
       # action-setup runs from the repo root (there is no root package.json), and
       # `working-directory` only affects `run:` steps. pnpm 9 cannot install this
       # project: the lockfile and pnpm-workspace.yaml overrides are pnpm-11 format.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: frontend/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm

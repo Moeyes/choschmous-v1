@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Dialog } from '@base-ui/react/dialog';
-import { X } from 'lucide-react';
-import { cn } from '@/shared/utils/cn';
+import { type ReactNode } from "react";
+import { Dialog } from "@base-ui/react/dialog";
+import { X } from "lucide-react";
+import { cn } from "@/shared/utils/cn";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  children: React.ReactNode;
+  description?: string;
+  children: ReactNode;
+  footer?: ReactNode;
   /** Max width of the dialog. Defaults to `lg`. */
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
@@ -28,7 +30,7 @@ const SIZE_MAP: Record<NonNullable<ModalProps['size']>, string> = {
  * free. The imperative `isOpen`/`onClose` API is preserved so existing call
  * sites need no changes.
  */
-export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, description, children, footer, size = 'lg' }: ModalProps) {
   return (
     <Dialog.Root
       open={isOpen}
@@ -52,15 +54,28 @@ export function Modal({ isOpen, onClose, title, children, size = 'lg' }: ModalPr
           )}
         >
           <div className="flex shrink-0 items-center justify-between border-b border-border p-4 sm:p-6">
-            <Dialog.Title className="text-base font-semibold leading-snug text-foreground sm:text-lg">{title}</Dialog.Title>
+            <div>
+              <Dialog.Title className="text-base font-semibold leading-snug text-foreground sm:text-lg">{title}</Dialog.Title>
+              {description && (
+                <Dialog.Description className="text-sm text-muted-foreground mt-0.5">
+                  {description}
+                </Dialog.Description>
+              )}
+            </div>
             <Dialog.Close
+              type="button"
               aria-label="Close"
               className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <X className="h-5 w-5" />
+              <X className="size-5" />
             </Dialog.Close>
           </div>
           <div className="overflow-y-auto p-4 sm:p-6">{children}</div>
+          {footer && (
+            <div className="shrink-0 border-t border-border p-4 sm:p-6">
+              {footer}
+            </div>
+          )}
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>

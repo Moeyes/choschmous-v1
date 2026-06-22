@@ -25,16 +25,3 @@ export interface OrganizerRegistrationPayload {
     nationalIdPath?: string | null;
     passportPath?: string | null;
 }
-
-export interface OrganizerResponse {
-    enroll_id: number;
-    organizer_participation_id: number;
-    organizer_role_id: number;
-    role_name_en: string;
-    role_name_kh: string;
-    event_id: number;
-    organization_id: number | null;
-    kh_family_name: string;
-    kh_given_name: string;
-    created_at: string;
-}

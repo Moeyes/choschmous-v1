@@ -60,7 +60,8 @@ export function ParticipantList() {
       isLoading={isLoading}
       data={registrations}
       onRowClick={(row) => openDetail(row.id, row.role)}
-      emptyMessage={t('noParticipants')}
+      rowKey={(row) => row.id}
+      emptyState={t('noParticipants')}
       pagination={{
         page: currentPage + 1,
         totalPages,

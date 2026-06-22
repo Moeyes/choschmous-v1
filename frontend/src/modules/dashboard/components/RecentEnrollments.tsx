@@ -22,7 +22,8 @@ export function RecentEnrollments({ data }: RecentEnrollmentsProps) {
                 <DataTable
                     data={data}
                     minWidth="min-w-0"
-                    emptyMessage={t('noRecentEnrollments')}
+                    rowKey={(item: RecentEnrollment) => item.id}
+                    emptyState={t('noRecentEnrollments')}
                     cardMode={true}
                     columns={[
                         {

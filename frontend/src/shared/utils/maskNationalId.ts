@@ -8,8 +8,8 @@
  * 010203040506 -> **** **** 0506
  * AB12         -> ***
  */
-export function maskNationalId(id: string): string {
-    const s = (id ?? '').trim();
-    if (s.length <= 4) return '***';
-    return `**** **** ${s.slice(-4)}`;
+export function maskNationalId(id: string | null | undefined): string {
+  const s = (id ?? "").trim();
+  if (s.length <= 4) return "***";
+  return `**** **** ${s.slice(-4)}`;
 }

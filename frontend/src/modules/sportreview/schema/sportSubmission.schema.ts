@@ -30,3 +30,10 @@ export const sportSubmissionListSchema = z
         count: z.number().int().nonnegative(),
     })
     .strict();
+
+export const sportOrgBulkReviewResultSchema = z
+    .object({
+        updated: z.number().int().nonnegative(),
+        status: z.string(),
+    })
+    .strict();

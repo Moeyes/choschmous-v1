@@ -97,10 +97,37 @@ def hash_token_value(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+# Passwords that satisfy the naive complexity rules below but are still trivially
+# guessed. This is a small curated denylist, NOT a full breach corpus — for
+# ASVS-grade coverage, additionally screen new passwords against a breached-
+# password set (e.g. the HaveIBeenPwned k-anonymity range API) at the
+# registration / change call site in UserService.
+_COMMON_WEAK_PASSWORDS = frozenset(
+    {
+        "password1234",
+        "passw0rd1234",
+        "p@ssw0rd1234",
+        "welcome123456",
+        "qwerty123456",
+        "admin1234567",
+        "letmein12345",
+        "iloveyou1234",
+        "changeme1234",
+        "1q2w3e4r5t6y",
+    }
+)
+
+
 def validate_password_strength(password: str) -> None:
-    """Raise ValueError if password does not meet strength requirements."""
-    if len(password) < 8:
-        raise ValueError("password must be at least 8 characters")
+    """Raise ValueError if a password does not meet strength requirements.
+
+    Policy raised to ASVS 5.0 L1 for this public-sector system: minimum 12
+    characters, mixed case + digit, and not a well-known weak password. Enforced
+    at registration / password-change only (never at login), so existing
+    credentials predating this policy are not locked out.
+    """
+    if len(password) < 12:
+        raise ValueError("password must be at least 12 characters")
     if len(password) > 128:
         raise ValueError("password must not exceed 128 characters")
     if not re.search(r"[A-Z]", password):
@@ -109,6 +136,8 @@ def validate_password_strength(password: str) -> None:
         raise ValueError("password must contain at least one lowercase letter")
     if not re.search(r"[0-9]", password):
         raise ValueError("password must contain at least one digit")
+    if password.lower() in _COMMON_WEAK_PASSWORDS:
+        raise ValueError("password is too common; choose a less predictable password")
 
 
 def generate_csrf_token() -> str:

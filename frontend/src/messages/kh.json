@@ -351,6 +351,18 @@
       "noResults": "គ្មានអ្នកចូលរួមត្រូវនឹងតម្រងទាំងនេះទេ។",
       "revealPhone": "បង្ហាញលេខទូរស័ព្ទ",
       "revealing": "កំពុងបង្ហាញ…",
+      "yearsUnit": "ឆ្នាំ",
+      "emptyTitle": "មិនទាន់មានអ្នកចូលរួម",
+      "emptyHint": "មិនទាន់មានអ្នកចុះឈ្មោះក្នុងប្រភេទនេះទេ។",
+      "filteredEmptyTitle": "គ្មានលទ្ធផល",
+      "filteredEmptyHint": "គ្មានអ្នកចូលរួមត្រូវនឹងតម្រងបច្ចុប្បន្នទេ។",
+      "stats": {
+        "total": "សរុប",
+        "athletes": "កីឡាករ",
+        "leaders": "អ្នកដឹកនាំ",
+        "male": "ប្រុស",
+        "female": "ស្រី"
+      },
       "types": {
         "all": "ទាំងអស់",
         "athlete": "កីឡាករ",
@@ -387,6 +399,70 @@
     "columns": {
       "orgName": "ឈ្មោះអង្គការ",
       "type": "ប្រភេទ"
+    },
+    "detail": {
+      "backToOrgs": "ត្រឡប់ទៅអង្គការ",
+      "notFound": "រកមិនឃើញអង្គការ",
+      "filterLabel": "ត្រងតាមព្រឹត្តិការណ៍",
+      "allEvents": "ព្រឹត្តិការណ៍ទាំងអស់",
+      "revealPhone": "បង្ហាញលេខទូរស័ព្ទ",
+      "revealing": "កំពុងបង្ហាញ…",
+      "nRegistered": "បានចុះឈ្មោះ {count} នាក់",
+      "noParticipants": "មិនទាន់មានអ្នកចូលរួមចុះឈ្មោះ",
+      "participantsTotal": "អ្នកចូលរួម {count} នាក់",
+      "genderSplit": "ប្រុស {male} · ស្រី {female}",
+      "genderCount": "ប្រុស {male} នាក់, ស្រី {female} នាក់",
+      "showingCount": "បង្ហាញ {count}",
+      "nPending": "រង់ចាំ {count}",
+      "nApproved": "អនុម័ត {count}",
+      "nRejected": "បដិសេធ {count}",
+      "tabs": {
+        "bySport": "តាមកីឡា",
+        "surveyStatus": "ស្ថានភាពស្ទង់មតិ",
+        "category": "ប្រភេទ"
+      },
+      "stats": {
+        "events": "ព្រឹត្តិការណ៍",
+        "sports": "កីឡា",
+        "athletes": "កីឡាករ",
+        "leaders": "អ្នកដឹកនាំ"
+      },
+      "sections": {
+        "bySport": {
+          "title": "ការចូលរួមតាមកីឡា",
+          "subtitle": "ចំនួនកីឡាករ និងអ្នកដឹកនាំដែលបានចុះឈ្មោះតាមកីឡានីមួយៗ។ ចុចលើជួរដើម្បីមើលបញ្ជីឈ្មោះ។",
+          "empty": "មិនមានការចូលរួមសម្រាប់អង្គការនេះទេ។"
+        },
+        "surveyStatus": {
+          "title": "ស្ថានភាពការស្ទង់មតិតាមកីឡា",
+          "subtitle": "កីឡាដែលអង្គការនេះបានដាក់ស្នើសម្រាប់ព្រឹត្តិការណ៍នីមួយៗ និងស្ថានភាពពិនិត្យ។",
+          "empty": "មិនមានការដាក់ស្នើការស្ទង់មតិតាមកីឡា។"
+        },
+        "category": {
+          "title": "ការស្ទង់មតិតាមប្រភេទ",
+          "subtitle": "ការប្រកាសប្រភេទសម្រាប់ព្រឹត្តិការណ៍ និងកីឡាដែលអង្គការនេះចូលរួម។",
+          "empty": "មិនមានការដាក់ស្នើតាមប្រភេទសម្រាប់កីឡារបស់អង្គការនេះ។"
+        }
+      },
+      "columns": {
+        "sport": "កីឡា",
+        "event": "ព្រឹត្តិការណ៍",
+        "athletes": "កីឡាករ",
+        "leaders": "អ្នកដឹកនាំ",
+        "categories": "ប្រភេទ",
+        "status": "ស្ថានភាព",
+        "participant": "អ្នកចូលរួម",
+        "type": "ប្រភេទ",
+        "role": "តួនាទី"
+      },
+      "statuses": {
+        "DRAFT": "សេចក្តីព្រាង",
+        "SUBMITTED": "បានដាក់ស្នើ",
+        "APPROVED": "បានអនុម័ត",
+        "REJECTED": "បានបដិសេធ",
+        "FLAGGED": "បានដាក់សញ្ញា",
+        "REVISION_REQUESTED": "ស្នើសុំកែប្រែ"
+      }
     }
   },
   "users": {
@@ -688,14 +764,49 @@
       "actionSuccess": "បានធ្វើបច្ចុប្បន្នភាពស្ថានភាព",
       "actionFailed": "សកម្មភាពបរាជ័យ",
       "cancel": "បោះបង់"
-    }
+    },
+    "orgsSubmitted": "ស្ថាប័នបានដាក់ស្នើ",
+    "orgRecords": {
+      "title": "ស្ថាប័នដែលបានដាក់ស្នើ",
+      "subtitle": "មួយជួរក្នុងមួយស្ថាប័ន — ចុចមួយ ដើម្បីពិនិត្យការដាក់ស្នើរបស់ខ្លួន"
+    },
+    "orgSubmissions": {
+      "title": "ការដាក់ស្នើ",
+      "subtitle": "ចុចលើការដាក់ស្នើ ដើម្បីពិនិត្យម្តងមួយៗ"
+    },
+    "orgColumns": {
+      "submissions": "ការដាក់ស្នើ",
+      "breakdown": "ស្ថានភាព",
+      "status": "ស្ថានភាព"
+    },
+    "nEvents": "ព្រឹត្តិការណ៍ {count}",
+    "nSubmissions": "ការដាក់ស្នើ {count}",
+    "nPending": "កំពុងរង់ចាំ {count}",
+    "nApproved": "បានអនុម័ត {count}",
+    "nRejected": "បានបដិសេធ {count}",
+    "participantsSummary": "កីឡាករ {athletes} · អ្នកដឹកនាំ {leaders}",
+    "backToOrgs": "ត្រឡប់ទៅស្ថាប័ន",
+    "bulkPrompt": "មានការដាក់ស្នើកំពុងរង់ចាំ {count} សម្រាប់ស្ថាប័ននេះ។",
+    "approveAll": "អនុម័តទាំងអស់",
+    "rejectAll": "បដិសេធទាំងអស់",
+    "orgActionSuccess": "បានធ្វើបច្ចុប្បន្នភាពការដាក់ស្នើ {count}",
+    "orgActionFailed": "សកម្មភាពបរាជ័យ"
   },
   "sportReview": {
     "queueTitle": "ការត្រួតពិនិត្យការដាក់ស្នើតាមកីឡា",
-    "queueSubtitle": "ពិនិត្យ និងសម្រេចលើការជ្រើសរើសកីឡារបស់ស្ថាប័ន",
+    "queueSubtitle": "ពិនិត្យការដាក់ស្នើដោយចាត់ក្រុមតាមស្ថាប័ន",
     "search": "ស្វែងរក...",
     "allStatuses": "ស្ថានភាពទាំងអស់",
     "failedToLoad": "បរាជ័យក្នុងការផ្ទុកការដាក់ស្នើ",
+    "orgsSubmitted": "ស្ថាប័នបានដាក់ស្នើ",
+    "orgRecords": {
+      "title": "ស្ថាប័នដែលបានដាក់ស្នើ",
+      "subtitle": "មួយជួរក្នុងមួយស្ថាប័ន — ចុចមួយ ដើម្បីពិនិត្យកីឡារបស់ខ្លួន"
+    },
+    "orgSports": {
+      "title": "កីឡាដែលបានដាក់ស្នើ",
+      "subtitle": "ចុចលើកីឡា ដើម្បីពិនិត្យម្តងមួយៗ"
+    },
     "records": {
       "title": "ការដាក់ស្នើតាមកីឡា",
       "subtitle": "ការប្រកាសចេតនាចូលរួមរបស់ស្ថាប័នតាមកីឡា"
@@ -703,12 +814,24 @@
     "columns": {
       "organization": "ស្ថាប័ន",
       "sport": "កីឡា",
+      "sports": "កីឡា",
       "event": "ព្រឹត្តិការណ៍",
+      "breakdown": "ស្ថានភាព",
       "status": "ស្ថានភាព",
       "submitted": "បានដាក់ស្នើ"
     },
+    "nSports": "កីឡា {count}",
+    "nEvents": "ព្រឹត្តិការណ៍ {count}",
+    "nPending": "កំពុងរង់ចាំ {count}",
+    "nApproved": "បានអនុម័ត {count}",
+    "nRejected": "បានបដិសេធ {count}",
+    "backToOrgs": "ត្រឡប់ទៅស្ថាប័ន",
+    "bulkPrompt": "មានការដាក់ស្នើកំពុងរង់ចាំ {count} សម្រាប់ស្ថាប័ននេះ។",
+    "approveAll": "អនុម័តទាំងអស់",
+    "rejectAll": "បដិសេធទាំងអស់",
     "declaration": "ការប្រកាសកីឡា",
     "actionSuccess": "បានធ្វើបច្ចុប្បន្នភាពស្ថានភាព",
+    "orgActionSuccess": "បានធ្វើបច្ចុប្បន្នភាពការដាក់ស្នើ {count}",
     "actionFailed": "សកម្មភាពបរាជ័យ"
   },
   "categoryReview": {
@@ -738,7 +861,30 @@
       "MIXED": "ចម្រុះ"
     },
     "actionSuccess": "បានធ្វើបច្ចុប្បន្នភាពស្ថានភាព",
-    "actionFailed": "សកម្មភាពបរាជ័យ"
+    "actionFailed": "សកម្មភាពបរាជ័យ",
+    "sportsSubmitted": "កីឡាបានដាក់ស្នើ",
+    "sportRecords": {
+      "title": "កីឡាដែលបានដាក់ស្នើ",
+      "subtitle": "មួយជួរក្នុងមួយកីឡា — ចុចមួយ ដើម្បីពិនិត្យព្រឹត្តិការណ៍របស់វា"
+    },
+    "sportSubmissions": {
+      "title": "ព្រឹត្តិការណ៍ដែលបានដាក់ស្នើ",
+      "subtitle": "ចុចលើព្រឹត្តិការណ៍ ដើម្បីពិនិត្យម្តងមួយៗ"
+    },
+    "sportColumns": {
+      "submissions": "ការដាក់ស្នើ",
+      "breakdown": "ស្ថានភាព"
+    },
+    "nEvents": "ព្រឹត្តិការណ៍ {count}",
+    "nSubmissions": "ការដាក់ស្នើ {count}",
+    "nPending": "កំពុងរង់ចាំ {count}",
+    "nApproved": "បានអនុម័ត {count}",
+    "nRejected": "បានបដិសេធ {count}",
+    "backToSports": "ត្រឡប់ទៅកីឡា",
+    "bulkPrompt": "មានការដាក់ស្នើកំពុងរង់ចាំ {count} សម្រាប់កីឡានេះ។",
+    "approveAll": "អនុម័តទាំងអស់",
+    "rejectAll": "បដិសេធទាំងអស់",
+    "sportActionSuccess": "បានធ្វើបច្ចុប្បន្នភាពការដាក់ស្នើ {count}"
   },
   "cards": {
     "title": "កាតអ្នកចូលរួម",
@@ -1048,5 +1194,13 @@
     "active": "សកម្ម",
     "inactive": "អសកម្ម",
     "actions": "សកម្មភាព"
+  },
+  "statuses": {
+    "draft": "ព្រាង",
+    "submitted": "បានដាក់ស្នើ",
+    "approved": "អនុម័ត",
+    "rejected": "បដិសេធ",
+    "flagged": "សម្គាល់",
+    "revision_requested": "ត្រូវកែ"
   }
 }

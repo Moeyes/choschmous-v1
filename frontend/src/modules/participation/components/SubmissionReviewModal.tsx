@@ -1,8 +1,7 @@
 'use client';
 
 import { AlertCircle } from 'lucide-react';
-import { Button } from '@/shared/ui/button';
-import { Modal } from '@/shared/ui/Modal';
+import { ModalV2 } from '@/shared/ui/ModalV2';
 import { useTranslations } from 'next-intl';
 
 interface SubmissionReviewModalProps {
@@ -27,10 +26,17 @@ export function SubmissionReviewModal({
   if (!reasonAction) return null;
 
   return (
-    <Modal
+    <ModalV2
       isOpen={reasonAction !== null}
       onClose={onClose}
       title={reasonAction === 'reject' ? t('confirmReject') : t('confirmFlag')}
+      size="xs"
+      cancelText={t('cancel')}
+      confirmText={reasonAction === 'reject' ? t('reject') : t('flag')}
+      confirmVariant={reasonAction === 'reject' ? 'destructive' : 'default'}
+      confirmLoading={isReviewing}
+      confirmDisabled={!reason.trim() || isReviewing}
+      onConfirm={onConfirm}
     >
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/10 p-3">
@@ -47,21 +53,7 @@ export function SubmissionReviewModal({
             className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm leading-relaxed focus:border-primary focus:ring-1 focus:ring-ring"
           />
         </div>
-        <div className="flex justify-end gap-3 border-t border-border pt-4">
-          <Button variant="outline" onClick={onClose}>
-            {t('cancel')}
-          </Button>
-          <Button
-            variant={reasonAction === 'reject' ? 'destructive' : 'default'}
-            className={reasonAction === 'flag' ? 'bg-warning text-warning-foreground hover:bg-warning/90 border-warning' : undefined}
-            loading={isReviewing}
-            disabled={!reason.trim() || isReviewing}
-            onClick={onConfirm}
-          >
-            {reasonAction === 'reject' ? t('reject') : t('flag')}
-          </Button>
-        </div>
       </div>
-    </Modal>
+    </ModalV2>
   );
 }

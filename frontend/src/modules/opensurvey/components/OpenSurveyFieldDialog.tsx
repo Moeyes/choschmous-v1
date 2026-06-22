@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Modal, Button } from '@/shared';
+import { ModalV2 } from '@/shared/ui/ModalV2';
 import { FormField } from '@/shared/form/FormField';
 import { Input } from '@/shared/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
@@ -87,7 +87,16 @@ export function OpenSurveyFieldDialog({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? t('editTitle') : t('createTitle')} size="md">
+    <ModalV2
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEdit ? t('editTitle') : t('createTitle')}
+      size="md"
+      cancelText={tCommon('cancel')}
+      confirmText={isPending ? tCommon('saving') : tCommon('save')}
+      confirmLoading={isPending}
+      onConfirm={handleSave}
+    >
       <div className="space-y-5">
         <FormField label={t('labelKh')} required htmlFor="osf-label-kh" error={errors.labelKh}>
           <Input
@@ -153,17 +162,8 @@ export function OpenSurveyFieldDialog({
             </label>
           )}
         </div>
-
-        <div className="flex justify-end gap-3 pt-2">
-          <Button variant="secondary" onClick={onClose}>
-            {tCommon('cancel')}
-          </Button>
-          <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? tCommon('saving') : tCommon('save')}
-          </Button>
-        </div>
       </div>
-    </Modal>
+    </ModalV2>
   );
 }
 

@@ -21,7 +21,7 @@ export const OPEN_SURVEY_FIELD_TYPES = ['text', 'number', 'select', 'radio', 'ch
 export type OpenSurveyFieldType = (typeof OPEN_SURVEY_FIELD_TYPES)[number];
 
 // The choice types: these REQUIRE options. (text / number must NOT carry options.)
-export const OPEN_SURVEY_CHOICE_FIELD_TYPES = ['select', 'radio', 'checkbox'] as const;
+const OPEN_SURVEY_CHOICE_FIELD_TYPES = ['select', 'radio', 'checkbox'] as const;
 
 export function isChoiceFieldType(fieldType: OpenSurveyFieldType): boolean {
   return (OPEN_SURVEY_CHOICE_FIELD_TYPES as readonly string[]).includes(fieldType);
@@ -33,7 +33,7 @@ export function isChoiceFieldType(fieldType: OpenSurveyFieldType): boolean {
  * option VALUE would corrupt that round-trip. Labels are display-only and may
  * contain anything — only values are constrained.
  */
-export const OPEN_SURVEY_OPTION_DELIMITER = ',';
+const OPEN_SURVEY_OPTION_DELIMITER = ',';
 
 /* ---------------------------------------------------------------------------
  * Server response — UNTRUSTED. Parsed at the adapter boundary.
@@ -179,7 +179,7 @@ export function buildOpenSurveyFieldFormSchema(messages: OpenSurveyFieldValidati
  * whereas the builder must preserve a distinct value + label for round-trip
  * editing. Both understand the same `{ choices: [...] }` wire shape.
  * ------------------------------------------------------------------------- */
-export function fieldOptionsToInputs(options: Record<string, unknown> | null): OpenSurveyFieldOptionInput[] {
+function fieldOptionsToInputs(options: Record<string, unknown> | null): OpenSurveyFieldOptionInput[] {
   if (!options) return [];
 
   const choices = (options as { choices?: unknown }).choices;
@@ -205,7 +205,7 @@ export function fieldOptionsToInputs(options: Record<string, unknown> | null): O
     .map(([key, value]) => ({ value: key, label: String(value) }));
 }
 
-export function inputsToFieldOptions(options: OpenSurveyFieldOptionInput[]): OpenSurveyFieldOptions {
+function inputsToFieldOptions(options: OpenSurveyFieldOptionInput[]): OpenSurveyFieldOptions {
   return {
     choices: options.map((option) => {
       const value = option.value.trim();

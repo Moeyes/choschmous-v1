@@ -1,6 +1,7 @@
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+from secrets import compare_digest
 
 from fastapi import HTTPException, Response
 from jwt import InvalidTokenError
@@ -244,7 +245,7 @@ class AuthService:
                 detail="Session revoked due to token reuse — please log in again",
             )
 
-        if record.token_hash != hash_token_value(refresh_token):
+        if not compare_digest(record.token_hash, hash_token_value(refresh_token)):
             raise HTTPException(status_code=401, detail="Refresh token hash mismatch")
 
         # revoke old token

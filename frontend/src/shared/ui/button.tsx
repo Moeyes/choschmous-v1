@@ -53,6 +53,7 @@ function Button({
       data-slot="button"
       data-loading={loading || undefined}
       disabled={disabled || loading}
+      aria-busy={loading}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     >

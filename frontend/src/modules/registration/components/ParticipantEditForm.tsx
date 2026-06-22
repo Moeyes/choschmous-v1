@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
-import { Modal } from '@/shared/ui/Modal';
+import { ModalV2 } from '@/shared/ui/ModalV2';
 import { Button } from '@/shared/ui/button';
 import { TextInputField, SelectField } from '@/shared/form';
 import { GENDER_OPTIONS, LEADER_ROLE_OPTIONS } from '@/core/config/constants';
@@ -66,9 +66,26 @@ export function ParticipantEditForm({ participant, isOpen, onClose }: Participan
         );
     };
 
+    const editFooter = (
+        <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
+                {tCommon('cancel')}
+            </Button>
+            <Button type="submit" form="participant-edit-form" disabled={isPending || !formState.isDirty}>
+                {isPending ? tCommon('saving') : tCommon('save')}
+            </Button>
+        </div>
+    );
+
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={tDetail('editTitle')} size="2xl">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <ModalV2
+            isOpen={isOpen}
+            onClose={onClose}
+            title={tDetail('editTitle')}
+            size="xl"
+            footer={editFooter}
+        >
+            <form id="participant-edit-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 {error && (
                     <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                         {tDetail('editError')}
@@ -108,16 +125,7 @@ export function ParticipantEditForm({ participant, isOpen, onClose }: Participan
                         )}
                     </div>
                 </section>
-
-                <div className="flex justify-end gap-3 border-t border-border pt-4">
-                    <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-                        {tCommon('cancel')}
-                    </Button>
-                    <Button type="submit" disabled={isPending || !formState.isDirty}>
-                        {isPending ? tCommon('saving') : tCommon('save')}
-                    </Button>
-                </div>
             </form>
-        </Modal>
+        </ModalV2>
     );
 }

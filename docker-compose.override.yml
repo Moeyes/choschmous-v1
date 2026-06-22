@@ -6,13 +6,20 @@ services:
       - ./backend:/app
       - /app/.venv
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=local # /docs reachable + JWT placeholder guard relaxed for dev
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-secret-change-me-in-production}
       - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY:-dev-refresh-secret-change-me-in-production}
 
   frontend:
     build:
       target: development
+    # Dev-only: the Next 16 + Turbopack dev server compiles many routes on demand
+    # and blows past the base 768M limit (container was OOM-killed). Production
+    # runs `next start` and stays lean, so this override only affects local dev.
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     volumes:
       - ./frontend:/app
       - /app/node_modules

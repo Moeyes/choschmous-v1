@@ -214,6 +214,39 @@ class CategorySurveyService:
             return None
         return await self._enrich_submission(item, with_categories=True)
 
+    async def review_bulk_by_sport(
+        self,
+        sports_id: int,
+        action: str,
+        event_id: int | None = None,
+        note: str | None = None,
+    ) -> int:
+        """Bulk approve/reject **all** pending (SUBMITTED) by-category submissions
+        for one sport at once, optionally scoped to a single event. Only
+        SUBMITTED rows are touched, so a bulk action never flips a prior
+        individual decision. Returns the number of rows updated. ``action`` must
+        be ``approve`` or ``reject``."""
+        if action not in ("approve", "reject"):
+            raise CategoryReviewError(
+                f"Bulk action must be approve or reject, got '{action}'.", code=400
+            )
+        target = "APPROVED" if action == "approve" else "REJECTED"
+        q = select(category_survey_review).where(
+            category_survey_review.sports_id == sports_id,
+            category_survey_review.status == "SUBMITTED",
+        )
+        if event_id is not None:
+            q = q.where(category_survey_review.events_id == event_id)
+        rows = (await self.db.execute(q)).scalars().all()
+        now = datetime.utcnow()
+        for item in rows:
+            item.status = target
+            if note is not None:
+                item.review_note = note
+            item.reviewed_at = now
+        await self.db.commit()
+        return len(rows)
+
     async def review(
         self, id: int, action: str, note: str | None = None
     ) -> dict | None:

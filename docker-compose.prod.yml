@@ -1,14 +1,117 @@
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${DB_USER:?set DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS:?set a strong DB_PASS}
+      - POSTGRES_DB=${DB_NAME:?set DB_NAME}
+    expose:
+      - "5432" # internal only — NOT published to the host
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 1G }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  redis:
+    image: redis:7-alpine
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASS:?set REDIS_PASS}
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --save
+      - "900"
+      - "1"
+    expose:
+      - "6379" # internal only
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASS}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 320M }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
   backend:
     build:
+      context: ./backend
+      dockerfile: Dockerfile
       target: production
-    restart: unless-stopped
+    init: true
+    expose:
+      - "8000" # internal only — frontend proxies to it
     environment:
       - ENVIRONMENT=production
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - REDIS_URL=redis://:${REDIS_PASS}@redis:6379/0 # note the password
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
+      - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY:?set JWT_REFRESH_SECRET_KEY}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:?set production origins}
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-2}
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { memory: 1G }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
 
   frontend:
     build:
+      context: ./frontend
+      dockerfile: Dockerfile
       target: production
-    restart: unless-stopped
+      args:
+        - API_PROXY_TARGET=http://backend:8000 # internal service name; fine in-network
+        # REQUIRED: the real public https URL, baked into the client bundle at
+        # build time. Build/config fails loudly if it is unset (see .env.production).
+        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:?set NEXT_PUBLIC_APP_URL to the public https URL}
+    init: true
+    ports:
+      - "3003:3003" # the ONLY public port — put TLS in front of it
     environment:
       - NODE_ENV=production
+      # Runtime env for the standalone server: rewrites are baked at build, but
+      # the SSR fetch (apiGetPublicEventById) reads API_PROXY_TARGET at runtime.
+      - API_PROXY_TARGET=http://backend:8000
+      - API_URL=http://backend:8000 # belt-and-braces, same target
+    depends_on:
+      backend: { condition: service_started }
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { memory: 512M }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  pgdata:
+  redisdata:

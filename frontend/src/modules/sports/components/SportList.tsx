@@ -9,11 +9,13 @@ import { Button } from '@/shared/ui/button';
 import { useAuth, UserRole } from '@/core/auth';
 import { Edit2, Plus, Type, Eye, Trash2, Trophy } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 export function SportList() {
     const { data: sports, isLoading, error } = useSports();
     const { mutate: deleteSport } = useDeleteSport();
+    const router = useRouter();
     const { user, hasRole } = useAuth();
     const canManage = hasRole([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
     const isFederation = hasRole([UserRole.FEDERATION]);
@@ -41,6 +43,8 @@ export function SportList() {
                 errorTitle={t('failedToLoad')}
                 isLoading={isLoading}
                 data={visibleSports}
+                rowKey={(sport) => sport.id}
+                onRowClick={(sport) => router.push(`/sports/${sport.id}`)}
                 columns={[
                     {
                         header: t('columns.sportName'),
@@ -59,7 +63,8 @@ export function SportList() {
                     {
                         header: tCommon('actions'), align: 'right',
                         accessor: (sport) => (
-                            <div className="flex items-center justify-end gap-2">
+                            // Stop clicks here from bubbling to the row's navigate handler.
+                            <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                 <Link href={`/sports/${sport.id}`}><Button variant="ghost" size="icon-sm"><Eye className="w-4 h-4" /></Button></Link>
                                 {canManage && <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(sport)}><Edit2 className="w-4 h-4" /></Button>}
                                 {canManage && <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(sport)} className="text-error hover:text-error hover:bg-error/5"><Trash2 className="w-4 h-4" /></Button>}

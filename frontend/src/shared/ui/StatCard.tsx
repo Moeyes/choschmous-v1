@@ -7,6 +7,11 @@ interface StatCardProps {
     label: string;
     value: string | number;
     icon: LucideIcon;
+    /**
+     * Supporting copy rendered under the value. Shows whether or not a `trend`
+     * is present (unlike `trend.subtitle`, which is gated on the trend badge).
+     */
+    description?: string;
     trend?: {
         value: number;
         isUp: boolean;
@@ -30,11 +35,13 @@ export function StatCard({
     label,
     value,
     icon: Icon,
+    description,
     trend,
     color = 'primary',
     className,
 }: StatCardProps) {
     const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
+    const subtitle = description ?? trend?.subtitle;
 
     return (
         <div
@@ -73,9 +80,9 @@ export function StatCard({
                     </p>
                     <p className="text-sm text-muted-text leading-relaxed">{label}</p>
                 </div>
-                {trend?.subtitle && (
+                {subtitle && (
                     <p className="mt-3 text-xs text-muted-text leading-relaxed">
-                        {trend.subtitle}
+                        {subtitle}
                     </p>
                 )}
             </div>

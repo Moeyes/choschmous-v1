@@ -1,20 +1,15 @@
 "use client";
 
-import { Input } from "@/shared/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/shared/ui/select";
 import { useTranslations } from "next-intl";
+import { FilterToolbar } from "@/shared/ui/layout";
+
+type EventStatus = "all" | "upcoming" | "ongoing" | "completed";
 
 interface EventFiltersProps {
   query: string;
   onQueryChange: (value: string) => void;
-  statusFilter: "all" | "upcoming" | "ongoing" | "completed";
-  onStatusFilterChange: (value: "all" | "upcoming" | "ongoing" | "completed") => void;
+  statusFilter: EventStatus;
+  onStatusFilterChange: (value: EventStatus) => void;
 }
 
 export function EventFilters({
@@ -26,42 +21,29 @@ export function EventFilters({
   const t = useTranslations("events");
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <div className="flex-1">
-        <Input
-          placeholder={t("search") as string}
-          value={query}
-          onChange={(e) => {
-            onQueryChange(e.target.value);
-          }}
-        />
-      </div>
-      <div className="w-full sm:w-48">
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            onStatusFilterChange(
-              v as "all" | "upcoming" | "ongoing" | "completed",
-            );
-          }}
-        >
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue>{t(`statusFilter.${statusFilter}`)}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("statusFilter.all")}</SelectItem>
-            <SelectItem value="upcoming">
-              {t("statusFilter.upcoming")}
-            </SelectItem>
-            <SelectItem value="ongoing">
-              {t("statusFilter.ongoing")}
-            </SelectItem>
-            <SelectItem value="completed">
-              {t("statusFilter.completed")}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
+    <FilterToolbar
+      search={{
+        value: query,
+        onChange: onQueryChange,
+        placeholder: t("search"),
+      }}
+      filters={[
+        {
+          key: "status",
+          value: statusFilter,
+          onChange: (value) => onStatusFilterChange(value as EventStatus),
+          options: [
+            { value: "all", label: t("statusFilter.all") },
+            { value: "upcoming", label: t("statusFilter.upcoming") },
+            { value: "ongoing", label: t("statusFilter.ongoing") },
+            { value: "completed", label: t("statusFilter.completed") },
+          ],
+        },
+      ]}
+      onClear={() => {
+        onQueryChange("");
+        onStatusFilterChange("all");
+      }}
+    />
   );
 }

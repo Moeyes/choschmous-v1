@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import { PageHeader, PageShell } from '@/shared';
 import { useTranslations } from 'next-intl';
-import { CategorySubmissionList } from './CategorySubmissionList';
+import { CategorySportList } from './CategorySportList';
+import { CategorySportDetail } from './CategorySportDetail';
 import { CategorySubmissionDetail } from './CategorySubmissionDetail';
-import type { CategorySubmission } from '../types';
+import type { CategorySportGroup, CategorySubmission } from '../types';
 
 export function CategorySubmissionsPage() {
+    // Two-level drill-down: sport queue → one sport's events → one submission.
+    const [selectedSport, setSelectedSport] = useState<CategorySportGroup | null>(null);
     const [selected, setSelected] = useState<CategorySubmission | null>(null);
     const t = useTranslations('categoryReview');
 
@@ -19,10 +22,23 @@ export function CategorySubmissionsPage() {
         );
     }
 
+    if (selectedSport) {
+        return (
+            <PageShell size="wide">
+                <CategorySportDetail
+                    key={selectedSport.sports_id ?? selectedSport.sport_name ?? 'sport'}
+                    group={selectedSport}
+                    onBack={() => setSelectedSport(null)}
+                    onSelectSubmission={(s) => setSelected(s)}
+                />
+            </PageShell>
+        );
+    }
+
     return (
         <PageShell size="wide">
             <PageHeader title={t('queueTitle')} description={t('queueSubtitle')} />
-            <CategorySubmissionList onSelect={(s) => setSelected(s)} />
+            <CategorySportList onSelectSport={(g) => setSelectedSport(g)} />
         </PageShell>
     );
 }

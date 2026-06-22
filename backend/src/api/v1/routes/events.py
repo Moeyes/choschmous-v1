@@ -365,6 +365,7 @@ async def list_event_sport_categories(
 @router.get("/sport-org/submissions", response_model=SportsEventOrgReviewList)
 async def list_sport_org_submissions(
     event_id: int | None = Query(None),
+    organization_id: int | None = Query(None),
     status: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
@@ -396,6 +397,8 @@ async def list_sport_org_submissions(
     )
     if event_id:
         query = query.where(SeoModel.events_id == event_id)
+    if organization_id:
+        query = query.where(SeoModel.organization_id == organization_id)
     if status:
         query = query.where(SeoModel.status == status)
     result = await db.execute(query)
@@ -428,6 +431,46 @@ async def review_sport_org(
     await db.commit()
     await db.refresh(obj)
     return obj
+
+
+@router.patch("/sport-org/org/{organization_id}/review")
+async def review_sport_org_bulk(
+    organization_id: int,
+    action: str = Body(..., embed=True),
+    note: str | None = Body(None, embed=True),
+    event_id: int | None = Body(None, embed=True),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    """Bulk approve/reject **all** of an organization's pending (SUBMITTED)
+    by-sport submissions at once. Optionally scoped to a single event via
+    ``event_id``. Already-decided (APPROVED/REJECTED) rows are left untouched —
+    mirrors the per-row gate so a bulk action never silently flips a prior
+    individual decision. action: approve | reject.
+    """
+    from sqlalchemy import select as sa_select
+    from src.models.sports_event_org import sports_event_org as SeoModel
+    from datetime import datetime as dt
+
+    if action not in ("approve", "reject"):
+        raise HTTPException(status_code=400, detail="action must be approve or reject")
+
+    query = sa_select(SeoModel).where(
+        SeoModel.organization_id == organization_id,
+        SeoModel.status == "SUBMITTED",
+    )
+    if event_id is not None:
+        query = query.where(SeoModel.events_id == event_id)
+    rows = (await db.execute(query)).scalars().all()
+
+    new_status = "APPROVED" if action == "approve" else "REJECTED"
+    now = dt.utcnow()
+    for obj in rows:
+        obj.status = new_status
+        obj.review_note = note
+        obj.reviewed_at = now
+    await db.commit()
+    return {"updated": len(rows), "status": new_status}
 
 
 @router.delete("/delete-event-sport-org-link", status_code=status.HTTP_200_OK)

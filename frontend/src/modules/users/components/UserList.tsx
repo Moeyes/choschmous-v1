@@ -48,6 +48,7 @@ export function UserList() {
                 errorTitle={t('failedToLoad')}
                 isLoading={isLoading}
                 data={users ?? []}
+                rowKey={(user) => user.id}
                 columns={[
                     {
                         header: t('columns.user'),

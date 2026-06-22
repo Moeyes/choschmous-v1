@@ -69,12 +69,14 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
 
   const sportId = form.watch("sportId");
   const eventId = form.watch("eventId");
+  const organizationId = form.watch("organizationId");
   const { data: categories = [] } = useCategories(
     eventId ? Number(eventId) : undefined,
     sportId ? Number(sportId) : undefined,
   );
   const { data: eligibleSports = [] } = useEligibleSports(
-    !isLeader && eventId ? Number(eventId) : undefined,
+    eventId ? Number(eventId) : undefined,
+    organizationId ? Number(organizationId) : undefined,
   );
 
   // Determine the sport's mode and compute the effective step list.

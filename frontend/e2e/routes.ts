@@ -4,7 +4,7 @@
  * Mirrors src/app/**\/page.tsx. When you add a route, add it here and the
  * smoke crawl picks it up automatically.
  */
-export type RouteGroup = 'public' | 'auth' | 'portal';
+type RouteGroup = 'public' | 'auth' | 'portal';
 
 export interface RouteDef {
   /** Short, stable name used in the test title and screenshot filename. */

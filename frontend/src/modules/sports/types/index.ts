@@ -59,7 +59,8 @@ export type ParticipantRole = 'athlete' | 'leader';
 
 interface NamedRef {
     id: number;
-    name: string;
+    // Built from an outer join server-side, so the label can be absent.
+    name?: string | null;
 }
 
 /** A row returned by GET /api/participant/ (athlete or leader). */

@@ -23,3 +23,12 @@ export function useOrganizations(params: OrganizationListParams = DEFAULT_LIST_P
         select:   (res) => res.data,
     });
 }
+
+/** Single organization by id — powers the organization detail page. */
+export function useOrganization(id: number) {
+    return useQuery({
+        queryKey: queryKeys.organizations.detail(id),
+        queryFn:  () => organizationsRepository.getById(id),
+        enabled:  Number.isFinite(id) && id > 0,
+    });
+}

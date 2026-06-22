@@ -150,6 +150,14 @@ async def list_participants(
     leader_roles: Optional[list[LeaderRole]] = Query(
         None, description="Filter by one or more leader roles (coach, manager, etc.)"
     ),
+    detailed: bool = Query(
+        False,
+        description=(
+            "Return the richer per-row projection (category/gender/organization/"
+            "event) used by the sport-detail participant panel. The default list "
+            "stays lean for data minimization."
+        ),
+    ),
     limit: int = Query(20, ge=1, le=200, description="Page size"),
     offset: int = Query(0, ge=0, description="Number of records to skip"),
     db: AsyncSession = Depends(get_db),
@@ -182,7 +190,7 @@ async def list_participants(
         limit=limit,
         offset=offset,
     )
-    return await service.get_participants(params)
+    return await service.get_participants(params, detailed=detailed)
 
 
 @router.post("/search")

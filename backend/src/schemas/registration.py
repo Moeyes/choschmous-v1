@@ -24,6 +24,7 @@ class FullRegistrationRequest(BaseModel):
     birthCertificateUrl: Optional[str] = None
     nationalIdUrl: Optional[str] = None
     passportUrl: Optional[str] = None
+    nationality: Optional[str] = None
 
     # These will store the actual Enum members
     gender: genderEnum
@@ -36,13 +37,18 @@ class FullRegistrationRequest(BaseModel):
     # Set true to override the soft-duplicate (name + DoB) warning and register anyway.
     force: bool = False
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore",
+    )
 
     @field_validator("gender", mode="before")
     @classmethod
     def validate_gender(cls, v):
         if isinstance(v, str):
-            return v.upper()
+            val = v.upper()
+            if val in [e.value for e in genderEnum]:
+                return val
         return v
 
     @field_validator("id_document_type", mode="before")
@@ -51,9 +57,13 @@ class FullRegistrationRequest(BaseModel):
         # Maps frontend labels to your actual Enum members
         mapping = {
             "IDCard": "CAM_NID",
+            "IDCARD": "CAM_NID",
             "Passport": "CAM_PASSPORT",
+            "PASSPORT": "CAM_PASSPORT",
             "BirthCertificate": "CAM_BIRTH_CERT",
+            "BIRTHCERTIFICATE": "CAM_BIRTH_CERT",
             "FamilyBook": "CAM_FAMILY_BOOK",
+            "FAMILYBOOK": "CAM_FAMILY_BOOK",
         }
         return mapping.get(v, "OTHER" if isinstance(v, str) else v)
 

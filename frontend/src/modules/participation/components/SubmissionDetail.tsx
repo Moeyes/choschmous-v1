@@ -25,8 +25,16 @@ const ALLOWED: Record<string, ReviewAction[]> = {
     REJECTED: [],
 };
 
-const badgeVariant = (status: ParticipationStatus) =>
-    status.toLowerCase() as 'submitted' | 'approved' | 'rejected' | 'flagged' | 'revision_requested' | 'draft';
+const STATUS_VARIANT: Record<ParticipationStatus, "info" | "success" | "error" | "warning" | "muted"> = {
+    SUBMITTED: "info",
+    APPROVED: "success",
+    REJECTED: "error",
+    FLAGGED: "warning",
+    REVISION_REQUESTED: "warning",
+    DRAFT: "muted",
+};
+
+const badgeVariant = (status: ParticipationStatus) => STATUS_VARIANT[status];
 
 export function SubmissionDetail({ submission, onBack }: SubmissionDetailProps) {
     const t = useTranslations('participation.review');

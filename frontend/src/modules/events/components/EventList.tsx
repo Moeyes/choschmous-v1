@@ -151,6 +151,7 @@ export function EventList() {
         <DataTable
           isLoading={isLoading}
           data={pageData || []}
+          rowKey={(item: Event) => item.id}
           onRowClick={(item: Event) => router.push(`/events/${item.id}`)}
           columns={[
             {
@@ -181,7 +182,7 @@ export function EventList() {
                       ? "info"
                       : getStatus(event) === "ongoing"
                         ? "success"
-                        : "draft"
+                        : "muted"
                   }
                   className="whitespace-nowrap"
                 >

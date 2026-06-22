@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Users, RotateCcw } from 'lucide-react';
 import { Category, SportParticipant } from '../types';
 import { useSportParticipants } from '../hooks';
+import { useAuth, UserRole } from '@/core/auth';
 import { useEvents } from '@/modules/events/hooks';
 import { useOrganizations } from '@/modules/organizations/hooks';
 import {
@@ -41,6 +43,16 @@ const ALL = '__all__';
 
 export function CategoryParticipants({ sportId, category }: CategoryParticipantsProps) {
     const t = useTranslations('sports.participants');
+    const router = useRouter();
+    const { hasRole } = useAuth();
+
+    // The participant detail lives on the registrations route, which only
+    // admins/super-admins can open; gate the click so federation viewers (who
+    // can see this panel but not that route) don't hit a dead end.
+    const canViewDetail = hasRole([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
+    const openParticipant = canViewDetail
+        ? (p: SportParticipant) => router.push(`/registrations/${p.participant_id}?role=${p.role}`)
+        : undefined;
 
     const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
     const [eventFilter, setEventFilter] = useState(''); // '' = all
@@ -89,6 +101,17 @@ export function CategoryParticipants({ sportId, category }: CategoryParticipants
         return list;
     }, [athletesQ.data, leadersQ.data, category.id, typeFilter, eventFilter, orgFilter, ageMin, ageMax]);
 
+    const summary = useMemo(() => {
+        const isMale = (g: string) => g === 'MALE' || g === 'male';
+        const isFemale = (g: string) => g === 'FEMALE' || g === 'female';
+        return {
+            athletes: rows.filter((p) => p.role === 'athlete').length,
+            leaders: rows.filter((p) => p.role === 'leader').length,
+            male: rows.filter((p) => isMale(p.gender)).length,
+            female: rows.filter((p) => isFemale(p.gender)).length,
+        };
+    }, [rows]);
+
     const selectedEventName = events?.find((e) => String(e.id) === eventFilter)?.name;
     const selectedOrgName = organizations?.find((o) => String(o.id) === orgFilter)?.name_kh;
 
@@ -109,6 +132,14 @@ export function CategoryParticipants({ sportId, category }: CategoryParticipants
                     {t('title', { category: category.category })}
                 </h4>
                 <Badge variant="secondary">{t('count', { count: rows.length })}</Badge>
+            </div>
+
+            {/* Summary breakdown */}
+            <div className="flex flex-wrap gap-2">
+                <StatChip label={t('stats.athletes')} value={summary.athletes} dotClass="bg-info" />
+                <StatChip label={t('stats.leaders')} value={summary.leaders} dotClass="bg-muted-foreground" />
+                <StatChip label={t('stats.male')} value={summary.male} dotClass="bg-blue-500" />
+                <StatChip label={t('stats.female')} value={summary.female} dotClass="bg-pink-500" />
             </div>
 
             {/* Filters */}
@@ -180,7 +211,20 @@ export function CategoryParticipants({ sportId, category }: CategoryParticipants
               rows={rows}
               isLoading={isLoading}
               eventName={eventName}
+              hasActiveFilters={hasFilters}
+              onResetFilters={resetFilters}
+              onParticipantClick={openParticipant}
             />
+        </div>
+    );
+}
+
+function StatChip({ label, value, dotClass }: { label: string; value: number; dotClass: string }) {
+    return (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
+            <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+            <span className="text-sm font-bold tabular-nums text-foreground">{value}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
         </div>
     );
 }

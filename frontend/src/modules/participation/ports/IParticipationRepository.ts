@@ -1,4 +1,4 @@
-import type { ParticipationPerSport, ParticipationPerSportPayload, ParticipationPerSportListResponse, ParticipationReviewPayload } from '../types';
+import type { ParticipationPerSport, ParticipationPerSportPayload, ParticipationPerSportListResponse, ParticipationReviewPayload, ParticipationOrgReviewPayload, ParticipationBulkReviewResult } from '../types';
 
 export interface IParticipationRepository {
     create(payload: ParticipationPerSportPayload): Promise<ParticipationPerSport>;
@@ -7,4 +7,5 @@ export interface IParticipationRepository {
     update(id: number, payload: Partial<ParticipationPerSportPayload>): Promise<ParticipationPerSport>;
     delete(id: number): Promise<{ message: string }>;
     review(id: number, payload: ParticipationReviewPayload): Promise<ParticipationPerSport>;
+    reviewOrg(orgId: number, payload: ParticipationOrgReviewPayload): Promise<ParticipationBulkReviewResult>;
 }

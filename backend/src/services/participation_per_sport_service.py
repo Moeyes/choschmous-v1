@@ -6,6 +6,7 @@ from src.models.participation_per_sport import participation_per_sport
 from src.models.sports_event_org import sports_event_org
 from src.models.organization import Organization
 from src.models.events import Events
+from src.models.sport import Sport
 from src.schemas.participation_per_sport import (
     ParticipationPerSportCreate,
     ParticipationPerSportUpdate,
@@ -195,12 +196,43 @@ class ParticipationPerSportService:
         await self.db.refresh(item)
         return await self._enrich(item)
 
+    async def review_bulk_by_org(
+        self, org_id: int, action: str, note: str | None = None
+    ) -> int:
+        """Bulk approve/reject **all** of an org's pending (SUBMITTED) rows at
+        once. Only SUBMITTED rows are touched, so a bulk action never flips a
+        prior individual decision (flag / revision / reject). Returns the number
+        of rows updated. ``action`` must be ``approve`` or ``reject``."""
+        if action not in ("approve", "reject"):
+            raise ParticipationReviewError(
+                f"Bulk action must be approve or reject, got '{action}'.", code=400
+            )
+        target = "APPROVED" if action == "approve" else "REJECTED"
+        result = await self.db.execute(
+            select(participation_per_sport).where(
+                participation_per_sport.org_id == org_id,
+                participation_per_sport.status == "SUBMITTED",
+            )
+        )
+        rows = result.scalars().all()
+        now = datetime.utcnow()
+        for item in rows:
+            item.status = target
+            if note is not None:
+                item.review_note = note
+            item.reviewed_at = now
+        await self.db.commit()
+        return len(rows)
+
     async def list(self, skip: int = 0, limit: int = 100, org_id: int | None = None):
         q = (
             select(
                 participation_per_sport,
                 Organization.name_kh.label("org_name"),
                 Events.name_kh.label("event_name"),
+                Sport.name_kh.label("sport_name"),
+                sports_event_org.events_id.label("event_id"),
+                sports_event_org.sports_id.label("sport_id"),
             )
             .outerjoin(Organization, participation_per_sport.org_id == Organization.id)
             .outerjoin(
@@ -208,6 +240,7 @@ class ParticipationPerSportService:
                 participation_per_sport.sports_Events_id == sports_event_org.id,
             )
             .outerjoin(Events, sports_event_org.events_id == Events.id)
+            .outerjoin(Sport, sports_event_org.sports_id == Sport.id)
         )
         if org_id is not None:
             q = q.where(participation_per_sport.org_id == org_id)
@@ -224,6 +257,9 @@ class ParticipationPerSportService:
                     **item.__dict__,
                     "org_name": row["org_name"],
                     "event_name": row["event_name"],
+                    "sport_name": row["sport_name"],
+                    "event_id": row["event_id"],
+                    "sport_id": row["sport_id"],
                 }
             )
         return enriched

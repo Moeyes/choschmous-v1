@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Modal, Button } from '@/shared';
+import { ModalV2 } from '@/shared/ui/ModalV2';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { useUpdateSportConfig } from '../hooks';
 import type { EventSportPublic } from '../schema/events.schema';
@@ -51,7 +51,16 @@ export function EventSportConfigDialog({ eventId, sport, isOpen, onClose }: Even
         'w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary';
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`${t('title')} — ${sport.name_kh}`} size="md">
+        <ModalV2
+            isOpen={isOpen}
+            onClose={onClose}
+            title={`${t('title')} — ${sport.name_kh}`}
+            size="sm"
+            cancelText={tCommon('cancel')}
+            confirmText={isPending ? tCommon('saving') : tCommon('save')}
+            confirmLoading={isPending}
+            onConfirm={handleSave}
+        >
             <div className="space-y-5">
                 <div className="space-y-1.5">
                     <label className="block text-sm font-medium text-foreground">{t('mode')}</label>
@@ -98,14 +107,7 @@ export function EventSportConfigDialog({ eventId, sport, isOpen, onClose }: Even
                         </div>
                     )}
                 </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                    <Button variant="secondary" onClick={onClose}>{tCommon('cancel')}</Button>
-                    <Button onClick={handleSave} disabled={isPending}>
-                        {isPending ? tCommon('saving') : tCommon('save')}
-                    </Button>
-                </div>
             </div>
-        </Modal>
+        </ModalV2>
     );
 }

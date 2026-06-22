@@ -256,7 +256,7 @@ async def test_user_create_rejects_stolen_file_ref(db_session):
         en_given_name="d",
         email="test@example.org",
         username="testuser",
-        password="Str0ng!Pass",
+        password="Str0ng!Passw0rd",
         role=UserRole.ORGANIZATION,
         organization_id=org_b.id,
         photo_path=f"/api/files/{f.id}",
@@ -279,7 +279,7 @@ async def test_user_create_rejects_forged_uuid(db_session):
         en_given_name="d",
         email="test2@example.org",
         username="testuser2",
-        password="Str0ng!Pass",
+        password="Str0ng!Passw0rd",
         role=UserRole.SUPER_ADMIN,
         photo_path=f"/api/files/{uuid.uuid4()}",
     )
@@ -301,7 +301,7 @@ async def test_user_create_allows_external_url(db_session):
         en_given_name="d",
         email="test3@example.org",
         username="testuser3",
-        password="Str0ng!Pass",
+        password="Str0ng!Passw0rd",
         role=UserRole.SUPER_ADMIN,
         photo_path="https://example.com/photo.jpg",
     )
@@ -322,7 +322,7 @@ async def test_user_create_allows_own_file_ref(db_session):
         en_given_name="d",
         email="test4@example.org",
         username="testuser4",
-        password="Str0ng!Pass",
+        password="Str0ng!Passw0rd",
         role=UserRole.SUPER_ADMIN,
         photo_path=f"/api/files/{f.id}",
     )

@@ -48,6 +48,13 @@ describe("formDataToPayload — field aliasing", () => {
         expect(p.organizationId).toBe(42);
         expect(typeof p.organizationId).toBe("number");
     });
+
+    it("maps normalized document type values to backend labels", () => {
+        expect(formDataToPayload(formData({ idDocumentType: "IDCARD" }), "u").idDocType).toBe("IDCard");
+        expect(formDataToPayload(formData({ idDocumentType: "BIRTHCERTIFICATE" }), "u").idDocType).toBe("BirthCertificate");
+        expect(formDataToPayload(formData({ idDocumentType: "PASSPORT" }), "u").idDocType).toBe("Passport");
+        expect(formDataToPayload(formData({ idDocumentType: "FAMILYBOOK" }), "u").idDocType).toBe("FamilyBook");
+    });
 });
 
 describe("formDataToPayload — nullable defaults", () => {

@@ -13,7 +13,7 @@ export const toastFallback = {
 };
 
 interface FastAPIErrorBody {
-  detail?: string | { msg?: string }[] | unknown;
+  detail?: string | { msg?: string }[];
   code?: unknown;
 }
 

@@ -1,15 +1,29 @@
 # Dependabot keeps the three ecosystems in this repo up to date and, crucially,
 # bumps the GitHub Actions themselves — which is what surfaces deprecations like
 # the Node.js 20 runtime warning before it becomes a hard failure.
+#
+# Policy: for application code (npm + uv) Dependabot proposes only MINOR/PATCH
+# updates, grouped, so the PR queue stays small and green. Major bumps are
+# breaking (e.g. eslint 9→10, typescript 5→6, vitest 3→4, bcrypt 4→5) and are
+# done deliberately by a human, not auto-proposed. GitHub Actions DO take majors
+# (e.g. checkout v4→v5) because that is how we stay on supported Node runtimes.
 version: 2
 updates:
-  # Frontend (pnpm). Dependabot reads the lockfile to compute updates.
+  # ── Frontend (pnpm) ──────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
+      # One PR for production deps so coupled packages never drift apart: a
+      # react/react-dom version mismatch crashes the test renderer even on a
+      # patch gap, which is exactly why the split per-package PRs were failing.
+      production:
+        dependency-type: production
       # Batch the noisy, low-risk dev/test tooling into one PR.
       dev-dependencies:
         dependency-type: development
@@ -17,21 +31,35 @@ updates:
       - dependencies
       - frontend
 
-  # Backend (uv / PEP 621). Dependabot supports uv.lock natively.
+  # ── Backend (uv / PEP 621) ───────────────────────────────────────
   - package-ecosystem: uv
     directory: /backend
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      # passlib 1.7.4 (unmaintained) is incompatible with bcrypt >= 4.1: it reads
+      # the removed `bcrypt.__about__`, and bcrypt now hard-raises on >72-byte
+      # inputs — which breaks password hashing (auth) outright. Pin bcrypt and
+      # ignore ALL its bumps until we migrate off passlib.
+      - dependency-name: "bcrypt"
+    groups:
+      backend:
+        patterns: ["*"]
     labels:
       - dependencies
       - backend
 
-  # The workflow actions themselves (actions/checkout, setup-node, setup-uv, …).
+  # ── GitHub Actions (majors allowed — needed for Node runtime bumps) ──
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
     labels:
       - dependencies
       - ci

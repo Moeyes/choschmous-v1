@@ -23,8 +23,13 @@ const ALLOWED: Record<string, SportReviewAction[]> = {
     REJECTED: [],
 };
 
-const badgeVariant = (status: SportSubmissionStatus) =>
-    status.toLowerCase() as 'submitted' | 'approved' | 'rejected';
+const STATUS_VARIANT: Record<SportSubmissionStatus, "info" | "success" | "error"> = {
+    SUBMITTED: "info",
+    APPROVED: "success",
+    REJECTED: "error",
+};
+
+const badgeVariant = (status: SportSubmissionStatus) => STATUS_VARIANT[status];
 
 export function SportSubmissionDetail({ submission, onBack }: SportSubmissionDetailProps) {
     const t = useTranslations('sportReview');
