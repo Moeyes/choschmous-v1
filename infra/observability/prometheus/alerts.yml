@@ -1,0 +1,41 @@
+# Prometheus alert rules (CHOS-105) — SCAFFOLD starter rules.
+# Tune thresholds to real SLOs once baseline metrics exist.
+groups:
+  - name: moeys-backend
+    rules:
+      - alert: BackendDown
+        expr: up{job="moeys-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend target is down"
+          description: "Prometheus cannot scrape moeys-backend for >2m."
+
+      - alert: HighHttp5xxRate
+        # >5% of requests returning 5xx over 5m.
+        expr: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[5m]))
+            / sum(rate(http_requests_total{job="moeys-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elevated 5xx error rate"
+          description: "More than 5% of requests are failing with 5xx for >5m."
+
+      - alert: HighRequestLatencyP95
+        # p95 latency above 1s over 5m.
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="moeys-backend"}[5m])) by (le)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 latency"
+          description: "p95 request latency > 1s for >10m."
+
+  # TODO(CHOS-105): add DB/Redis alerts (connection saturation, replication lag,
+  # WAL archive lag, backup-job failures) once the relevant exporters are added.

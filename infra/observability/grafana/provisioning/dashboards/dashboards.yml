@@ -1,0 +1,15 @@
+# Grafana dashboard provisioning (CHOS-105) — SCAFFOLD.
+# Drop dashboard JSON files into ./json (mounted at /var/lib/grafana/dashboards)
+# and Grafana will auto-load them.
+apiVersion: 1
+providers:
+  - name: moeys
+    orgId: 1
+    folder: "MOEYS"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
+# TODO(CHOS-105): add starter dashboards (FastAPI RED metrics, Postgres, Redis)
+# under infra/observability/grafana/dashboards/ and mount them in the compose file.

@@ -1,0 +1,33 @@
+# Alertmanager configuration (CHOS-105) — SCAFFOLD.
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: default
+  group_by: ["alertname", "severity"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers:
+        - severity = "critical"
+      receiver: pagerduty
+      continue: true
+
+receivers:
+  - name: default
+    # TODO(CHOS-105): add a real low-severity sink (Slack/email).
+
+  - name: pagerduty
+    pagerduty_configs:
+      # TODO(CHOS-105): inject the PagerDuty integration (routing) key from a
+      # secret — do NOT commit it. e.g. via env templating or a secret file.
+      - routing_key: "REPLACE_WITH_PAGERDUTY_ROUTING_KEY"
+        severity: "critical"
+        description: "{{ .CommonAnnotations.summary }}"
+
+inhibit_rules:
+  # Silence warnings for an alertname already firing as critical.
+  - source_matchers: [severity = "critical"]
+    target_matchers: [severity = "warning"]
+    equal: ["alertname"]

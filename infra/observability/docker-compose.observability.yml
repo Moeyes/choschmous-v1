@@ -1,0 +1,58 @@
+# Observability stack (CHOS-105) — SCAFFOLD.
+#
+# Prometheus (scrape + alert rules) -> Alertmanager (routing/paging) and
+# Grafana (dashboards). Run alongside the app stack:
+#
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f infra/observability/docker-compose.observability.yml up -d
+#
+# The backend exposes metrics at /metrics (wired in backend/main.py via
+# prometheus-fastapi-instrumentator). Prometheus scrapes `backend:8000`.
+# TODO(CHOS-105): put Grafana behind auth / SSO and set GF_SECURITY_ADMIN_PASSWORD
+# from a secret. TODO(CHOS-105): wire the Alertmanager PagerDuty routing key.
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    volumes:
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+    ports:
+      - "127.0.0.1:9090:9090"   # bind to loopback only; expose via reverse proxy
+    depends_on:
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    volumes:
+      - ./infra/observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    ports:
+      - "127.0.0.1:9093:9093"
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    restart: unless-stopped
+    environment:
+      # TODO(CHOS-105): source this from a secret, do not hardcode in prod.
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus_data:
+  grafana_data:

@@ -169,3 +169,21 @@ elif not _IS_LOCAL:
     )
 
 app.include_router(api_router)
+
+
+# Observability (CHOS-105): expose Prometheus metrics at /metrics. The
+# instrumentator is an optional dependency, so the import is guarded — the app
+# (and the test suite, which imports this module) runs fine without it.
+# NOTE: prometheus-fastapi-instrumentator's current release pins
+# ``starlette<1.0``, which conflicts with this project's ``starlette>=1.3.1``
+# pin, so it is not yet in pyproject.toml. See infra/observability/README.md for
+# the wiring + the TODO to resolve the version conflict before enabling in prod.
+if settings.ENABLE_METRICS:
+    try:
+        from prometheus_fastapi_instrumentator import Instrumentator
+
+        Instrumentator().instrument(app).expose(
+            app, endpoint="/metrics", include_in_schema=False
+        )
+    except Exception as exc:  # missing or incompatible — degrade gracefully
+        logger.warning("Prometheus /metrics not enabled: %s", exc)

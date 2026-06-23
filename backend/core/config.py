@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     # (/maintenance/sync-schema, /maintenance/drop) are excluded from the prod
     # image unless this is explicitly enabled. Always available in local dev.
     ENABLE_MAINTENANCE: bool = False
+    # Observability (CHOS-105): expose Prometheus metrics at /metrics when the
+    # optional instrumentator package is installed. No-op if it is absent.
+    ENABLE_METRICS: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",

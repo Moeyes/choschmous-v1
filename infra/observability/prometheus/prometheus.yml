@@ -1,0 +1,32 @@
+# Prometheus configuration (CHOS-105) — SCAFFOLD.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    env: prod        # TODO(CHOS-105): set per environment (uat/prod)
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # FastAPI backend — /metrics is exposed by prometheus-fastapi-instrumentator.
+  - job_name: moeys-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["backend:8000"]   # service name on the compose network
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  # TODO(CHOS-105): add postgres-exporter, redis-exporter, and node-exporter
+  # targets for DB/cache/host metrics.
