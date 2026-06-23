@@ -19,7 +19,7 @@ from core.request_size_limit import RequestSizeLimitMiddleware
 from core.cache_control import CacheControlMiddleware
 from core.dashboard_invalidation import DashboardCacheMiddleware
 from core.redis_client import close_redis, ping_redis
-from src.api.main import api_router
+from src.api.main import api_router, legacy_redirect_router
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +169,10 @@ elif not _IS_LOCAL:
     )
 
 app.include_router(api_router)
+
+# CHOS-203 backward-compat: must be included LAST so the explicit /api/v1/*
+# routes above always take precedence over this /api/<path> redirect catch-all.
+app.include_router(legacy_redirect_router)
 
 
 # Observability (CHOS-105): expose Prometheus metrics at /metrics. The

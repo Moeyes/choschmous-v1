@@ -2,7 +2,7 @@
  * Database-backed file upload service.
  *
  * Uploads a file to the backend, which stores the raw bytes in the database
- * under a freshly-minted UUID and returns a relative URL (`/api/files/{id}`).
+ * under a freshly-minted UUID and returns a relative URL (`/api/v1/files/{id}`).
  * That URL is what callers persist (e.g. in a registration's photo/document
  * field) and render directly — same-origin, so it needs no CSP changes and
  * carries the auth cookie automatically when fetched.
@@ -50,7 +50,7 @@ async function uploadFile(file: File, c: UploadConstraints): Promise<string> {
 
     // postForm serializes to multipart/form-data with the correct boundary,
     // overriding the client's default JSON Content-Type.
-    const { data } = await apiClient.postForm<UploadResult>('/api/files', { file });
+    const { data } = await apiClient.postForm<UploadResult>('/api/v1/files', { file });
     return data.url;
 }
 

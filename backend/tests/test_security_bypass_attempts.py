@@ -130,7 +130,7 @@ async def _make_enroll_referencing(db, file_id, *, org_id, sport_id):
         gender=genderEnum.MALE,
         date_of_birth=date(2000, 1, 1),
         id_document_type=_ID_DOC,
-        national_id_path=f"/api/files/{file_id}",
+        national_id_path=f"/api/v1/files/{file_id}",
     )
     db.add(enroll)
     await db.flush()
@@ -321,7 +321,7 @@ async def test_admin_cannot_sync_schema(as_user):
             headers={"X-CSRF-Token": _CSRF_TOKEN},
             cookies={"csrf_token": _CSRF_TOKEN},
         ) as ac:
-            resp = await ac.post("/api/maintenance/sync-schema")
+            resp = await ac.post("/api/v1/maintenance/sync-schema")
     finally:
         app.dependency_overrides.clear()
 

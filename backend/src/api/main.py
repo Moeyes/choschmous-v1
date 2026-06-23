@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
+from starlette.status import HTTP_307_TEMPORARY_REDIRECT
+
 from core.config import settings
 from src.database.deps import get_current_user
 
@@ -151,3 +154,30 @@ if settings.ENVIRONMENT == "local" or settings.ENABLE_MAINTENANCE:
         tags=["maintenance"],
         dependencies=_auth,
     )
+
+
+# Backward-compat (CHOS-203): the API prefix moved from /api to /api/v1. Any
+# legacy /api/<path> request that does NOT match a real /api/v1 route is
+# redirected with 307 (which preserves the method + body, so POST/PUT/PATCH/
+# DELETE keep working) to its /api/v1 equivalent. This must be mounted AFTER
+# api_router in main.py so the explicit /api/v1/* routes always win the match
+# and a /api/v1/* request never reaches this catch-all (no redirect loop).
+legacy_redirect_router = APIRouter()
+
+
+@legacy_redirect_router.api_route(
+    "/api/{path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+    include_in_schema=False,
+)
+async def _legacy_api_redirect(path: str, request: Request) -> RedirectResponse:
+    # A request already under /api/v1 that reaches this catch-all is a genuine
+    # miss on a versioned route — return 404 rather than redirecting it to
+    # /api/v1/v1/... (which would never resolve). Only un-versioned legacy paths
+    # get rewritten to their /api/v1 equivalent.
+    if path == "v1" or path.startswith("v1/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    target = f"{V1}/{path}"
+    if request.url.query:
+        target = f"{target}?{request.url.query}"
+    return RedirectResponse(url=target, status_code=HTTP_307_TEMPORARY_REDIRECT)

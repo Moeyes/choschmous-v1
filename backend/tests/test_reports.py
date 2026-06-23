@@ -58,7 +58,7 @@ async def test_report_renders_xlsx(client, db_session, as_user, key):
     event, _, _ = await _event_with_sport(db_session)
     as_user(make_user(UserRole.ADMIN))
 
-    resp = await client.get(f"/api/reports/{key}?event_id={event.id}&format=xlsx")
+    resp = await client.get(f"/api/v1/reports/{key}?event_id={event.id}&format=xlsx")
     assert resp.status_code == 200, resp.text
     assert resp.headers["content-type"].startswith(XLSX_MIME)
     assert resp.content[:2] == b"PK"  # xlsx is a zip container
@@ -70,7 +70,7 @@ async def test_sport_list_xlsx_cells_are_populated(client, db_session, as_user):
     event, sport, _ = await _event_with_sport(db_session, sport_name="កីឡាសាកល្បង")
     as_user(make_user(UserRole.ADMIN))
 
-    resp = await client.get(f"/api/reports/sport-list?event_id={event.id}&format=xlsx")
+    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=xlsx")
     assert resp.status_code == 200, resp.text
 
     ws = load_workbook(io.BytesIO(resp.content)).active
@@ -84,7 +84,7 @@ async def test_report_pdf_renders(client, db_session, as_user):
     event, _, _ = await _event_with_sport(db_session)
     as_user(make_user(UserRole.ADMIN))
 
-    resp = await client.get(f"/api/reports/sport-list?event_id={event.id}&format=pdf")
+    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=pdf")
     assert resp.status_code == 200, resp.text
     assert resp.headers["content-type"] == "application/pdf"
     assert resp.content[:4] == b"%PDF"
@@ -94,21 +94,21 @@ async def test_report_unknown_key_rejected(client, db_session, as_user):
     event = await make_event(db_session)
     as_user(make_user(UserRole.ADMIN))
     resp = await client.get(
-        f"/api/reports/not-a-report?event_id={event.id}&format=xlsx"
+        f"/api/v1/reports/not-a-report?event_id={event.id}&format=xlsx"
     )
     assert resp.status_code == 400, resp.text
 
 
 async def test_report_missing_event_404(client, db_session, as_user):
     as_user(make_user(UserRole.ADMIN))
-    resp = await client.get("/api/reports/sport-list?event_id=999999&format=xlsx")
+    resp = await client.get("/api/v1/reports/sport-list?event_id=999999&format=xlsx")
     assert resp.status_code == 404, resp.text
 
 
 async def test_report_bad_format_rejected(client, db_session, as_user):
     event, _, _ = await _event_with_sport(db_session)
     as_user(make_user(UserRole.ADMIN))
-    resp = await client.get(f"/api/reports/sport-list?event_id={event.id}&format=docx")
+    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=docx")
     assert resp.status_code == 422, resp.text  # Query pattern validation
 
 
@@ -156,7 +156,7 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
         "idDocType": "IDCard",
         "birthCertificateUrl": "/u/bc.jpg",
     }
-    assert (await client.post("/api/registration", json=athlete)).status_code == 201
+    assert (await client.post("/api/v1/registration", json=athlete)).status_code == 201
     athlete_f = {
         **athlete,
         "firstNameKhmer": "ច័ន្ទនី",
@@ -164,7 +164,7 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
         "gender": "Female",
         "phone": "012111333",
     }
-    assert (await client.post("/api/registration", json=athlete_f)).status_code == 201
+    assert (await client.post("/api/v1/registration", json=athlete_f)).status_code == 201
 
     coach = {
         **athlete,
@@ -179,14 +179,14 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
         "birthCertificateUrl": None,
         "nationalIdUrl": "/u/nid.jpg",
     }
-    r_coach = await client.post("/api/registration", json=coach)
+    r_coach = await client.post("/api/v1/registration", json=coach)
     assert r_coach.status_code == 201, r_coach.text
 
     role = OrganizerRole(name_en="Head", name_kh="ប្រធាន", active=True)
     db_session.add(role)
     await db_session.flush()
     org_reg = await client.post(
-        "/api/registration/organizer",
+        "/api/v1/registration/organizer",
         json={
             "eventId": event.id,
             "organizationId": org.id,
@@ -205,13 +205,13 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
     assert org_reg.status_code == 201, org_reg.text
 
     # sport-list: planned M=3 / F=2 (cols 4,5)
-    sl = await client.get(f"/api/reports/sport-list?event_id={event.id}&format=xlsx")
+    sl = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=xlsx")
     ws = load_workbook(io.BytesIO(sl.content)).active
     assert ws.cell(row=2, column=4).value == 3
     assert ws.cell(row=2, column=5).value == 2
 
     # counts: actual coaches=1 (col5), athletes=2 (col6)
-    cnt = await client.get(f"/api/reports/counts?event_id={event.id}&format=xlsx")
+    cnt = await client.get(f"/api/v1/reports/counts?event_id={event.id}&format=xlsx")
     wc = load_workbook(io.BytesIO(cnt.content)).active
     assert wc.cell(row=2, column=5).value == 1
     assert wc.cell(row=2, column=6).value == 2
@@ -219,24 +219,24 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
     # album / name-list carry the actual people
     album = _xlsx_values(
         (
-            await client.get(f"/api/reports/album?event_id={event.id}&format=xlsx")
+            await client.get(f"/api/v1/reports/album?event_id={event.id}&format=xlsx")
         ).content
     )
     assert {"ម៉េង", "សុភា", "ច័ន្ទនី"} <= album
     name_list = _xlsx_values(
         (
-            await client.get(f"/api/reports/name-list?event_id={event.id}&format=xlsx")
+            await client.get(f"/api/v1/reports/name-list?event_id={event.id}&format=xlsx")
         ).content
     )
     assert "រតនៈ" in name_list  # the coach
     delegation = _xlsx_values(
         (
-            await client.get(f"/api/reports/delegation?event_id={event.id}&format=xlsx")
+            await client.get(f"/api/v1/reports/delegation?event_id={event.id}&format=xlsx")
         ).content
     )
     assert {"ខេមរា", "ប្រធាន"} <= delegation  # organizer + their role
 
     # a fully-populated PDF renders
-    pdf = await client.get(f"/api/reports/album?event_id={event.id}&format=pdf")
+    pdf = await client.get(f"/api/v1/reports/album?event_id={event.id}&format=pdf")
     assert pdf.status_code == 200
     assert pdf.content[:4] == b"%PDF"

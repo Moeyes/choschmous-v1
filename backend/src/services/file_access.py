@@ -39,16 +39,19 @@ from src.models.user import User
 
 logger = logging.getLogger(__name__)
 
-# Matches a managed file reference: "/api/files/{uuid}". Free-form values
-# (external https URLs, legacy /uploads paths, None) are not managed refs and
-# are left untouched — they are never served by the authenticated files route.
+# Matches a managed file reference: "/api/v1/files/{uuid}". The "/v1" segment is
+# optional so values persisted before the CHOS-203 prefix change (stored as the
+# legacy "/api/files/{uuid}") still resolve. Free-form values (external https
+# URLs, legacy /uploads paths, None) are not managed refs and are left untouched
+# — they are never served by the authenticated files route.
 _FILE_REF_RE = re.compile(
-    r"/api/files/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+    r"/api/(?:v1/)?files/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
 )
 
 
 def extract_file_id(path: Optional[str]) -> Optional[uuid.UUID]:
-    """Return the file UUID from a managed '/api/files/{uuid}' ref, else None."""
+    """Return the file UUID from a managed '/api/v1/files/{uuid}' ref (or the
+    legacy '/api/files/{uuid}' form), else None."""
     if not path or not isinstance(path, str):
         return None
     m = _FILE_REF_RE.search(path)

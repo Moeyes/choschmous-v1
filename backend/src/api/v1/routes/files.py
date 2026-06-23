@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.ratelimit import upload_limiter
 from src.database.deps import get_db, get_current_user
 from src.models.uploaded_file import UploadedFile
@@ -96,7 +97,7 @@ async def upload_file(
 
     Validates type (JPG/PNG/WebP/GIF/HEIC/PDF) and size (<= 5MB), then persists
     the raw bytes and returns the file's id plus a relative URL
-    (`/api/files/{id}`) the client can store and render directly.
+    (`/api/v1/files/{id}`) the client can store and render directly.
     """
     await upload_limiter.check(
         request, key_suffix=str(current_user.id), response=response
@@ -149,7 +150,7 @@ async def upload_file(
     await db.commit()
     await db.refresh(record)
 
-    return UploadResponse(id=record.id, url=f"/api/files/{record.id}")
+    return UploadResponse(id=record.id, url=f"{settings.API_V1_STR}/files/{record.id}")
 
 
 @router.get("/{file_id}")

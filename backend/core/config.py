@@ -38,7 +38,10 @@ class Settings(BaseSettings):
     """
 
     PROJECT_NAME: str = "Backend"
-    API_V1_STR: str = "/api"
+    # CHOS-203: the canonical API prefix is now versioned. Legacy /api/* requests
+    # are 307-redirected to /api/v1/* by the backward-compat router mounted in
+    # src/api/main.py, so existing clients keep working during the migration.
+    API_V1_STR: str = "/api/v1"
     SENTRY_DSN: str | None = None
     ENVIRONMENT: str = "local"
     # Store raw origins as a plain string to avoid dotenv/json decoding issues.

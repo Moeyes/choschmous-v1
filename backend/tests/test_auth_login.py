@@ -79,7 +79,7 @@ async def test_login_success_sets_cookies(client, db_session):
     await _make_user(db_session, username=uname, password="ValidPass123")
 
     r = await client.post(
-        "/api/auth/login", json={"username": uname, "password": "ValidPass123"}
+        "/api/v1/auth/login", json={"username": uname, "password": "ValidPass123"}
     )
 
     assert r.status_code == 200
@@ -95,7 +95,7 @@ async def test_login_wrong_password_rejected(client, db_session):
     await _make_user(db_session, username=uname, password="ValidPass123")
 
     r = await client.post(
-        "/api/auth/login", json={"username": uname, "password": "WrongPass999"}
+        "/api/v1/auth/login", json={"username": uname, "password": "WrongPass999"}
     )
 
     assert r.status_code == 401
@@ -110,7 +110,7 @@ async def test_legacy_weak_password_account_can_log_in(client, db_session):
     await _make_user(db_session, username=uname, password="weak")  # < policy
 
     r = await client.post(
-        "/api/auth/login", json={"username": uname, "password": "weak"}
+        "/api/v1/auth/login", json={"username": uname, "password": "weak"}
     )
 
     assert r.status_code == 200
@@ -124,10 +124,10 @@ async def test_unknown_user_returns_same_response_as_wrong_password(client, db_s
     await _make_user(db_session, username=uname, password="ValidPass123")
 
     wrong = await client.post(
-        "/api/auth/login", json={"username": uname, "password": "Nope12345"}
+        "/api/v1/auth/login", json={"username": uname, "password": "Nope12345"}
     )
     unknown = await client.post(
-        "/api/auth/login",
+        "/api/v1/auth/login",
         json={"username": "ghost_" + uuid.uuid4().hex[:6], "password": "Nope12345"},
     )
 
@@ -151,7 +151,7 @@ async def test_unknown_user_still_runs_bcrypt_verify(client, db_session, monkeyp
     monkeypatch.setattr(auth_mod, "verify_password", spy)
 
     r = await client.post(
-        "/api/auth/login",
+        "/api/v1/auth/login",
         json={"username": "nobody_" + uuid.uuid4().hex[:6], "password": "Whatever123"},
     )
 
@@ -166,13 +166,13 @@ async def test_account_locks_after_five_failures(client, db_session):
 
     for _ in range(5):
         r = await client.post(
-            "/api/auth/login", json={"username": uname, "password": "WrongPass999"}
+            "/api/v1/auth/login", json={"username": uname, "password": "WrongPass999"}
         )
         assert r.status_code == 401
 
     # Now locked: even the correct password is rejected.
     r = await client.post(
-        "/api/auth/login", json={"username": uname, "password": "ValidPass123"}
+        "/api/v1/auth/login", json={"username": uname, "password": "ValidPass123"}
     )
     assert r.status_code == 401
     assert r.json()["detail"] == "Invalid credentials"

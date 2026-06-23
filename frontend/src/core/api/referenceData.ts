@@ -45,7 +45,7 @@ export interface CascadingDataLoaded {
 
 async function fetchEvents(): Promise<EventReference[]> {
     try {
-        const response = await apiClient.get('/api/events', {
+        const response = await apiClient.get('/api/v1/events', {
             params: { skip: 0, limit: 100 },
         });
         return response.data.data || [];
@@ -56,7 +56,7 @@ async function fetchEvents(): Promise<EventReference[]> {
 
 export async function fetchAllOrganizations(): Promise<OrganizationReference[]> {
     try {
-        const response = await apiClient.get('/api/organization', {
+        const response = await apiClient.get('/api/v1/organization', {
             params: { skip: 0, limit: 100 },
         });
         return response.data.data || [];
@@ -67,7 +67,7 @@ export async function fetchAllOrganizations(): Promise<OrganizationReference[]> 
 
 export async function fetchAllSports(): Promise<SportReference[]> {
     try {
-        const response = await apiClient.get('/api/sports', {
+        const response = await apiClient.get('/api/v1/sports', {
             params: { skip: 0, limit: 100 },
         });
         return response.data.data || [];
@@ -81,7 +81,7 @@ export async function fetchCategories(
     sportId: number
 ): Promise<CategoryReference[]> {
     try {
-        const response = await apiClient.get(`/api/events/${eventId}/sports/${sportId}/categories`);
+        const response = await apiClient.get(`/api/v1/events/${eventId}/sports/${sportId}/categories`);
         return Array.isArray(response.data) ? response.data : [];
     } catch {
         return [];
@@ -106,7 +106,7 @@ export async function fetchEligibleSports(
     organizationId?: number
 ): Promise<EligibleSport[]> {
     try {
-        const response = await apiClient.get(`/api/events/${eventId}/my-eligible-sports`, {
+        const response = await apiClient.get(`/api/v1/events/${eventId}/my-eligible-sports`, {
             params: organizationId ? { organization_id: organizationId } : undefined,
         });
         return Array.isArray(response.data) ? response.data : [];
