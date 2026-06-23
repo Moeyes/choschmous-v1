@@ -24,7 +24,7 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Sync dependencies
@@ -69,7 +69,7 @@ jobs:
       JWT_SECRET_KEY: ci-test-secret-key-not-for-production-0001
       JWT_REFRESH_SECRET_KEY: ci-test-refresh-secret-not-for-prod-0002
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Sync dependencies
@@ -86,7 +86,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # Read the pinned pnpm from the `packageManager` field in
       # frontend/package.json (currently pnpm@11.7.0) — the same version corepack
       # installs in the Dockerfile. `package_json_file` is required because
@@ -96,7 +96,7 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: frontend/package.json
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
