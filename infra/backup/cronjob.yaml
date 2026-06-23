@@ -1,0 +1,98 @@
+# Scheduled database backups (CHOS-103) — SCAFFOLD (Kubernetes).
+#
+# Two CronJobs: a weekly full backup and a daily differential. WAL is archived
+# continuously by the database (archive_command = pgbackrest archive-push), which
+# together with these backups enables point-in-time recovery. See DR runbook:
+# infra/backup/docs/DR_RUNBOOK.md
+#
+# Prerequisites (TODO before applying):
+#   1. Create the Secret `pgbackrest-secrets` with S3 creds + cipher pass.
+#   2. Mount pgbackrest.conf via a ConfigMap (`kubectl create configmap
+#      pgbackrest-config --from-file=infra/backup/pgbackrest.conf`).
+#   3. Run the one-time stanza create:  pgbackrest --stanza=moeys stanza-create
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgbackrest-secrets
+  namespace: moeys
+type: Opaque
+stringData:
+  # TODO(CHOS-103): replace with real values sourced from your secret manager.
+  PGBACKREST_REPO1_S3_KEY: "CHANGE_ME"
+  PGBACKREST_REPO1_S3_KEY_SECRET: "CHANGE_ME"
+  PGBACKREST_REPO1_CIPHER_PASS: "CHANGE_ME"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pgbackrest-full
+  namespace: moeys
+spec:
+  schedule: "0 2 * * 0"          # 02:00 every Sunday
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pgbackrest
+              image: pgbackrest/pgbackrest:2.51   # TODO(CHOS-103): pin/verify tag
+              args: ["--stanza=moeys", "--type=full", "backup"]
+              envFrom:
+                - secretRef:
+                    name: pgbackrest-secrets
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/pgbackrest/pgbackrest.conf
+                  subPath: pgbackrest.conf
+                - name: pgdata
+                  mountPath: /var/lib/postgresql/data
+          volumes:
+            - name: config
+              configMap:
+                name: pgbackrest-config
+            - name: pgdata
+              persistentVolumeClaim:
+                claimName: postgres-data   # TODO(CHOS-103): match your PVC name
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pgbackrest-diff
+  namespace: moeys
+spec:
+  schedule: "0 2 * * 1-6"        # 02:00 Mon–Sat
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pgbackrest
+              image: pgbackrest/pgbackrest:2.51   # TODO(CHOS-103): pin/verify tag
+              args: ["--stanza=moeys", "--type=diff", "backup"]
+              envFrom:
+                - secretRef:
+                    name: pgbackrest-secrets
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/pgbackrest/pgbackrest.conf
+                  subPath: pgbackrest.conf
+                - name: pgdata
+                  mountPath: /var/lib/postgresql/data
+          volumes:
+            - name: config
+              configMap:
+                name: pgbackrest-config
+            - name: pgdata
+              persistentVolumeClaim:
+                claimName: postgres-data   # TODO(CHOS-103): match your PVC name
