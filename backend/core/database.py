@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -12,8 +13,9 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-# Async connection string
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Async connection string — quote user/pass so special characters (@, !, :, etc.)
+# don't break the URI parser.
+DATABASE_URL = f"postgresql+asyncpg://{quote(DB_USER)}:{quote(DB_PASS)}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Async engine/session configuration
 engine = create_async_engine(

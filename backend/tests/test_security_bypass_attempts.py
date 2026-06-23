@@ -76,7 +76,9 @@ def test_ssrf_fetcher_blocks_every_evasion(url):
 
 def test_ssrf_fetcher_allows_only_font_and_data():
     assert isinstance(secure_url_fetcher(_FONT_URL), URLFetcherResponse)
-    assert isinstance(secure_url_fetcher("data:text/plain;base64,QQ=="), URLFetcherResponse)
+    assert isinstance(
+        secure_url_fetcher("data:text/plain;base64,QQ=="), URLFetcherResponse
+    )
 
 
 def test_weasyprint_actually_routes_resources_through_fetcher():
