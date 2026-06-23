@@ -1,0 +1,7 @@
+apiVersion: v2
+name: moeys-api
+description: MOEYS backend API (FastAPI) — CHOS-205
+type: application
+version: 0.1.0
+# Tracks the application image tag by default; override per-env in values.
+appVersion: "0.1.0"

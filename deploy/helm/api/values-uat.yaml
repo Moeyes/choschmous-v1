@@ -1,0 +1,21 @@
+# CHOS-205: uat overrides for moeys-api.
+environment: uat
+replicaCount: 2
+image:
+  tag: "uat"
+config:
+  ENVIRONMENT: production   # UAT runs the prod code path (docs off, strict CORS)
+  DB_HOST: REPLACE_ME-uat-pg-host
+  DB_NAME: moeys
+  BACKEND_CORS_ORIGINS: "https://uat.moeys.example.gov.kh"
+  WEB_CONCURRENCY: "2"
+vault:
+  csi:
+    vaultAddress: https://vault-uat.example.internal:8200
+  agentAnnotations:
+    vault.hashicorp.com/service: https://vault-uat.example.internal:8200
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70

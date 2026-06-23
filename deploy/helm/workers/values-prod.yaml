@@ -1,0 +1,26 @@
+# CHOS-205: prod overrides for moeys-workers.
+environment: prod
+replicaCount: 3
+image:
+  tag: "" # pinned to an immutable release tag/digest by the Argo CD Application
+config:
+  ENVIRONMENT: production
+  DB_HOST: REPLACE_ME-prod-pg-host
+  DB_NAME: moeys
+  ARQ_REDIS_URL: "redis://REPLACE_ME-prod-broker-host:6379/0"
+vault:
+  csi:
+    vaultAddress: https://vault.example.internal:8200
+  agentAnnotations:
+    vault.hashicorp.com/service: https://vault.example.internal:8200
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 2Gi
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 12
+  targetCPUUtilizationPercentage: 65

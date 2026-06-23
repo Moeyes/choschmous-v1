@@ -1,0 +1,6 @@
+apiVersion: v2
+name: moeys-bff
+description: MOEYS frontend / BFF (Next.js standalone, SSR proxy to the API) — CHOS-205
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

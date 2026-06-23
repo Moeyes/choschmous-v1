@@ -1,0 +1,8 @@
+MOEYS API ({{ .Values.environment }}) deployed as {{ include "moeys-api.fullname" . }}.
+
+Service:    {{ include "moeys-api.fullname" . }}:{{ .Values.service.port }} (ClusterIP)
+Autoscale:  {{ if .Values.autoscaling.enabled }}{{ .Values.autoscaling.minReplicas }}–{{ .Values.autoscaling.maxReplicas }} pods (CPU {{ .Values.autoscaling.targetCPUUtilizationPercentage }}%){{ else }}disabled ({{ .Values.replicaCount }} replicas){{ end }}
+Secrets:    {{ if .Values.vault.enabled }}Vault — static via CSI ({{ .Values.vault.csi.secretProviderClassName }}), dynamic DB creds via Agent Injector{{ else }}DISABLED — set vault.enabled=true{{ end }}
+
+Health:     GET /health (liveness), /health/ready (readiness)
+API base:   /api/v1  (legacy /api/* 307-redirects — CHOS-203)

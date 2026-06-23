@@ -1,0 +1,52 @@
+# CHOS-205: default values for the MOEYS frontend/BFF chart. The public client
+# URL (NEXT_PUBLIC_APP_URL) is baked into the image at BUILD time (see
+# docker.yml), so it is NOT a runtime value here. Only the SSR proxy target is.
+
+environment: dev
+replicaCount: 2
+
+image:
+  # TODO(infra): real registry/repo (matches docker.yml frontend image).
+  repository: ghcr.io/REPLACE_ME/moeys/frontend
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+service:
+  type: ClusterIP
+  port: 3003
+
+# Runtime env for the Next.js standalone server (none are secret).
+config:
+  NODE_ENV: production
+  PORT: "3003"
+  # SSR fetch + rewrites target the in-cluster API service. Must match the api
+  # chart's Service name (release-prefixed). Override per env.
+  API_PROXY_TARGET: "http://moeys-api:8000"
+  API_URL: "http://moeys-api:8000"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

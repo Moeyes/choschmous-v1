@@ -1,0 +1,19 @@
+# CHOS-205: staging overrides for moeys-workers.
+environment: staging
+replicaCount: 2
+image:
+  tag: "staging"
+config:
+  ENVIRONMENT: production
+  DB_HOST: REPLACE_ME-staging-pg-host
+  DB_NAME: moeys
+  ARQ_REDIS_URL: "redis://REPLACE_ME-staging-broker-host:6379/0"
+vault:
+  csi:
+    vaultAddress: https://vault-staging.example.internal:8200
+  agentAnnotations:
+    vault.hashicorp.com/service: https://vault-staging.example.internal:8200
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
