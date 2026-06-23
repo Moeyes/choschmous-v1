@@ -1,0 +1,102 @@
+name: Security Scan
+
+# Supply-chain & image security gate. Complements Dependabot (which opens PRs
+# for upgrades) by failing CI when a High/Critical vulnerability is present in
+# our dependency tree or container image, and by publishing an SBOM artifact.
+#
+#   * pip-audit  — Python dependency vulnerabilities (backend, uv environment)
+#   * npm-audit  — JS dependency vulnerabilities (frontend, pnpm)
+#   * trivy      — container image scan of the production backend image
+#   * sbom       — CycloneDX SBOM, uploaded as a build artifact
+#   * gitleaks   — secret scanning (see CHOS-101)
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  schedule:
+    # Weekly run so newly disclosed CVEs are caught even without code changes.
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    name: Python deps (pip-audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Sync dependencies
+        run: uv sync --frozen
+      # Audits the resolved/installed environment. pip-audit exits non-zero on
+      # any known vulnerability, which is a strict (and acceptable) gate.
+      - name: pip-audit
+        run: uv run --with pip-audit pip-audit --strict --progress-spinner off
+
+  npm-audit:
+    name: Frontend deps (pnpm audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # Fail only on High/Critical advisories to avoid blocking on low-severity
+      # transitive noise. Tighten to `moderate` once the tree is clean.
+      - name: pnpm audit (High/Critical)
+        run: pnpm audit --audit-level high --prod
+
+  trivy:
+    name: Image scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build production backend image
+        run: docker build --target production -t moeys-backend:scan ./backend
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: moeys-backend:scan
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "1"          # fail the job on High/Critical
+          ignore-unfixed: true     # don't block on CVEs with no available fix
+          vuln-type: os,library
+
+  sbom:
+    name: SBOM (CycloneDX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Generate CycloneDX SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cyclonedx.json
+          if-no-files-found: error
