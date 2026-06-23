@@ -11,6 +11,8 @@ final/_rebuild/reskin/demo/CREDENTIALS.md
 .env.production
 .env.*
 !.env.example
+# UAT env file — contains DB/Redis credentials, must never be committed (CHOS-101)
+uat.env
 
 # OS / editor
 .DS_Store

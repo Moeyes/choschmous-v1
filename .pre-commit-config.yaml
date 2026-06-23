@@ -1,0 +1,13 @@
+# Pre-commit hooks (CHOS-101). Install once with:
+#
+#   pip install pre-commit && pre-commit install
+#
+# Then `git commit` runs gitleaks against the staged changes and blocks the
+# commit if a secret is detected.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        name: gitleaks (secret scan)
+        args: ["--config", ".gitleaks.toml"]

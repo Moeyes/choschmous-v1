@@ -1,0 +1,26 @@
+# Gitleaks configuration (CHOS-101).
+#
+# Inherit the full set of upstream default rules (AWS keys, generic API tokens,
+# private keys, high-entropy secrets, etc.). We only add an allowlist for known
+# safe placeholders so the scan stays signal-heavy.
+#
+# Run locally:   gitleaks detect --config .gitleaks.toml --redact
+# Pre-commit:    handled by .pre-commit-config.yaml
+title = "moeys gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented placeholders and example secrets that are not real."
+# Files that legitimately contain example/placeholder secrets.
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)\.gitleaks\.toml$''',
+]
+# Obvious placeholder values shipped in source (see backend/core/config.py).
+regexes = [
+  '''change-me[-a-z]*''',
+  '''REPLACE_ME_WITH_A_32_CHAR_RANDOM_SECRET''',
+  '''ci-test-(secret|refresh)-[a-z0-9-]+''',
+]
