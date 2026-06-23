@@ -25,6 +25,8 @@ from src.models.enum.user import IdDocumentType, UserRole, genderEnum
 from src.models.uploaded_file import UploadedFile
 from src.models.user import User
 from src.services.file_access import user_can_access_file
+from weasyprint.urls import URLFetcherResponse
+
 from src.services.report_renderers import (
     ReportAssetBlocked,
     _FONT_URL,
@@ -73,8 +75,8 @@ def test_ssrf_fetcher_blocks_every_evasion(url):
 
 
 def test_ssrf_fetcher_allows_only_font_and_data():
-    assert isinstance(secure_url_fetcher(_FONT_URL), dict)
-    assert isinstance(secure_url_fetcher("data:text/plain;base64,QQ=="), dict)
+    assert isinstance(secure_url_fetcher(_FONT_URL), URLFetcherResponse)
+    assert isinstance(secure_url_fetcher("data:text/plain;base64,QQ=="), URLFetcherResponse)
 
 
 def test_weasyprint_actually_routes_resources_through_fetcher():

@@ -11,6 +11,8 @@ import io
 import pytest
 from openpyxl import load_workbook
 
+from weasyprint.urls import URLFetcherResponse
+
 from src.services.report_renderers import (
     ReportAssetBlocked,
     _FONT_URL,
@@ -88,7 +90,7 @@ def test_secure_url_fetcher_blocks_public_remote_assets():
 
 def test_secure_url_fetcher_allows_bundled_font():
     result = secure_url_fetcher(_FONT_URL)
-    assert isinstance(result, dict)  # default_url_fetcher returns a resource dict
+    assert isinstance(result, URLFetcherResponse)
 
 
 # ── Excel/CSV formula injection ────────────────────────────────────────

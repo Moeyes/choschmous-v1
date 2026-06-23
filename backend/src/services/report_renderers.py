@@ -13,7 +13,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from weasyprint import HTML, default_url_fetcher
+from weasyprint import HTML
+from weasyprint.urls import URLFetcher
+
+_URL_FETCHER = URLFetcher()
 
 # Absolute path so the WeasyPrint url_fetcher allowlist can compare realpaths.
 FONT_PATH = os.path.abspath(
@@ -96,10 +99,10 @@ def secure_url_fetcher(url: str):
     """WeasyPrint URL fetcher: allow only the bundled font + inert data: URIs."""
     scheme = (urlparse(url).scheme or "").lower()
     if scheme == "data":
-        return default_url_fetcher(url)
+        return _URL_FETCHER.fetch(url)
     if scheme == "file":
         if _is_allowed_font(url):
-            return default_url_fetcher(url)
+            return _URL_FETCHER.fetch(url)
         raise ReportAssetBlocked(f"Blocked local file in report asset: {url!r}")
     if scheme in ("http", "https"):
         if _host_is_blocked(urlparse(url).hostname or ""):

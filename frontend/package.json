@@ -49,6 +49,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "jsdom": "^29.1.1",
+    "@noble/hashes": "1.8.0",
     "knip": "^6.16.1",
     "shadcn": "^4.3.0",
     "tailwindcss": "^4",
