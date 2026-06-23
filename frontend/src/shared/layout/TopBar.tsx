@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, LogOut, Menu } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useAuth, UserRole } from "@/core/auth";
 import { Button, LanguageSwitcher } from "@/shared/ui";
+import { queryKeys } from "@/core/api/queryKeys";
 import { cn } from "@/shared/utils/cn";
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -16,20 +19,70 @@ const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.GUEST]: "guest",
 };
 
-const BREADCRUMB_MAP: Array<{ href: string; labelKey: string }> = [
+// Top-level route → nav label key. Used to label the section crumb.
+const SECTION_LABELS: Array<{ href: string; labelKey: string }> = [
   { href: "/dashboard", labelKey: "dashboard" },
   { href: "/events", labelKey: "events" },
   { href: "/sports", labelKey: "sports" },
   { href: "/organizations", labelKey: "organizations" },
   { href: "/users", labelKey: "users" },
   { href: "/register", labelKey: "athleteRegistration" },
+  { href: "/leader-registration", labelKey: "leaderRegistration" },
+  { href: "/organizer-registration", labelKey: "organizerRegistration" },
+  { href: "/organizer-roles", labelKey: "organizerRoles" },
   { href: "/by-sport", labelKey: "bysport" },
   { href: "/by-number", labelKey: "bynumber" },
   { href: "/by-category", labelKey: "bycategory" },
+  { href: "/open-survey", labelKey: "openSurvey" },
   { href: "/participation", labelKey: "submissions" },
+  { href: "/sport-submissions", labelKey: "sportSubmissions" },
+  { href: "/category-submissions", labelKey: "categorySubmissions" },
+  { href: "/registrations", labelKey: "registrations" },
   { href: "/reports", labelKey: "reports" },
   { href: "/cards", labelKey: "cards" },
 ];
+
+// Detail routes whose leaf crumb should show the entity name, resolved from the
+// React Query cache populated by the detail page itself.
+const DETAIL_BASES = ["/events", "/sports", "/organizations", "/registrations"];
+
+interface DetailRoute {
+  base: string;
+  id: string;
+}
+
+function parseDetailRoute(pathname: string): DetailRoute | null {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length < 2) return null;
+  const base = `/${segments[0]}`;
+  if (!DETAIL_BASES.includes(base)) return null;
+  // Only numeric record ids — keeps `/events/new` style routes out.
+  if (!/^\d+$/.test(segments[1])) return null;
+  return { base, id: segments[1] };
+}
+
+function detailCacheKey(detail: DetailRoute): readonly unknown[] | null {
+  const id = Number(detail.id);
+  switch (detail.base) {
+    case "/events":
+      return queryKeys.events.detail(id);
+    case "/sports":
+      return queryKeys.sports.detail(id);
+    case "/organizations":
+      return queryKeys.organizations.detail(id);
+    default:
+      return null; // registrations resolve to a non-PII reference, not a name
+  }
+}
+
+function extractName(data: unknown, locale: string): string | null {
+  if (!data || typeof data !== "object") return null;
+  const record = data as Record<string, unknown>;
+  const kh = typeof record.name_kh === "string" ? record.name_kh : "";
+  const en = typeof record.name_en === "string" ? record.name_en : "";
+  const picked = locale === "kh" ? kh || en : en || kh;
+  return picked || null;
+}
 
 function getInitials(name: string) {
   return (
@@ -42,23 +95,6 @@ function getInitials(name: string) {
   );
 }
 
-function getBreadcrumbs(pathname: string) {
-  const segments = pathname.split("/").filter(Boolean);
-  const breadcrumbs: Array<{ href: string; labelKey: string }> = [];
-
-  for (let index = 0; index < segments.length; index += 1) {
-    const href = `/${segments.slice(0, index + 1).join("/")}`;
-    const match = BREADCRUMB_MAP.find(
-      (item) => href === item.href || href.startsWith(`${item.href}/`),
-    );
-    if (match && !breadcrumbs.some((crumb) => crumb.href === match.href)) {
-      breadcrumbs.push(match);
-    }
-  }
-
-  return breadcrumbs;
-}
-
 interface TopBarProps {
   onMenuClick?: () => void;
 }
@@ -66,6 +102,7 @@ interface TopBarProps {
 export function TopBar({ onMenuClick }: TopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const locale = useLocale();
   const { user, role, logout } = useAuth();
   const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
@@ -82,7 +119,53 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const breadcrumbs = useMemo(() => getBreadcrumbs(pathname), [pathname]);
+  const detail = useMemo(() => parseDetailRoute(pathname), [pathname]);
+  const cacheKey = detail ? detailCacheKey(detail) : null;
+
+  // Read-only subscription to the cache entry the detail page populated. With
+  // `enabled: false` this never fetches; it just re-renders when that entry
+  // arrives, letting us swap the static label for the real entity name.
+  const { data: detailData } = useQuery({
+    queryKey: cacheKey ?? ["breadcrumb", "noop"],
+    queryFn: () => null,
+    enabled: false,
+  });
+
+  const detailName = useMemo(() => {
+    if (!detail) return null;
+    if (detail.base === "/registrations") {
+      return `REG-${detail.id.padStart(6, "0")}`;
+    }
+    return extractName(detailData, locale);
+  }, [detail, detailData, locale]);
+
+  const crumbs = useMemo(() => {
+    const onDashboard = pathname === "/dashboard" || pathname === "/";
+    const list: Array<{ label: string; href?: string }> = [
+      { label: tNav("dashboard"), href: onDashboard ? undefined : "/dashboard" },
+    ];
+    if (onDashboard) return list;
+
+    const segments = pathname.split("/").filter(Boolean);
+    const topHref = `/${segments[0]}`;
+    const match = SECTION_LABELS.find(
+      (item) => topHref === item.href || topHref.startsWith(`${item.href}/`),
+    );
+    let sectionLabelKey = match?.labelKey;
+    // Organizations see the participation queue as their leader registrations.
+    if (topHref === "/participation" && role === UserRole.ORGANIZATION) {
+      sectionLabelKey = "leaderRegistration";
+    }
+    if (sectionLabelKey) {
+      list.push({
+        label: tNav(sectionLabelKey as never),
+        href: detailName ? topHref : undefined,
+      });
+    }
+    if (detailName) list.push({ label: detailName });
+    return list;
+  }, [pathname, role, detailName, tNav]);
+
   const displayName =
     user?.khmer_name ||
     user?.english_name ||
@@ -92,14 +175,6 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     ? tCommon(`roles.${ROLE_LABELS[role]}` as never)
     : tCommon("role");
   const initials = getInitials(displayName);
-
-  const resolveBreadcrumbLabel = (href: string) => {
-    if (href === "/participation" && role === UserRole.ORGANIZATION) {
-      return "leaderRegistration";
-    }
-    const match = BREADCRUMB_MAP.find((item) => item.href === href);
-    return match?.labelKey ?? "dashboard";
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -112,7 +187,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         <button
           type="button"
           onClick={onMenuClick}
-          aria-label="Open menu"
+          aria-label={tCommon("openMenu")}
           className="-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-accent hover:text-primary lg:hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Menu className="h-[18px] w-[18px]" />
@@ -123,32 +198,28 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             aria-label="Breadcrumb"
             className="flex items-center gap-1.5 text-sm text-muted-text"
           >
-            <span
-              className={cn(
-                "truncate",
-                breadcrumbs.length === 0
-                  ? "font-semibold text-heading"
-                  : "font-medium",
-              )}
-            >
-              {tNav("dashboard")}
-            </span>
-            {breadcrumbs.map((crumb, index) => {
-              const isLast = index === breadcrumbs.length - 1;
+            {crumbs.map((crumb, index) => {
+              const isLast = index === crumbs.length - 1;
               return (
-                <div
-                  key={crumb.href}
-                  className="flex min-w-0 items-center gap-1.5"
-                >
-                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-text/40" />
-                  <span
-                    className={cn(
-                      "truncate",
-                      isLast && "font-semibold text-heading",
-                    )}
-                  >
-                    {tNav(resolveBreadcrumbLabel(crumb.href) as never)}
-                  </span>
+                <div key={index} className="flex min-w-0 items-center gap-1.5">
+                  {index > 0 && (
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-text/40" />
+                  )}
+                  {crumb.href && !isLast ? (
+                    <Link
+                      href={crumb.href}
+                      className="truncate font-medium transition-colors hover:text-heading"
+                    >
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span
+                      className={cn("truncate", isLast && "font-semibold text-heading")}
+                      aria-current={isLast ? "page" : undefined}
+                    >
+                      {crumb.label}
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -163,7 +234,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               type="button"
               onClick={() => setMenuOpen((value) => !value)}
               className="flex items-center gap-2.5 rounded-lg border border-border bg-card py-1.5 pl-1.5 pr-2.5 text-left transition-all duration-150 hover:bg-accent hover:border-border/80 focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="User menu"
+              aria-label={tCommon("userMenu")}
               aria-expanded={menuOpen}
               aria-haspopup="true"
             >

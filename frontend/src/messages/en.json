@@ -6,21 +6,24 @@
     "goToDashboard": "Go to dashboard"
   },
   "home": {
-    "brand": "MOEYS Sports",
-    "ministry": "Ministry of Education, Youth and Sport",
+    "identity": {
+      "kh": "ក្រសួងអប់រំ យុវជន និងកីឡា",
+      "en": "Ministry of Education, Youth and Sport",
+      "system": "National Sports Event Management System"
+    },
     "nav": {
-      "signIn": "Sign In",
-      "register": "Register",
+      "signIn": "Sign in",
       "dashboard": "Dashboard"
     },
     "hero": {
-      "title": "Sports Event Management Platform",
-      "subtitle": "Streamline participant registration, manage events, and coordinate sports activities across the Ministry with one unified platform.",
-      "getStarted": "Get Started",
-      "signIn": "Sign In"
+      "headlineKh": "ប្រព័ន្ធគ្រប់គ្រងព្រឹត្តិការណ៍កីឡាថ្នាក់ជាតិ",
+      "headlineEn": "National Sports Event Management System",
+      "lead": "An official Ministry platform for registering athletes and teams, coordinating events, and reporting participation across federations and organizations.",
+      "signIn": "Sign in",
+      "accessNote": "Accounts are issued by your federation or organization. Contact your administrator to get access."
     },
     "features": {
-      "title": "Platform Features",
+      "title": "What the system does",
       "registration": {
         "title": "Easy Registration",
         "description": "Simple, quick registration for athletes and leaders with full Khmer and English support."
@@ -34,13 +37,59 @@
         "description": "Real-time insights and detailed reports for event organizers and administrators."
       }
     },
-    "cta": {
-      "title": "Ready to get started?",
-      "subtitle": "Join sports organizations using the MOEYS platform to streamline their operations.",
-      "register": "Register Now"
+    "howItWorks": {
+      "title": "How it works",
+      "step1": {
+        "title": "Receive your account",
+        "description": "Your federation or organization administrator issues your sign-in credentials."
+      },
+      "step2": {
+        "title": "Register participants",
+        "description": "Submit athletes, teams, and leaders with the required documents for each event."
+      },
+      "step3": {
+        "title": "Track and report",
+        "description": "Follow review status and view participation figures for your organization."
+      }
+    },
+    "supportedEvents": {
+      "label": "Supported events",
+      "value": "National Games, regional tournaments, and school sports competitions."
     },
     "footer": {
+      "ministry": "Ministry of Education, Youth and Sport",
+      "address": "No. 80, Preah Norodom Boulevard, Phnom Penh, Cambodia",
+      "supportLabel": "Support",
+      "support": "For access or technical help, contact your federation or organization administrator.",
+      "legalLabel": "Legal",
+      "privacy": "Privacy & data handling",
+      "version": "Version",
       "rights": "Ministry of Education, Youth and Sport. All rights reserved."
+    },
+    "privacy": {
+      "back": "Back to home",
+      "title": "Privacy & Data Handling",
+      "subtitle": "How this system collects and protects personal data",
+      "intro": "This system processes personal data of athletes, team leaders, and organizers to administer official sports events of the Ministry of Education, Youth and Sport. Data is handled in line with the Ministry's data-protection obligations.",
+      "sections": {
+        "collection": {
+          "title": "What we collect",
+          "body": "Names, dates of birth, gender, contact details, nationality, identity-document references, and photographs required to register and verify participants."
+        },
+        "use": {
+          "title": "How we use it",
+          "body": "Personal data is used only to process registrations, verify eligibility, issue participant cards, and produce official participation reports."
+        },
+        "retention": {
+          "title": "Retention",
+          "body": "Records are retained for the period required by the Ministry for the relevant event cycle and audit purposes, then archived or removed."
+        },
+        "rights": {
+          "title": "Your rights",
+          "body": "Participants may request correction of their records through their registering federation or organization administrator."
+        }
+      },
+      "contact": "For questions about how your data is handled, contact your federation or organization administrator, who can escalate to the Ministry."
     }
   },
   "common": {
@@ -112,7 +161,12 @@
     "athlete": "Athlete",
     "leader": "Leader",
     "athleteMale": "Male Athlete",
-    "athleteFemale": "Female Athlete"
+    "athleteFemale": "Female Athlete",
+    "openMenu": "Open menu",
+    "userMenu": "User menu",
+    "navigation": "Navigation",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar"
   },
   "nav": {
     "main": "Overview",
@@ -128,11 +182,11 @@
     "participation": "Participation",
     "cards": "Cards",
     "reports": "Reports",
-    "federations": "Federations",
-    "bysport": "By Sport",
-    "bynumber": "By Number",
-    "bycategory": "By Category",
-    "submissions": "Submissions",
+    "federations": "Category survey",
+    "bysport": "Sport survey",
+    "bynumber": "Athlete-count survey",
+    "bycategory": "Category survey",
+    "submissions": "Review queue",
     "sportSubmissions": "Sport Submissions",
     "categorySubmissions": "Category Submissions",
     "registrations": "Registrations",
@@ -141,7 +195,8 @@
     "organizerRegistration": "Organizer Registration",
     "organizerRoles": "Organizer Roles",
     "openSurvey": "Open Survey",
-    "portalVersion": "Portal v1.0"
+    "portalVersion": "Portal v1.0",
+    "review": "Review & Approvals"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -154,12 +209,14 @@
     "hidePassword": "Hide password",
     "signIn": "Sign In",
     "signingIn": "Signing in...",
-    "noAccount": "Don't have an account?",
-    "registerHere": "Register here",
     "accessDenied": "Access Denied",
     "noPermission": "You don't have permission to view this page.",
     "signedInAs": "Signed in as",
-    "goToDashboard": "Go to Dashboard"
+    "goToDashboard": "Go to Dashboard",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordHelp": "Contact your administrator for help.",
+    "capsLockOn": "Caps Lock is on",
+    "accountLocked": "Account temporarily locked or too many attempts. Please try again later."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -192,7 +249,18 @@
     "male": "Male",
     "female": "Female",
     "other": "Other",
-    "quickActions": "Quick Actions"
+    "quickActions": "Quick Actions",
+    "total": "Total",
+    "totalMembers": "{count} total members",
+    "pendingReview": "Pending reviews",
+    "pendingReviewHint": "Submissions awaiting review",
+    "registrationWindow": "Registration window",
+    "registrationStatus": {
+      "open": "Open",
+      "closed": "Closed",
+      "scheduled": "Scheduled",
+      "unknown": "Not available"
+    }
   },
   "events": {
     "title": "Events",
@@ -697,6 +765,12 @@
       },
       "editTitle": "Edit participant",
       "editError": "Failed to save changes. Please try again."
+    },
+    "draftSaved": "Draft saved",
+    "upload": {
+      "uploading": "Uploading file…",
+      "success": "File uploaded",
+      "error": "Upload failed. Please try again."
     }
   },
   "participation": {

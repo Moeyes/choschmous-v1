@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useRegisterForm } from "@/modules/registration/hooks";
+import { useRouter } from "next/navigation";
+import { useRegisterForm, useRegistrationDraft } from "@/modules/registration/hooks";
 import { RegisterFormFields } from "./RegisterFormFields";
 import { RegistrationSuccess } from "./RegistrationSuccess";
 import { useAuth, UserRole } from "@/core/auth";
 import { RegisterFormData } from "../schema/registration.schema";
 import { eventsRepository } from "@/modules/events/adapters";
 import { useTranslations } from "next-intl";
-import { Loader2, Sparkles, AlertCircle, Users } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, Users, Check } from "lucide-react";
 import { useCascadingData, useCategories, useEligibleSports } from "../hooks";
 import { RegisterFormNavButtons } from "./RegisterFormNavButtons";
 import { StepIndicator, Badge, useConfirm } from "@/shared";
@@ -26,6 +27,7 @@ interface RegisterFormProps {
 export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
   const isLeader = mode === "leader";
   const { user } = useAuth();
+  const router = useRouter();
   const t = useTranslations("registration");
 
   const BASE_STEPS: readonly BaseStep[] = useMemo(
@@ -66,6 +68,18 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     handleRegistrationSuccess,
     () => setDuplicatePending(true),
   );
+
+  // Autosave the wizard to localStorage; restore on return, clear on submit.
+  const { savedAt, clearDraft } = useRegistrationDraft(
+    form,
+    user?.id,
+    mode,
+    !cascadingLoading && !!cascadingData,
+  );
+
+  useEffect(() => {
+    if (isSuccess || memberRegistered) clearDraft();
+  }, [isSuccess, memberRegistered, clearDraft]);
 
   const sportId = form.watch("sportId");
   const eventId = form.watch("eventId");
@@ -260,6 +274,15 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     [maxReached, FORM_STEPS],
   );
 
+  // Jump back to a specific step from the review screen (respects maxReached).
+  const handleEditStep = useCallback(
+    (step: BaseStep) => {
+      const idx = FORM_STEPS.indexOf(step);
+      if (idx >= 0) handleStepClick(idx);
+    },
+    [FORM_STEPS, handleStepClick],
+  );
+
   const handleEditMember = useCallback(() => {
     setMemberRegistered(false);
     setCurrentStep("personal");
@@ -303,7 +326,7 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
           refNo={refNo}
           onRegisterAnother={handleRegisterAnother}
           onGoHome={() => {
-            window.location.href = "/dashboard";
+            router.push("/dashboard");
           }}
         />
       </div>
@@ -335,6 +358,13 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
       </div>
 
       <StepIndicator steps={stepLabels} currentIndex={stepIndex} onStepClick={handleStepClick} />
+
+      {savedAt !== null && (
+        <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground" role="status" aria-live="polite">
+          <Check className="size-3.5 text-success" aria-hidden />
+          {t("draftSaved")}
+        </p>
+      )}
 
       {(serverError || registerWindowError) && (
         <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
@@ -455,6 +485,7 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
           mode={mode}
           consent={consent}
           setConsent={setConsent}
+          onEditStep={handleEditStep}
         />
       )}
 

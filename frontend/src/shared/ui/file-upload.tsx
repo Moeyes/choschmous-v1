@@ -16,6 +16,10 @@ interface FileUploadProps {
   value?: string;
   error?: string;
   className?: string;
+  /** Id applied to the underlying file input so a <label htmlFor> can target it. */
+  id?: string;
+  /** Accessible name for the control (defaults to `title`). */
+  ariaLabel?: string;
 }
 
 export function FileUpload({
@@ -29,6 +33,8 @@ export function FileUpload({
   value,
   error,
   className,
+  id,
+  ariaLabel,
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -102,7 +108,7 @@ export function FileUpload({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
-            alt="Preview"
+            alt={ariaLabel || title || 'Preview'}
             className="size-full object-cover"
           />
         </div>
@@ -147,6 +153,8 @@ export function FileUpload({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         disabled={uploading}
+        aria-label={ariaLabel || title}
+        aria-busy={uploading}
         className={cn(
           'flex w-full cursor-pointer flex-col items-center gap-3 rounded-lg border-2 border-dashed transition-all outline-none',
           'disabled:cursor-not-allowed disabled:opacity-50',
@@ -182,9 +190,11 @@ export function FileUpload({
 
       <input
         ref={inputRef}
+        id={id}
         type="file"
         accept={accept || (isHero ? 'image/png,image/jpeg,image/jpg' : '.pdf')}
         onChange={handleInputChange}
+        aria-label={ariaLabel || title}
         className="hidden"
       />
 

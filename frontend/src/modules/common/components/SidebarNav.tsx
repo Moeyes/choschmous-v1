@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/shared/utils/cn";
+import { Badge } from "@/shared/ui";
+import { useReviewPendingCount } from "@/modules/common/hooks";
 import type { FeatureKey } from "@/core/auth";
 
 interface MenuItem {
@@ -11,19 +13,16 @@ interface MenuItem {
   href: string;
   icon: React.ElementType;
   feature: FeatureKey;
+  showPendingBadge?: boolean;
 }
 
-type MenuSections = MenuItem[][];
-
-const SECTION_LABELS: Record<number, string> = {
-  0: "main",
-  1: "management",
-  2: "registration",
-  3: "oversight",
-};
+interface MenuSection {
+  labelKey: string;
+  items: MenuItem[];
+}
 
 interface SidebarNavProps {
-  sections: MenuSections;
+  sections: MenuSection[];
   collapsed: boolean;
   onMobileClose?: () => void;
 }
@@ -31,32 +30,31 @@ interface SidebarNavProps {
 export function SidebarNav({ sections, collapsed, onMobileClose }: SidebarNavProps) {
   const pathname = usePathname();
   const t = useTranslations("nav");
+  const pendingCount = useReviewPendingCount();
 
   return (
     <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 scrollbar-thin">
       {sections.map((section, sectionIndex) => (
-        <div
-          key={sectionIndex}
-          className={cn(
-            sectionIndex > 0 && "mt-6"
-          )}
-        >
+        <div key={section.labelKey} className={cn(sectionIndex > 0 && "mt-6")}>
           {!collapsed && (
             <p className="px-3 pb-2 text-[11px] font-semibold text-sidebar-foreground/50 uppercase tracking-widest">
-              {t(SECTION_LABELS[sectionIndex] as never)}
+              {t(section.labelKey as never)}
             </p>
           )}
           <div className="space-y-0.5">
-            {section.map((item) => {
+            {section.items.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const showBadge = Boolean(item.showPendingBadge) && pendingCount > 0;
+              const label = t(item.labelKey as never);
+              const ariaLabel = showBadge ? `${label} (${pendingCount})` : label;
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  aria-label={t(item.labelKey as never)}
-                  title={collapsed ? t(item.labelKey as never) : undefined}
+                  aria-label={ariaLabel}
+                  title={collapsed ? label : undefined}
                   onClick={onMobileClose}
                   className={cn(
                     "group relative flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150",
@@ -79,7 +77,15 @@ export function SidebarNav({ sections, collapsed, onMobileClose }: SidebarNavPro
                     )}
                   />
                   {!collapsed && (
-                    <span className="truncate">{t(item.labelKey as never)}</span>
+                    <span className="truncate">{label}</span>
+                  )}
+                  {showBadge && !collapsed && (
+                    <Badge variant="error" size="xs" className="ml-auto tabular-nums">
+                      {pendingCount}
+                    </Badge>
+                  )}
+                  {showBadge && collapsed && (
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-danger" aria-hidden />
                   )}
                   {isActive && collapsed && (
                     <span className="absolute inset-0 rounded-lg bg-primary-50" aria-hidden />

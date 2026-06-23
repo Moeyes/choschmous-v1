@@ -1,18 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useSyncExternalStore, type MouseEvent } from 'react';
-import { ArrowRight, BarChart3, Calendar, Landmark, Users } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
+import {
+    ArrowRight,
+    BarChart3,
+    Calendar,
+    Info,
+    KeyRound,
+    LineChart,
+    Users,
+    UserPlus,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/shared/ui/button';
 import { LanguageSwitcher } from '@/shared/ui';
 import { useAuth } from '@/core/auth';
 import { routes } from '@/core/config/constants';
+import { MinistryCrest } from './MinistryCrest';
+
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '—';
 
 export function HomePage() {
     const { isAuthenticated, user } = useAuth();
-    const router = useRouter();
     const t = useTranslations('home');
     const mounted = useSyncExternalStore(
         (cb) => { window.addEventListener('storage', cb); return () => window.removeEventListener('storage', cb); },
@@ -20,15 +30,16 @@ export function HomePage() {
         () => false,
     );
 
-    const handleRegisterClick = (e: MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault();
-        router.push(isAuthenticated ? routes.register : routes.login);
-    };
-
     const features = [
         { icon: Users, title: t('features.registration.title'), description: t('features.registration.description') },
         { icon: Calendar, title: t('features.events.title'), description: t('features.events.description') },
         { icon: BarChart3, title: t('features.analytics.title'), description: t('features.analytics.description') },
+    ];
+
+    const steps = [
+        { icon: KeyRound, title: t('howItWorks.step1.title'), description: t('howItWorks.step1.description') },
+        { icon: UserPlus, title: t('howItWorks.step2.title'), description: t('howItWorks.step2.description') },
+        { icon: LineChart, title: t('howItWorks.step3.title'), description: t('howItWorks.step3.description') },
     ];
 
     return (
@@ -37,15 +48,13 @@ export function HomePage() {
                 <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                <Landmark className="h-5 w-5" />
-                            </div>
+                            <MinistryCrest label={t('identity.en')} className="h-11 w-11 shrink-0" />
                             <div className="min-w-0">
-                                <p className="truncate text-base font-semibold leading-snug text-foreground">
-                                    {t('brand')}
+                                <p className="truncate font-khmer text-base font-bold leading-snug text-heading">
+                                    {t('identity.kh')}
                                 </p>
                                 <p className="truncate text-xs leading-relaxed text-muted-foreground">
-                                    {t('ministry')}
+                                    {t('identity.en')}
                                 </p>
                             </div>
                         </div>
@@ -64,46 +73,56 @@ export function HomePage() {
                                     </Link>
                                 </>
                             ) : (
-                                <>
-                                    <Link href={routes.login}>
-                                        <Button variant="outline" size="sm">
-                                            {t('nav.signIn')}
-                                        </Button>
-                                    </Link>
-                                    <Link href={routes.login} onClick={handleRegisterClick}>
-                                        <Button variant="default" size="sm">
-                                            {t('nav.register')}
-                                        </Button>
-                                    </Link>
-                                </>
+                                <Link href={routes.login}>
+                                    <Button variant="default" size="sm">
+                                        {t('nav.signIn')}
+                                    </Button>
+                                </Link>
                             )}
                         </nav>
                     </div>
                 </div>
+                {/* National-colors accent bar (Cambodian flag: blue / red) */}
+                <div aria-hidden className="flex h-1">
+                    <span className="h-full flex-[3] bg-flag-blue" />
+                    <span className="h-full flex-1 bg-flag-red" />
+                    <span className="h-full flex-[3] bg-flag-blue" />
+                </div>
             </header>
 
             <main>
-                <section className="px-4 py-24 sm:px-6 lg:px-8">
+                <section className="px-4 py-20 sm:px-6 lg:px-8">
                     <div className="mx-auto max-w-4xl text-center">
-                        <h1 className="mb-6 text-4xl font-bold text-foreground sm:text-5xl">
-                            {t('hero.title')}
+                        <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-primary">
+                            {t('identity.system')}
+                        </p>
+                        <h1 className="mb-3 font-khmer text-3xl font-bold leading-tight text-heading sm:text-5xl">
+                            {t('hero.headlineKh')}
                         </h1>
-                        <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                            {t('hero.subtitle')}
+                        <p className="mb-6 text-lg font-medium text-muted-foreground sm:text-xl">
+                            {t('hero.headlineEn')}
+                        </p>
+                        <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed text-muted-foreground">
+                            {t('hero.lead')}
                         </p>
 
-                        {mounted && !isAuthenticated && (
-                            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                                <Link href={routes.login} onClick={handleRegisterClick}>
-                                    <Button size="lg" className="w-full gap-2 sm:w-auto">
-                                        {t('hero.getStarted')} <ArrowRight className="h-5 w-5" />
-                                    </Button>
-                                </Link>
+                        {mounted && isAuthenticated ? (
+                            <Link href={routes.dashboard}>
+                                <Button size="lg" className="gap-2">
+                                    {t('nav.dashboard')} <ArrowRight className="h-5 w-5" />
+                                </Button>
+                            </Link>
+                        ) : (
+                            <div className="mx-auto flex max-w-xl flex-col items-center gap-4">
                                 <Link href={routes.login}>
-                                    <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                                        {t('hero.signIn')}
+                                    <Button size="lg" className="gap-2">
+                                        {t('hero.signIn')} <ArrowRight className="h-5 w-5" />
                                     </Button>
                                 </Link>
+                                <p className="flex items-start gap-2 rounded-lg border border-border bg-accent/40 px-4 py-3 text-left text-sm leading-relaxed text-muted-foreground">
+                                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                                    <span>{t('hero.accessNote')}</span>
+                                </p>
                             </div>
                         )}
                     </div>
@@ -129,26 +148,71 @@ export function HomePage() {
                     </div>
                 </section>
 
-                <section className="px-4 py-20 sm:px-6 lg:px-8">
-                    <div className="mx-auto max-w-3xl text-center">
-                        <h2 className="mb-6 text-2xl font-bold text-foreground sm:text-3xl">{t('cta.title')}</h2>
-                        <p className="mb-8 text-lg leading-relaxed text-muted-foreground">
-                            {t('cta.subtitle')}
-                        </p>
+                <section className="px-4 py-16 sm:px-6 lg:px-8">
+                    <div className="mx-auto max-w-5xl">
+                        <h2 className="mb-10 text-center text-2xl font-bold text-foreground sm:text-3xl">
+                            {t('howItWorks.title')}
+                        </h2>
+                        <ol className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                            {steps.map((step, index) => (
+                                <li key={step.title} className="relative rounded-lg border border-border bg-card p-6">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                                            {index + 1}
+                                        </span>
+                                        <step.icon className="h-5 w-5 text-primary" aria-hidden />
+                                    </div>
+                                    <h3 className="mb-2 text-base font-semibold text-foreground">{step.title}</h3>
+                                    <p className="text-sm leading-relaxed text-muted-foreground">{step.description}</p>
+                                </li>
+                            ))}
+                        </ol>
 
-                        {mounted && !isAuthenticated && (
-                            <Link href={routes.login} onClick={handleRegisterClick}>
-                                <Button size="lg">{t('cta.register')}</Button>
-                            </Link>
-                        )}
+                        <p className="mx-auto mt-10 max-w-3xl rounded-lg border border-border bg-accent/40 px-5 py-4 text-center text-sm leading-relaxed text-muted-foreground">
+                            <span className="font-semibold text-foreground">{t('supportedEvents.label')}: </span>
+                            {t('supportedEvents.value')}
+                        </p>
                     </div>
                 </section>
             </main>
 
-            <footer className="border-t border-border bg-card py-8">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="text-center text-sm leading-relaxed text-muted-foreground">
-                        <p>© {new Date().getFullYear()} {t('footer.rights')}</p>
+            <footer className="border-t border-border bg-card">
+                <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="flex items-start gap-3">
+                            <MinistryCrest label={t('identity.en')} className="h-10 w-10 shrink-0" />
+                            <div>
+                                <p className="font-khmer text-sm font-semibold text-heading">{t('identity.kh')}</p>
+                                <p className="text-sm text-muted-foreground">{t('footer.ministry')}</p>
+                                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t('footer.address')}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                {t('footer.supportLabel')}
+                            </p>
+                            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t('footer.support')}</p>
+                        </div>
+
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                                {t('footer.legalLabel')}
+                            </p>
+                            <Link
+                                href={routes.privacy}
+                                className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
+                            >
+                                {t('footer.privacy')}
+                            </Link>
+                            <p className="mt-3 text-xs text-muted-foreground">
+                                {t('footer.version')} {APP_VERSION}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 border-t border-border pt-6 text-center text-xs leading-relaxed text-muted-foreground">
+                        © {new Date().getFullYear()} {t('footer.rights')}
                     </div>
                 </div>
             </footer>

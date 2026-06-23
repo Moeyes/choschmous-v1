@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLogin } from '@/core/auth/hooks';
 import { Button } from '@/shared/ui/button';
+import { Input, LanguageSwitcher } from '@/shared/ui';
 import { AlertCircle, LogIn, Eye, EyeOff } from 'lucide-react';
 import { ROLE_DEFAULT_ROUTE } from '@/core/config/constants';
 import { useTranslations } from 'next-intl';
@@ -12,10 +13,18 @@ function LoginFormInner() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const { login, isPending, error, clearError } = useLogin();
+    const [capsLockOn, setCapsLockOn] = useState(false);
+    const { login, isPending, error, status, clearError } = useLogin();
     const router = useRouter();
     const searchParams = useSearchParams();
     const t = useTranslations('auth');
+
+    const isLockout = status === 423 || status === 429;
+    const errorMessage = error ? (isLockout ? t('accountLocked') : error) : null;
+
+    const handleCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        setCapsLockOn(e.getModifierState('CapsLock'));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,7 +40,10 @@ function LoginFormInner() {
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-background via-background to-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+                <LanguageSwitcher />
+            </div>
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center gap-2 mb-4">
@@ -44,10 +56,13 @@ function LoginFormInner() {
                 </div>
 
                 <div className="bg-card rounded-lg shadow-sm border border-border p-8">
-                    {error && (
-                        <div className="mb-6 flex items-start gap-3 rounded-lg bg-destructive/10 border border-destructive/30 p-4">
+                    {errorMessage && (
+                        <div
+                            role="alert"
+                            className="mb-6 flex items-start gap-3 rounded-lg bg-destructive/10 border border-destructive/30 p-4"
+                        >
                             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-                            <p className="text-sm text-destructive font-medium">{error}</p>
+                            <p className="text-sm text-destructive font-medium">{errorMessage}</p>
                         </div>
                     )}
 
@@ -56,14 +71,14 @@ function LoginFormInner() {
                             <label htmlFor="username" className="block text-sm font-medium text-foreground mb-2">
                                 {t('username')}
                             </label>
-                            <input
+                            <Input
                                 id="username"
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
+                                onKeyUp={handleCapsLock}
                                 placeholder={t('usernamePlaceholder')}
                                 autoComplete="username"
-                                className="w-full px-4 py-2 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                                 required
                             />
                         </div>
@@ -73,14 +88,17 @@ function LoginFormInner() {
                                 {t('password')}
                             </label>
                             <div className="relative">
-                                <input
+                                <Input
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    onKeyUp={handleCapsLock}
+                                    onKeyDown={handleCapsLock}
                                     placeholder={t('passwordPlaceholder')}
                                     autoComplete="current-password"
-                                    className="w-full px-4 py-2 pr-10 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                    aria-describedby={capsLockOn ? 'caps-lock-warning' : undefined}
+                                    className="pr-10"
                                     required
                                 />
                                 <button
@@ -92,6 +110,15 @@ function LoginFormInner() {
                                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
+                            {capsLockOn && (
+                                <p
+                                    id="caps-lock-warning"
+                                    className="mt-2 flex items-center gap-1.5 text-xs font-medium text-warning"
+                                >
+                                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                                    {t('capsLockOn')}
+                                </p>
+                            )}
                         </div>
 
                         <Button
@@ -103,12 +130,10 @@ function LoginFormInner() {
                         </Button>
                     </form>
 
-                    <div className="mt-6 text-center text-sm text-muted-foreground">
-                        {t('noAccount')}{' '}
-                        <a href="/register" className="text-primary hover:text-primary/90 font-medium">
-                            {t('registerHere')}
-                        </a>
-                    </div>
+                    <p className="mt-6 text-center text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">{t('forgotPassword')}</span>{' '}
+                        {t('forgotPasswordHelp')}
+                    </p>
                 </div>
             </div>
         </div>

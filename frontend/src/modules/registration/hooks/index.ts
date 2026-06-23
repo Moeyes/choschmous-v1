@@ -3,6 +3,7 @@
  */
 
 export { useRegisterForm } from './useRegisterForm';
+export { useRegistrationDraft } from './useRegistrationDraft';
 export { useRegisterMutation } from './useRegisterMutation';
 export { useRegistrations } from './useRegistrations';
 export { useRegistration } from './useRegistration';

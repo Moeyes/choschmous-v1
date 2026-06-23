@@ -5,12 +5,14 @@ import { UseFormReturn } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import {
   ClipboardCheck, Trophy, UserCircle2,
-  Medal, Paperclip, CheckCircle2, MinusCircle, ShieldCheck, Check,
+  Medal, Paperclip, CheckCircle2, MinusCircle, ShieldCheck, Check, Pencil,
 } from "lucide-react";
 import { RegisterFormData, RegisterFormInput } from "../schema/registration.schema";
 import type { CascadingDataLoaded, CategoryReference as Category } from "@/core/api/referenceData";
 import { Card, CardHeader, CardTitle, CardContent, Badge } from "@/shared";
 import { cn } from "@/shared/utils/cn";
+
+type ReviewStep = "event" | "category" | "personal" | "documents" | "review";
 
 interface RegisterReviewStepProps {
   form: UseFormReturn<RegisterFormInput, unknown, RegisterFormData>;
@@ -20,14 +22,29 @@ interface RegisterReviewStepProps {
   isAdmin?: boolean;
   consent: boolean;
   setConsent: (v: boolean) => void;
+  onEditStep?: (step: ReviewStep) => void;
 }
 
-function InfoCard({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+function EditButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary-50 focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <Pencil className="size-3" aria-hidden />
+      {label}
+    </button>
+  );
+}
+
+function InfoCard({ icon, title, action, children }: { icon: ReactNode; title: string; action?: ReactNode; children: ReactNode }) {
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border bg-secondary/5 px-5 py-3">
         <span className="text-primary">{icon}</span>
         <span className="text-sm font-semibold text-foreground">{title}</span>
+        {action}
       </div>
       <div className="space-y-0 px-5">{children}</div>
     </Card>
@@ -51,6 +68,7 @@ export function RegisterReviewStep({
   isAdmin = false,
   consent,
   setConsent,
+  onEditStep,
 }: RegisterReviewStepProps) {
   const isLeader = mode === "leader";
   const t = useTranslations("registration");
@@ -91,6 +109,7 @@ export function RegisterReviewStep({
           <InfoCard
             icon={<Trophy className="size-4" />}
             title={t('steps.event')}
+            action={onEditStep && <EditButton label={tCommon('edit')} onClick={() => onEditStep('event')} />}
           >
             <Row k={t('fields.event')}>
               {event?.name_kh || event?.name_en || "—"}
@@ -118,6 +137,7 @@ export function RegisterReviewStep({
           <InfoCard
             icon={<UserCircle2 className="size-4" />}
             title={t('steps.personal')}
+            action={onEditStep && <EditButton label={tCommon('edit')} onClick={() => onEditStep('personal')} />}
           >
             <Row k={t('fields.fullNameKhmer')}>{nameKh}</Row>
             <Row k={t('fields.fullNameEnglish')}>{nameEn}</Row>
@@ -134,6 +154,7 @@ export function RegisterReviewStep({
           <div className="flex items-center gap-2 border-b border-border bg-secondary/5 px-5 py-3">
             <Paperclip className="size-4 text-primary" />
             <span className="text-sm font-semibold text-foreground">{t('fields.documents')}</span>
+            {onEditStep && <EditButton label={tCommon('edit')} onClick={() => onEditStep('documents')} />}
           </div>
           <div className="flex flex-wrap gap-2 px-5 py-4">
             {docs.map((d, i) => (

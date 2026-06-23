@@ -25,6 +25,7 @@ interface RegisterFormFieldsProps {
   mode?: "athlete" | "leader";
   consent: boolean;
   setConsent: (v: boolean) => void;
+  onEditStep?: (step: FormStep) => void;
 }
 
 export function RegisterFormFields({
@@ -36,6 +37,7 @@ export function RegisterFormFields({
   mode = "athlete",
   consent,
   setConsent,
+  onEditStep,
 }: RegisterFormFieldsProps) {
   const { user } = useAuth();
   const isAdmin =
@@ -66,6 +68,7 @@ export function RegisterFormFields({
         isAdmin={isAdmin}
         consent={consent}
         setConsent={setConsent}
+        onEditStep={onEditStep}
       />
     );
 

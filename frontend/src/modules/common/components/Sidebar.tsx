@@ -20,6 +20,7 @@ import {
   UserCog,
   UsersRound,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAuth, FEATURE_ACCESS, type FeatureKey } from "@/core/auth";
 import { cn } from "@/shared/utils/cn";
 import { SidebarNav } from "./SidebarNav";
@@ -30,37 +31,61 @@ interface MenuItem {
   href: string;
   icon: React.ElementType;
   feature: FeatureKey;
+  /** Render the pending-review count badge on this item. */
+  showPendingBadge?: boolean;
 }
 
-type MenuSections = MenuItem[][];
+interface MenuSection {
+  labelKey: string;
+  items: MenuItem[];
+}
+
+type MenuSections = MenuSection[];
 
 const COLLAPSED_KEY = "moeys.sidebar.collapsed";
 
 const MENU_SECTIONS: MenuSections = [
-  [{ labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard, feature: "dashboard" }],
-  [
-    { labelKey: "events", href: "/events", icon: Calendar, feature: "events" },
-    { labelKey: "sports", href: "/sports", icon: Trophy, feature: "sports" },
-    { labelKey: "organizations", href: "/organizations", icon: Building2, feature: "organizations" },
-    { labelKey: "federations", href: "/by-category", icon: Layers, feature: "bycategory" },
-    { labelKey: "users", href: "/users", icon: Users, feature: "users" },
-  ],
-  [
-    { labelKey: "bysport", href: "/by-sport", icon: ClipboardList, feature: "bysport" },
-    { labelKey: "bynumber", href: "/by-number", icon: UserCheck, feature: "bynumber" },
-    { labelKey: "openSurvey", href: "/open-survey", icon: FileText, feature: "opensurvey" },
-    { labelKey: "athleteRegistration", href: "/register", icon: CreditCard, feature: "register" },
-    { labelKey: "leaderRegistration", href: "/leader-registration", icon: ClipboardCheck, feature: "leaderregistration" },
-  ],
-  [
-    { labelKey: "organizerRegistration", href: "/organizer-registration", icon: UsersRound, feature: "organizerregistration" },
-    { labelKey: "organizerRoles", href: "/organizer-roles", icon: UserCog, feature: "organizerroles" },
-    { labelKey: "registrations", href: "/registrations", icon: ListChecks, feature: "registrations" },
-    { labelKey: "submissions", href: "/participation", icon: UserCheck, feature: "participation" },
-    { labelKey: "sportSubmissions", href: "/sport-submissions", icon: ClipboardCheck, feature: "sportsubmissions" },
-    { labelKey: "categorySubmissions", href: "/category-submissions", icon: Layers, feature: "categorysubmissions" },
-    { labelKey: "reports", href: "/reports", icon: FilePieChart, feature: "reports" },
-  ],
+  {
+    labelKey: "main",
+    items: [{ labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard, feature: "dashboard" }],
+  },
+  {
+    labelKey: "management",
+    items: [
+      { labelKey: "events", href: "/events", icon: Calendar, feature: "events" },
+      { labelKey: "sports", href: "/sports", icon: Trophy, feature: "sports" },
+      { labelKey: "organizations", href: "/organizations", icon: Building2, feature: "organizations" },
+      { labelKey: "federations", href: "/by-category", icon: Layers, feature: "bycategory" },
+      { labelKey: "users", href: "/users", icon: Users, feature: "users" },
+    ],
+  },
+  {
+    labelKey: "registration",
+    items: [
+      { labelKey: "bysport", href: "/by-sport", icon: ClipboardList, feature: "bysport" },
+      { labelKey: "bynumber", href: "/by-number", icon: UserCheck, feature: "bynumber" },
+      { labelKey: "openSurvey", href: "/open-survey", icon: FileText, feature: "opensurvey" },
+      { labelKey: "athleteRegistration", href: "/register", icon: CreditCard, feature: "register" },
+      { labelKey: "leaderRegistration", href: "/leader-registration", icon: ClipboardCheck, feature: "leaderregistration" },
+    ],
+  },
+  {
+    labelKey: "review",
+    items: [
+      { labelKey: "submissions", href: "/participation", icon: UserCheck, feature: "participation", showPendingBadge: true },
+      { labelKey: "sportSubmissions", href: "/sport-submissions", icon: ClipboardCheck, feature: "sportsubmissions" },
+      { labelKey: "categorySubmissions", href: "/category-submissions", icon: Layers, feature: "categorysubmissions" },
+    ],
+  },
+  {
+    labelKey: "oversight",
+    items: [
+      { labelKey: "organizerRegistration", href: "/organizer-registration", icon: UsersRound, feature: "organizerregistration" },
+      { labelKey: "organizerRoles", href: "/organizer-roles", icon: UserCog, feature: "organizerroles" },
+      { labelKey: "registrations", href: "/registrations", icon: ListChecks, feature: "registrations" },
+      { labelKey: "reports", href: "/reports", icon: FilePieChart, feature: "reports" },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -70,6 +95,7 @@ interface SidebarProps {
 
 export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const { role } = useAuth();
+  const t = useTranslations("common");
   const [collapsed, setCollapsed] = useState(() => {
     try {
       if (typeof window === "undefined") return false;
@@ -98,9 +124,10 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
 
   const sections = useMemo<MenuSections>(() => {
     if (!role) return [];
-    return MENU_SECTIONS.map((section) =>
-      section.filter((item) => FEATURE_ACCESS[item.feature].includes(role)),
-    ).filter((section) => section.length > 0);
+    return MENU_SECTIONS.map((section) => ({
+      ...section,
+      items: section.items.filter((item) => FEATURE_ACCESS[item.feature].includes(role)),
+    })).filter((section) => section.items.length > 0);
   }, [role]);
 
   return (
@@ -120,7 +147,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
             type="button"
             onClick={() => setCollapsed((value) => !value)}
             className="flex h-8 w-full items-center justify-center rounded-lg text-sidebar-foreground/50 transition-all duration-150 hover:bg-accent hover:text-heading focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
           >
             {collapsed ? (
               <ChevronRight className="h-4 w-4" />
@@ -144,7 +171,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         <aside
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation"
+          aria-label={t("navigation")}
           className={cn(
             "fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] flex-col border-r border-border bg-sidebar shadow-xl transition-transform duration-300 ease-in-expo",
             mobileOpen ? "translate-x-0" : "-translate-x-full",

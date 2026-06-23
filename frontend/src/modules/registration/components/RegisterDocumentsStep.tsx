@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Camera, FileText, Info, AlertCircle } from "lucide-react";
@@ -15,6 +15,10 @@ interface RegisterDocumentsStepProps {
   form: UseFormReturn<RegisterFormInput, unknown, RegisterFormData>;
 }
 
+const PHOTO_INPUT_ID = "register-photo-upload";
+const ID_INPUT_ID = "register-id-upload";
+const BIRTH_INPUT_ID = "register-birth-upload";
+
 export function RegisterDocumentsStep({ form }: RegisterDocumentsStepProps) {
   const t = useTranslations('registration');
   const tCommon = useTranslations('common');
@@ -23,6 +27,9 @@ export function RegisterDocumentsStep({ form }: RegisterDocumentsStepProps) {
   const photoPath = watch("photoPath");
   const nationalIdPath = watch("nationalIdPath");
   const birthCertificatePath = watch("birthCertificatePath");
+
+  // Announced to assistive tech via an aria-live region as uploads progress.
+  const [uploadStatus, setUploadStatus] = useState("");
 
   const dateOfBirth = watch("dateOfBirth");
   const isUnder18 = (() => {
@@ -35,8 +42,23 @@ export function RegisterDocumentsStep({ form }: RegisterDocumentsStepProps) {
     return age < 18;
   })();
 
-  const handlePhotoUpload = useCallback(async (file: File) => uploadPhoto(file), []);
-  const handleDocumentUpload = useCallback(async (file: File) => uploadDocument(file), []);
+  const runUpload = useCallback(
+    async (uploader: (file: File) => Promise<string>, file: File) => {
+      setUploadStatus(t("upload.uploading"));
+      try {
+        const path = await uploader(file);
+        setUploadStatus(t("upload.success"));
+        return path;
+      } catch (err) {
+        setUploadStatus(t("upload.error"));
+        throw err;
+      }
+    },
+    [t],
+  );
+
+  const handlePhotoUpload = useCallback((file: File) => runUpload(uploadPhoto, file), [runUpload]);
+  const handleDocumentUpload = useCallback((file: File) => runUpload(uploadDocument, file), [runUpload]);
 
   return (
     <Card>
@@ -47,13 +69,20 @@ export function RegisterDocumentsStep({ form }: RegisterDocumentsStepProps) {
       </CardHeader>
       <CardContent className="space-y-6">
 
+        {/* Screen-reader announcements for upload progress */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {uploadStatus}
+        </div>
+
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-foreground">
+          <label htmlFor={PHOTO_INPUT_ID} className="block text-sm font-medium text-foreground">
             {t('fields.profilePhoto')}
-            <span className="ml-1 text-destructive">*</span>
+            <span className="ml-1 text-destructive" aria-hidden>*</span>
           </label>
-          <p className="text-xs text-muted-foreground">{t('fields.photoUploadDesc')}</p>
+          <p id="photo-upload-desc" className="text-xs text-muted-foreground">{t('fields.photoUploadDesc')}</p>
           <FileUpload
+            id={PHOTO_INPUT_ID}
+            ariaLabel={t('fields.profilePhoto')}
             variant="hero"
             value={photoPath ?? undefined}
             onChange={(v) => setValue("photoPath", v || null, { shouldValidate: true })}
@@ -79,21 +108,35 @@ export function RegisterDocumentsStep({ form }: RegisterDocumentsStepProps) {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FileUpload
-              variant="tile"
-              value={nationalIdPath ?? undefined}
-              onChange={(v) => setValue("nationalIdPath", v || null, { shouldValidate: true })}
-              onUpload={handleDocumentUpload}
-              title={t('fields.idDocument')}
-            />
-            {isUnder18 && (
+            <div className="space-y-1.5">
+              <label htmlFor={ID_INPUT_ID} className="block text-sm font-medium text-foreground">
+                {t('fields.idDocument')}
+              </label>
               <FileUpload
+                id={ID_INPUT_ID}
+                ariaLabel={t('fields.idDocument')}
                 variant="tile"
-                value={birthCertificatePath ?? undefined}
-                onChange={(v) => setValue("birthCertificatePath", v || null, { shouldValidate: true })}
+                value={nationalIdPath ?? undefined}
+                onChange={(v) => setValue("nationalIdPath", v || null, { shouldValidate: true })}
                 onUpload={handleDocumentUpload}
-                title={t('fields.birthCertificate')}
+                title={t('fields.idDocument')}
               />
+            </div>
+            {isUnder18 && (
+              <div className="space-y-1.5">
+                <label htmlFor={BIRTH_INPUT_ID} className="block text-sm font-medium text-foreground">
+                  {t('fields.birthCertificate')}
+                </label>
+                <FileUpload
+                  id={BIRTH_INPUT_ID}
+                  ariaLabel={t('fields.birthCertificate')}
+                  variant="tile"
+                  value={birthCertificatePath ?? undefined}
+                  onChange={(v) => setValue("birthCertificatePath", v || null, { shouldValidate: true })}
+                  onUpload={handleDocumentUpload}
+                  title={t('fields.birthCertificate')}
+                />
+              </div>
             )}
           </div>
 

@@ -8,6 +8,7 @@ import { useAuth, useRequireAuth, UserRole } from '@/core/auth';
 import { PageShell, PageHeader, PageErrorState, SkeletonCard, PageStats } from '@/shared';
 import { useDashboard } from '../hooks/useDashboard';
 import { GenderChart } from './GenderChart';
+import { DashboardInsights } from './DashboardInsights';
 import { RecentEnrollments } from './RecentEnrollments';
 import { StatsGrid } from './StatsGrid';
 import { TopOrgsTable } from './TopOrgsTable';
@@ -86,6 +87,9 @@ export function DashboardPage() {
                 <div className="space-y-6">
                     {/* KPI Cards */}
                     <StatsGrid stats={data.stats} />
+
+                    {/* Role-aware status widgets */}
+                    <DashboardInsights isAdmin={isAdmin} />
 
                     {/* Charts & Tables Section */}
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

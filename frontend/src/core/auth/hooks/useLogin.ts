@@ -9,6 +9,12 @@ interface UseLoginReturn {
   login: (username: string, password: string) => Promise<UserRole | null>;
   isPending: boolean;
   error: string | null;
+  /**
+   * HTTP status of the last failed login, when available. Lets the form show
+   * rate-limit/lockout messaging for 423 (Locked) / 429 (Too Many Requests)
+   * instead of the generic error string.
+   */
+  status: number | null;
   clearError: () => void;
 }
 
@@ -31,16 +37,22 @@ export function useLogin(): UseLoginReturn {
     }
   };
 
-  const error = mutation.error 
-    ? (mutation.error instanceof AxiosError 
-        ? mutation.error.response?.data?.detail || mutation.error.message 
+  const error = mutation.error
+    ? (mutation.error instanceof AxiosError
+        ? mutation.error.response?.data?.detail || mutation.error.message
         : mutation.error instanceof Error ? mutation.error.message : 'Login failed')
     : contextError;
 
-  return { 
-    login, 
-    isPending: mutation.isPending, 
-    error: typeof error === 'string' ? error : null, 
-    clearError: contextClearError 
+  const status =
+    mutation.error instanceof AxiosError
+      ? mutation.error.response?.status ?? null
+      : null;
+
+  return {
+    login,
+    isPending: mutation.isPending,
+    error: typeof error === 'string' ? error : null,
+    status,
+    clearError: contextClearError
   };
 }
