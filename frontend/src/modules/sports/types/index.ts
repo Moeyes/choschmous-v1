@@ -31,6 +31,9 @@ export interface Category {
     id: number;
     category: string;
     gender?: Gender | null;
+    // Team sizing: a max > 1 marks this as a team category (e.g. Doubles = 2).
+    team_size_min?: number | null;
+    team_size_max?: number | null;
     created_at?: string;
     sport_name?: string | null;
 }
@@ -39,6 +42,8 @@ export interface AddCategoryBody {
     sport_id: number;
     category: string;
     gender?: Gender | null;
+    team_size_min?: number | null;
+    team_size_max?: number | null;
 }
 
 export interface UpdateCategoryBody extends Partial<AddCategoryBody> {

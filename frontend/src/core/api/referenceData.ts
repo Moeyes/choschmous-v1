@@ -32,6 +32,8 @@ export interface CategoryReference {
     sport_name?: string;
     gender?: string;
     created_at?: string;
+    team_size_min?: number | null;
+    team_size_max?: number | null;
 }
 
 export interface CascadingDataLoaded {

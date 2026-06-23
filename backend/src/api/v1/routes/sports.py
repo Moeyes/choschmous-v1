@@ -104,6 +104,8 @@ class AddCategoryBody(BaseModel):
     category: str
     gender: str | None = None
     event_id: int | None = None
+    team_size_min: int | None = None
+    team_size_max: int | None = None
 
     @field_validator("gender", mode="before")
     @classmethod
@@ -167,6 +169,8 @@ async def add_sport_category(
         sport_id=body.sport_id,
         category_name=body.category,
         gender=body.gender,
+        team_size_min=body.team_size_min,
+        team_size_max=body.team_size_max,
     )
 
 
@@ -205,6 +209,8 @@ class UpdateCategoryBody(BaseModel):
     category: str | None = None
     gender: str | None = None
     sport_id: int | None = None
+    team_size_min: int | None = None
+    team_size_max: int | None = None
 
     @field_validator("gender", mode="before")
     @classmethod

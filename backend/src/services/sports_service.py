@@ -18,6 +18,8 @@ class SportService:
                 Sport.name_kh.label("sport_name"),
                 CategoryModel.category,
                 CategoryModel.gender,
+                CategoryModel.team_size_min,
+                CategoryModel.team_size_max,
                 CategoryModel.created_at,
             )
             .join(Sport, CategoryModel.sports_id == Sport.id)
@@ -89,7 +91,13 @@ class SportService:
         return result.scalars().all()
 
     async def add_category_to_sport(
-        self, event_id: int | None, sport_id: int, category_name: str, gender
+        self,
+        event_id: int | None,
+        sport_id: int,
+        category_name: str,
+        gender,
+        team_size_min: int | None = None,
+        team_size_max: int | None = None,
     ):
         filters = [
             CategoryModel.sports_id == sport_id,
@@ -111,6 +119,8 @@ class SportService:
             "sports_id": sport_id,
             "category": category_name,
             "gender": gender,
+            "team_size_min": team_size_min,
+            "team_size_max": team_size_max,
         }
         if event_id is not None:
             payload["events_id"] = event_id
@@ -122,6 +132,8 @@ class SportService:
                 Sport.name_kh.label("sport_name"),
                 CategoryModel.category,
                 CategoryModel.gender,
+                CategoryModel.team_size_min,
+                CategoryModel.team_size_max,
                 CategoryModel.created_at,
             )
             .join(Sport, CategoryModel.sports_id == Sport.id)
@@ -137,6 +149,8 @@ class SportService:
                 Sport.name_kh.label("sport_name"),
                 CategoryModel.category,
                 CategoryModel.gender,
+                CategoryModel.team_size_min,
+                CategoryModel.team_size_max,
                 CategoryModel.created_at,
             )
             .join(Events, CategoryModel.events_id == Events.id)
@@ -156,6 +170,8 @@ class SportService:
                 Sport.name_kh.label("sport_name"),
                 CategoryModel.category,
                 CategoryModel.gender,
+                CategoryModel.team_size_min,
+                CategoryModel.team_size_max,
                 CategoryModel.created_at,
             )
             .join(Sport, CategoryModel.sports_id == Sport.id)
@@ -188,7 +204,7 @@ class SportService:
             payload["category"] = new_name
 
         field_map = {"sport_id": "sports_id"}
-        for field in ("gender", "sport_id"):
+        for field in ("gender", "sport_id", "team_size_min", "team_size_max"):
             if field in update_data:
                 payload[field_map.get(field, field)] = update_data[field]
 
@@ -201,6 +217,8 @@ class SportService:
                 Sport.name_kh.label("sport_name"),
                 CategoryModel.category,
                 CategoryModel.gender,
+                CategoryModel.team_size_min,
+                CategoryModel.team_size_max,
                 CategoryModel.created_at,
             )
             .join(Sport, CategoryModel.sports_id == Sport.id)

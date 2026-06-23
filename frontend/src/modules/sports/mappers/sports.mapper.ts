@@ -18,18 +18,24 @@ export function formDataToUpdateSport(id: number, values: SportFormValues): Spor
 }
 
 export function formDataToAddCategory(sportId: number, values: CategoryFormValues): AddCategoryBody {
+    const isTeam = values.categoryType === 'team';
     return {
-        sport_id: sportId,
-        category: values.category,
-        gender:   values.gender ?? null,
+        sport_id:      sportId,
+        category:      values.category,
+        gender:        values.gender ?? null,
+        team_size_min: isTeam ? values.team_size_min ?? null : null,
+        team_size_max: isTeam ? values.team_size_max ?? null : null,
     };
 }
 
 export function formDataToUpdateCategory(id: number, sportId: number, values: CategoryFormValues): UpdateCategoryBody {
+    const isTeam = values.categoryType === 'team';
     return {
         id,
-        sport_id: sportId,
-        category: values.category,
-        gender:   values.gender ?? null,
+        sport_id:      sportId,
+        category:      values.category,
+        gender:        values.gender ?? null,
+        team_size_min: isTeam ? values.team_size_min ?? null : null,
+        team_size_max: isTeam ? values.team_size_max ?? null : null,
     };
 }

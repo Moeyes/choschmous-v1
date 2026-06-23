@@ -19,6 +19,11 @@ class category(Base):
 
     gender: Mapped[genderEnum] = mapped_column(Enum(genderEnum), nullable=True)
 
+    # Team sizing: max > 1 marks this as a team category (e.g. Doubles = 2).
+    # Both nullable; an absent/None max means an individual category.
+    team_size_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    team_size_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     events_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True, index=True
     )

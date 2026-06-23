@@ -13,7 +13,6 @@ import { Loader2, Sparkles, AlertCircle, Users, Check } from "lucide-react";
 import { useCascadingData, useCategories, useEligibleSports } from "../hooks";
 import { RegisterFormNavButtons } from "./RegisterFormNavButtons";
 import { StepIndicator, Badge, useConfirm } from "@/shared";
-import { TeamModeStep } from "./TeamModeStep";
 import { TeamCreateOrPickStep } from "./TeamCreateOrPickStep";
 import { TeamRosterStep } from "./TeamRosterStep";
 import type { TeamItem } from "../types/team";
@@ -43,7 +42,6 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
   const [registerWindowError, setRegisterWindowError] = useState<string | null>(null);
   const [duplicatePending, setDuplicatePending] = useState(false);
 
-  const [teamMode, setTeamMode] = useState<"individual" | "team" | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<TeamItem | null>(null);
   const [memberRegistered, setMemberRegistered] = useState(false);
   const [rosterValid, setRosterValid] = useState(true);
@@ -84,6 +82,7 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
   const sportId = form.watch("sportId");
   const eventId = form.watch("eventId");
   const organizationId = form.watch("organizationId");
+  const categoryId = form.watch("categoryId");
   const { data: categories = [] } = useCategories(
     eventId ? Number(eventId) : undefined,
     sportId ? Number(sportId) : undefined,
@@ -93,9 +92,11 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     organizationId ? Number(organizationId) : undefined,
   );
 
-  // Determine the sport's mode and compute the effective step list.
+  // A category is a TEAM category when its max team size is > 1 — that, not the
+  // sport's mode, drives whether the team flow shows and which min/max applies.
   const selectedSport = eligibleSports.find((s) => s.sports_id === Number(sportId));
-  const sportMode = selectedSport?.mode;
+  const selectedCategory = categories.find((c) => c.id === Number(categoryId));
+  const categoryIsTeam = (selectedCategory?.team_size_max ?? 1) > 1;
   const quota =
     selectedSport && selectedSport.quota_athletes_per_org != null
       ? { used: selectedSport.athletes_used, max: selectedSport.quota_athletes_per_org }
@@ -103,12 +104,11 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
 
   const FORM_STEPS = useMemo<readonly BaseStep[]>(() => {
     if (isLeader) return BASE_STEPS;
-    if (!sportMode || sportMode === "individual") return BASE_STEPS;
-    if (sportMode === "team" || teamMode === "team") {
+    if (categoryIsTeam) {
       return ["event", "category", "team", "personal", "documents", "review"] as const;
     }
     return BASE_STEPS;
-  }, [isLeader, BASE_STEPS, sportMode, teamMode]);
+  }, [isLeader, BASE_STEPS, categoryIsTeam]);
 
   const stepIndex = FORM_STEPS.indexOf(currentStep);
 
@@ -205,18 +205,14 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     if (currentStep === "event")
       fieldsToValidate = ["eventType", "eventId", "organizationId", "sportId"];
     else if (currentStep === "category") {
-      if (sportMode === "team") {
-        // No category validation in pure team mode — category is on the team
-      } else {
-        fieldsToValidate = ["categoryId"];
-      }
+      fieldsToValidate = ["categoryId"];
     } else if (currentStep === "team") {
       if (!selectedTeam) {
         form.setError("root", { message: t("team.required") });
         return;
       }
       if (!rosterValid) {
-        form.setError("root", { message: t("team.minNotReached", { min: selectedSport?.team_size_min ?? 0 }) });
+        form.setError("root", { message: t("team.minNotReached", { min: selectedCategory?.team_size_min ?? 0 }) });
         return;
       }
     } else if (currentStep === "personal") {
@@ -253,10 +249,9 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
     FORM_STEPS,
     stepIndex,
     goToStep,
-    sportMode,
     selectedTeam,
     rosterValid,
-    selectedSport?.team_size_min,
+    selectedCategory?.team_size_min,
     t,
   ]);
 
@@ -402,49 +397,32 @@ export function RegisterForm({ mode = "athlete" }: RegisterFormProps = {}) {
 
       {currentStep === "team" && (
         <div className="space-y-4">
-          {sportMode === "both" && (
-            <TeamModeStep
-              value={teamMode}
-              availableModes={["individual", "team"]}
-              onChange={(m) => {
-                setTeamMode(m);
-                if (m === "individual") {
-                  setSelectedTeam(null);
-                  form.setValue("teamId", null);
-                }
+          <TeamCreateOrPickStep
+            eventId={Number(eventId)}
+            sportId={Number(sportId)}
+            orgId={Number(form.getValues("organizationId"))}
+            categoryId={form.getValues("categoryId") ? Number(form.getValues("categoryId")) : null}
+            value={selectedTeam}
+            onChange={(team) => setSelectedTeam(team)}
+          />
+          {selectedTeam && (
+            <TeamRosterStep
+              teamId={selectedTeam.id}
+              teamSizeMin={selectedCategory?.team_size_min}
+              teamSizeMax={selectedCategory?.team_size_max}
+              onAddMember={() => {
+                setMemberRegistered(false);
+                const idx = FORM_STEPS.indexOf("personal");
+                if (idx >= 0) goToStep(idx);
               }}
+              onEditMember={handleEditMember}
+              onValidationChange={setRosterValid}
             />
           )}
-          {(sportMode === "team" || teamMode === "team") && (
-            <>
-              <TeamCreateOrPickStep
-                eventId={Number(eventId)}
-                sportId={Number(sportId)}
-                orgId={Number(form.getValues("organizationId"))}
-                categoryId={form.getValues("categoryId") ? Number(form.getValues("categoryId")) : null}
-                value={selectedTeam}
-                onChange={(team) => setSelectedTeam(team)}
-              />
-              {selectedTeam && (
-                <TeamRosterStep
-                  teamId={selectedTeam.id}
-                  teamSizeMin={selectedSport?.team_size_min}
-                  teamSizeMax={selectedSport?.team_size_max}
-                  onAddMember={() => {
-                    setMemberRegistered(false);
-                    const idx = FORM_STEPS.indexOf("personal");
-                    if (idx >= 0) goToStep(idx);
-                  }}
-                  onEditMember={handleEditMember}
-                  onValidationChange={setRosterValid}
-                />
-              )}
-              {memberRegistered && selectedTeam && (
-                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center text-sm text-primary">
-                  {t("team.memberAdded")}
-                </div>
-              )}
-            </>
+          {memberRegistered && selectedTeam && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center text-sm text-primary">
+              {t("team.memberAdded")}
+            </div>
           )}
         </div>
       )}

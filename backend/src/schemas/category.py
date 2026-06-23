@@ -8,6 +8,8 @@ class CategoryPublic(BaseModel):
     sport_name: str | None
     category: str
     gender: str | None = None
+    team_size_min: int | None = None
+    team_size_max: int | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

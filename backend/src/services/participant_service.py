@@ -175,13 +175,17 @@ class ParticipantService:
                         quota=config.quota_athletes_per_org,
                     )
 
-            # Team mode validation if teamId is provided
+            # Team mode validation if teamId is provided. Team-ness is a property
+            # of the CATEGORY (team_size_max > 1), not the sports_event config, so
+            # the rules below are driven off the registration's category.
             if data.teamId is not None and role == "athlete":
-                if config and config.mode == "individual":
+                category = await self.db.get(CategoryModel, data.categoryId)
+                cat_max = category.team_size_max if category else None
+                if not cat_max or cat_max <= 1:
                     self._raise(
                         422,
                         "TEAM_MODE_DISALLOWED",
-                        "This sport does not allow team registration.",
+                        "This category does not allow team registration.",
                     )
                 from src.models.team import team as TeamModel
 
@@ -198,23 +202,29 @@ class ParticipantService:
                         "TEAM_ORG_MISMATCH",
                         "Team does not belong to your organization.",
                     )
-                if config and config.team_size_max is not None:
-                    used_team = (
-                        await self.db.execute(
-                            select(func.count())
-                            .select_from(AthleteParticipation)
-                            .where(
-                                AthleteParticipation.team_id == data.teamId,
-                            )
+                if team.category_id != data.categoryId:
+                    self._raise(
+                        422,
+                        "TEAM_CATEGORY_MISMATCH",
+                        "The team belongs to a different category than this "
+                        "registration.",
+                    )
+                used_team = (
+                    await self.db.execute(
+                        select(func.count())
+                        .select_from(AthleteParticipation)
+                        .where(
+                            AthleteParticipation.team_id == data.teamId,
                         )
-                    ).scalar() or 0
-                    if used_team >= config.team_size_max:
-                        self._raise(
-                            409,
-                            "TEAM_FULL",
-                            "The team has reached its maximum size.",
-                            max=config.team_size_max,
-                        )
+                    )
+                ).scalar() or 0
+                if used_team >= cat_max:
+                    self._raise(
+                        409,
+                        "TEAM_FULL",
+                        "The team has reached its maximum size.",
+                        max=cat_max,
+                    )
 
         # Rule 3 — document requirement (all participants).
         self._validate_documents(event, data)

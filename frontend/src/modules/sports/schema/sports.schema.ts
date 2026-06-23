@@ -32,11 +32,13 @@ export type SportsPublic = z.infer<typeof sportsPublicSchema>;
 
 export const categoryPublicSchema = z
     .object({
-        id:         z.number().int(),
-        category:   z.string().min(1),
-        gender:     genderSchema,
-        created_at: z.string().optional(),
-        sport_name: z.string().nullable().optional(),
+        id:             z.number().int(),
+        category:       z.string().min(1),
+        gender:         genderSchema,
+        team_size_min:  z.number().int().nullable().optional(),
+        team_size_max:  z.number().int().nullable().optional(),
+        created_at:     z.string().optional(),
+        sport_name:     z.string().nullable().optional(),
     })
 
 export type CategoryPublic = z.infer<typeof categoryPublicSchema>;
@@ -89,9 +91,19 @@ export const sportFormSchema = z.object({
 
 export type SportFormValues = z.infer<typeof sportFormSchema>;
 
+// Number inputs hand back strings; coerce blank/null to null, otherwise to an int.
+const teamSizeField = z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : Number(val)),
+    z.number().int().min(1).nullable(),
+);
+
 export const categoryFormSchema = z.object({
-    category: z.string().min(2),
-    gender:   genderSchema,
+    category:      z.string().min(2),
+    gender:        genderSchema,
+    // 'team' reveals the size inputs; 'individual' clears them on save.
+    categoryType:  z.enum(['individual', 'team']),
+    team_size_min: teamSizeField.optional(),
+    team_size_max: teamSizeField.optional(),
 });
 
 export type CategoryFormValues = z.infer<typeof categoryFormSchema>;

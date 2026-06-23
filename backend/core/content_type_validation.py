@@ -13,10 +13,30 @@ _MULTIPART_PREFIX = "multipart/form-data"
 API_PREFIXES = ("/api",)
 
 
+def _has_body(request: Request) -> bool:
+    """Whether the request actually carries a payload.
+
+    Content-Type only describes a body, so a body-less mutating request
+    (e.g. ``DELETE /teams/{id}/members/{id}``) has nothing to validate.
+    Clients such as axios omit Content-Type when there is no body, and HTTP
+    requires no Content-Type without one — those must not be rejected. A body
+    in HTTP/1.1 is framed only by Content-Length or chunked transfer-encoding,
+    so their absence means no body will be parsed.
+    """
+    if request.headers.get("transfer-encoding"):
+        return True
+    try:
+        return int(request.headers.get("content-length") or 0) > 0
+    except ValueError:
+        return False
+
+
 class ContentTypeValidationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        if request.method in _UNSAFE_METHODS and request.url.path.startswith(
-            API_PREFIXES
+        if (
+            request.method in _UNSAFE_METHODS
+            and request.url.path.startswith(API_PREFIXES)
+            and _has_body(request)
         ):
             content_type = request.headers.get("content-type", "").lower().strip()
             if not content_type:
