@@ -11,7 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
 from core.config import settings
-from core.loggine import LoggingMiddleware
+from core.logging_mw import LoggingMiddleware
 from core.content_type_validation import ContentTypeValidationMiddleware
 from core.csrf import CSRFMiddleware
 from core.security_headers import SecurityHeadersMiddleware
