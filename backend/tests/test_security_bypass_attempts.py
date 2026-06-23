@@ -32,6 +32,7 @@ from src.services.report_renderers import (
     _FONT_URL,
     secure_url_fetcher,
 )
+from tests.conftest import make_user
 from tests.factories import make_org, make_sport
 
 _REAL_CHECK = RateLimiter.check  # captured before conftest's autouse no-op patch
@@ -284,3 +285,45 @@ async def test_render_offload_times_out(monkeypatch):
     with pytest.raises(HTTPException) as e:
         await reports_route._render_offloaded(slow_render, "x")
     assert e.value.status_code == 503
+
+
+# ════════════════════════════════════════════════════════════════════════
+# 5. Privilege escalation — destructive maintenance routes are SUPER_ADMIN only
+# ════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+async def test_admin_cannot_sync_schema(as_user):
+    """CHOS-102: /maintenance/sync-schema runs Base.metadata.create_all and must
+    be SUPER_ADMIN-only. A plain ADMIN (one rung below) must get a 403.
+
+    The 403 must come from the authz dependency, not the CSRF check — so we
+    supply a valid CSRF token pair and assert on the authz detail. The request
+    never reaches a query (require_superadmin short-circuits), so ``get_db`` is
+    stubbed and no live database is required."""
+    from httpx import ASGITransport, AsyncClient
+
+    from main import app
+    from src.database.deps import get_db
+    from tests.conftest import _CSRF_TOKEN
+
+    as_user(make_user(UserRole.ADMIN))
+
+    async def _no_db():
+        yield None  # never consumed: authz 403s before any DB access
+
+    app.dependency_overrides[get_db] = _no_db
+    transport = ASGITransport(app=app)
+    try:
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://testserver",
+            headers={"X-CSRF-Token": _CSRF_TOKEN},
+            cookies={"csrf_token": _CSRF_TOKEN},
+        ) as ac:
+            resp = await ac.post("/api/maintenance/sync-schema")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert resp.status_code == 403
+    assert "Super admin access required" in resp.json()["detail"]

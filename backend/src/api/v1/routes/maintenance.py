@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy import inspect, text
 
 from core.database import Base, engine
-from src.database.deps import require_admin
+from src.database.deps import require_superadmin
 from src.models.user import User
 
 router = APIRouter()
@@ -11,7 +11,7 @@ router = APIRouter()
 @router.post("/sync-schema", status_code=status.HTTP_200_OK)
 async def sync_schema(
     checkfirst: bool = True,
-    _: User = Depends(require_admin),
+    _: User = Depends(require_superadmin),
 ):
     """
     Synchronize the database schema by creating missing tables and adding
@@ -73,7 +73,7 @@ WHERE events_id IS NOT NULL AND sports_id IS NOT NULL AND organization_id IS NOT
 
 
 @router.post("/drop", status_code=status.HTTP_200_OK)
-async def drop_schema(_: User = Depends(require_admin)):
+async def drop_schema(_: User = Depends(require_superadmin)):
     """
     Drop all tables for a full reset.
     WARNING: Irreversible—removes all data.

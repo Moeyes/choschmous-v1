@@ -141,8 +141,10 @@ api_router.include_router(
     v1_files.router, prefix=V1 + "/files", tags=["files"], dependencies=_auth
 )
 
-# Maintenance — only registered when ENVIRONMENT=local; still requires auth
-if settings.ENVIRONMENT == "local":
+# Maintenance — destructive schema ops. Registered only in local dev or when
+# ENABLE_MAINTENANCE=1 is explicitly set, so the routes are absent from the prod
+# image by default (CHOS-102). Still requires auth + SUPER_ADMIN on each route.
+if settings.ENVIRONMENT == "local" or settings.ENABLE_MAINTENANCE:
     api_router.include_router(
         v1_maintenance.router,
         prefix=V1 + "/maintenance",

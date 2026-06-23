@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14
     BCRYPT_ROUNDS: int = 13
     REDIS_URL: str = "redis://localhost:6379/0"
+    # Build-time guard (CHOS-102): the destructive maintenance routes
+    # (/maintenance/sync-schema, /maintenance/drop) are excluded from the prod
+    # image unless this is explicitly enabled. Always available in local dev.
+    ENABLE_MAINTENANCE: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",
