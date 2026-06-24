@@ -20,6 +20,18 @@ output "postgres_port" {
   value = aws_db_instance.postgres.port
 }
 
+# CHOS-301: read path. Replica endpoints are informational; the app connects to
+# the PgBouncer service (DATABASE_READ_URL), not the replicas directly.
+output "postgres_replica_hosts" {
+  description = "Read-replica hostnames (fronted by PgBouncer)."
+  value       = aws_db_instance.postgres_replica[*].address
+}
+
+output "pgbouncer_service" {
+  description = "In-cluster PgBouncer DNS for the read path (DATABASE_READ_URL host)."
+  value       = "${kubernetes_service.pgbouncer.metadata[0].name}.${var.pgbouncer_namespace}.svc:6432"
+}
+
 output "redis_cache_endpoint" {
   description = "Primary endpoint for the application cache Redis."
   value       = aws_elasticache_replication_group.cache.primary_endpoint_address

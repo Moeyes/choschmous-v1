@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.ratelimit import create_org_limiter
 from src.database.deps import (
     get_db,
+    get_read_db,
     get_current_user,
     enforce_org_access,
     require_admin,
@@ -52,7 +53,7 @@ async def list_organizations(
     skip: int = 0,
     limit: int = 100,
     name: str | None = None,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_read_db),
 ):
     """
     Retrieve a paginated list of all organizations.
@@ -73,7 +74,7 @@ async def list_organizations(
 @router.get("/{org_id}", response_model=OrganizationPublic)
 async def get_organization(
     org_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_read_db),
     current_user: User = Depends(get_current_user),
 ):
     """

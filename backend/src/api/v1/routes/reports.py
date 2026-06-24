@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.ratelimit import report_limiter
 from src.database.deps import (
-    get_db,
+    get_read_db,
     get_current_user,
     get_effective_org_id,
 )
@@ -47,7 +47,7 @@ async def generate_report(
     org_id: int | None = Query(None),
     source: str | None = Query(None, pattern="^(planned|actual)$"),
     format: str = Query("xlsx", pattern="^(xlsx|pdf)$"),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_read_db),
     current_user: User = Depends(get_current_user),
 ):
     """**Enqueue a report render and return a job id.** Org users auto-scope to

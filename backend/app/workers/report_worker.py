@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 
-from core.database import SessionLocal
+from core.database import ReadSessionLocal
 from app.application.reports.render import (
     ReportRenderError,
     actor_from_payload,
@@ -46,10 +46,11 @@ async def render_report_job(
     ``{"status": "failed", "code": ...}`` rather than raised, so the API can map
     it to the right HTTP status instead of treating it as an internal error."""
     job_id = ctx["job_id"]
-    # Sessions come only from SessionLocal (same factory get_db uses) — never an
-    # ad-hoc engine. The worker is a separate process boundary, so opening a
-    # session here is the documented pattern, not a layering breach.
-    async with SessionLocal() as db:
+    # Report rendering is read-only, so the worker opens a READ-replica session
+    # (CHOS-301): the heavy report queries are served off the replicas, never the
+    # primary. ReadSessionLocal falls back to the primary factory when no replica
+    # is configured, so this is the documented cross-process pattern either way.
+    async with ReadSessionLocal() as db:
         try:
             artifact = await render_report_document(
                 db,

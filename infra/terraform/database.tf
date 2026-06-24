@@ -56,3 +56,33 @@ resource "aws_db_instance" "postgres" {
   deletion_protection     = var.environment == "prod"
   skip_final_snapshot     = var.environment != "prod"
 }
+
+# CHOS-301: read replicas. The app splits read/write sessions — dashboards,
+# reports and list/search reads are served from these replicas (via PgBouncer,
+# below) so heavy read traffic never competes with writes on the primary.
+#
+# Replicas stream from the primary asynchronously, so they lag slightly: the app
+# only routes READ-ONLY handlers here (see core/database.py get_read_db); any
+# read-after-write path stays on the primary.
+resource "aws_db_instance" "postgres_replica" {
+  count = var.db_read_replica_count
+
+  identifier          = "${local.name}-pg-ro-${count.index + 1}"
+  replicate_source_db = aws_db_instance.postgres.identifier
+  instance_class      = var.db_read_instance_class
+
+  vpc_security_group_ids = [aws_security_group.postgres.id]
+  storage_encrypted      = true
+
+  # A replica is not its own backup source of truth (the primary is) and is
+  # disposable, so no backups / final snapshot / deletion protection here.
+  backup_retention_period = 0
+  multi_az                = false
+  deletion_protection     = false
+  skip_final_snapshot     = true
+
+  # Avoid an apply blocking on a maintenance window outside prod.
+  apply_immediately = var.environment != "prod"
+
+  tags = { Role = "read-replica" }
+}

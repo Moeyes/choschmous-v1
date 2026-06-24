@@ -27,7 +27,7 @@ from sqlalchemy.pool import NullPool
 
 from core.database import DATABASE_URL
 from main import app
-from src.database.deps import get_current_user, get_db
+from src.database.deps import get_current_user, get_db, get_read_db
 from src.models.enum.user import UserRole
 from src.models.user import User
 
@@ -73,7 +73,11 @@ async def client(db_session: AsyncSession) -> AsyncClient:
     async def _get_db_override():
         yield db_session
 
+    # Route BOTH the primary and the read-replica dependency to the single test
+    # session so the read/write split (CHOS-301) stays inside the test's rolled-
+    # back transaction and read handlers still see the test's uncommitted data.
     app.dependency_overrides[get_db] = _get_db_override
+    app.dependency_overrides[get_read_db] = _get_db_override
     transport = ASGITransport(app=app)
     async with AsyncClient(
         transport=transport,

@@ -75,6 +75,37 @@ variable "db_engine_version" {
   default     = "16"
 }
 
+# --- Read replicas + PgBouncer (CHOS-301) ------------------------------------
+variable "db_read_replica_count" {
+  description = "Number of managed Postgres read replicas for the read path."
+  type        = number
+  default     = 2
+}
+
+variable "db_read_instance_class" {
+  description = "Instance class for read replicas (often == primary)."
+  type        = string
+  default     = "db.t3.medium"
+}
+
+variable "pgbouncer_image" {
+  description = "PgBouncer container image fronting the read replicas (txn pooling)."
+  type        = string
+  default     = "bitnami/pgbouncer:1.23.1"
+}
+
+variable "pgbouncer_replicas" {
+  description = "PgBouncer Deployment replica count (HA)."
+  type        = number
+  default     = 2
+}
+
+variable "pgbouncer_namespace" {
+  description = "Kubernetes namespace PgBouncer is deployed into."
+  type        = string
+  default     = "moeys"
+}
+
 # --- Managed Redis (cache) ----------------------------------------------------
 variable "redis_node_type" {
   description = "ElastiCache node type for the application cache Redis."

@@ -14,6 +14,7 @@ from typing import List
 from core.ratelimit import create_event_limiter
 from src.database.deps import (
     get_db,
+    get_read_db,
     get_current_user,
     get_effective_org_id,
     enforce_org_access,
@@ -85,7 +86,7 @@ async def list_events(
     survey_number_open: bool | None = Query(None),
     survey_open_open: bool | None = Query(None),
     registration_open: bool | None = Query(None),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_read_db),
 ):
     """
     **Retrieve a list of all events.**
@@ -122,7 +123,7 @@ async def list_events(
 
 
 @router.get("/{event_id}", response_model=EventPublic)
-async def get_event(event_id: int, db: AsyncSession = Depends(get_db)):
+async def get_event(event_id: int, db: AsyncSession = Depends(get_read_db)):
     """
     **Get details of a specific event.**
 
@@ -219,7 +220,7 @@ async def delete_event(
 
 
 @router.get("/{event_id}/sports", response_model=List[SportsEventPublic])
-async def list_event_sports(event_id: int, db: AsyncSession = Depends(get_db)):
+async def list_event_sports(event_id: int, db: AsyncSession = Depends(get_read_db)):
     """
     **List sports assigned to an Event.**
 
@@ -312,7 +313,7 @@ async def add_org_to_event_sport(
     "/{event_id}/sports/{sport_id}/orgs", response_model=list[SportEventOrgOnly]
 )
 async def list_event_sport_orgs(
-    event_id: int, sport_id: int, db: AsyncSession = Depends(get_db)
+    event_id: int, sport_id: int, db: AsyncSession = Depends(get_read_db)
 ):
     """
     **Show organizations signed up for a Sport-Event combo.**
@@ -332,7 +333,7 @@ async def list_event_sport_orgs(
 
 @router.get("/{event_id}/org-sports/{org_id}")
 async def list_org_event_sports(
-    event_id: int, org_id: int, db: AsyncSession = Depends(get_db)
+    event_id: int, org_id: int, db: AsyncSession = Depends(get_read_db)
 ):
     service = EventService(db)
     return await service.get_org_event_sports(event_id, org_id)
@@ -342,7 +343,7 @@ async def list_org_event_sports(
     "/{event_id}/sports/{sport_id}/categories", response_model=list[CategoryPublic]
 )
 async def list_event_sport_categories(
-    event_id: int, sport_id: int, db: AsyncSession = Depends(get_db)
+    event_id: int, sport_id: int, db: AsyncSession = Depends(get_read_db)
 ):
     """
     **Show sub-categories (age/gender groups) for a Sport in an Event.**
@@ -367,7 +368,7 @@ async def list_sport_org_submissions(
     event_id: int | None = Query(None),
     organization_id: int | None = Query(None),
     status: str | None = Query(None),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_read_db),
     _: User = Depends(require_admin),
 ):
     """List all org sport selections for admin review."""
@@ -514,7 +515,9 @@ async def delete_event_sport_org_link(
 
 
 @router.get("/{event_id}/organizations", response_model=list[EventOrgNamesPublic])
-async def list_unique_orgs_in_event(event_id: int, db: AsyncSession = Depends(get_db)):
+async def list_unique_orgs_in_event(
+    event_id: int, db: AsyncSession = Depends(get_read_db)
+):
     """
     **List all unique participating Organizations in an Event.**
 
@@ -565,7 +568,7 @@ async def remove_org_completely_from_event(
 @router.get("/{event_id}/survey-status", response_model=SurveyStatusResponse)
 async def get_event_survey_status(
     event_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_read_db),
     _admin: User = Depends(require_admin),
 ):
     service = EventService(db)
