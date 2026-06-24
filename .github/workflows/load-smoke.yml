@@ -1,0 +1,91 @@
+name: Load smoke
+
+# CHOS-306: a regression tripwire — boot the API against ephemeral Postgres +
+# Redis, seed a few users, and run the Locust READ scenarios at low concurrency
+# for ~30s, failing the build if the SLOs in tests/load/CAPACITY_REPORT.md are
+# breached. This is NOT the 3k-RPS capacity run (that runs against staging by
+# hand); it just catches "a hot endpoint started erroring / got slow".
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/load-smoke.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+
+concurrency:
+  group: load-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Locust read smoke
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: moeys_smoke
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: moeys_smoke
+      # ENVIRONMENT=local so the in-memory rate-limit/idempotency fallback is
+      # allowed (CHOS-302) and Redis being optional doesn't fail closed.
+      ENVIRONMENT: local
+      JWT_SECRET_KEY: ci-test-secret-key-not-for-production-0001
+      JWT_REFRESH_SECRET_KEY: ci-test-refresh-secret-not-for-prod-0002
+      REDIS_URL: redis://localhost:6379/0
+      BACKEND_CORS_ORIGINS: http://localhost:3000
+      LOAD_TEST_PASSWORD: LoadSmoke!2026Pass
+      LOAD_TEST_USER_COUNT: "5"
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Sync dependencies
+        run: uv sync --frozen
+      - name: Bootstrap schema (create_all)
+        run: uv run python scripts/init_db_schema.py
+      - name: Seed load users
+        run: uv run python tests/load/seed_load_users.py
+      - name: Boot API
+        run: |
+          uv run uvicorn main:app --host 0.0.0.0 --port 8000 &
+          echo $! > /tmp/api.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health >/dev/null 2>&1; then
+              echo "API is up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "API failed to start"; exit 1
+      - name: Locust read smoke (fails on SLO breach)
+        run: |
+          uv run locust -f tests/load/locustfile.py \
+            --host http://localhost:8000 \
+            --headless --users 5 --spawn-rate 1 --run-time 30s \
+            --tags read --only-summary
+      - name: Stop API
+        if: always()
+        run: kill "$(cat /tmp/api.pid)" 2>/dev/null || true
