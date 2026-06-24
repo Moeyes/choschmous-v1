@@ -5,6 +5,7 @@ import { ProtectedRoute } from "@/modules/auth";
 import { UserRole } from "@/core/auth";
 import { Sidebar } from "@/modules/common";
 import { TopBar } from "@/shared/layout";
+import { CommandPalette } from "@/modules/search";
 
 const PORTAL_ROLES: UserRole[] = [
   UserRole.SUPER_ADMIN,
@@ -34,6 +35,8 @@ export default function PortalShell({
           </main>
         </div>
       </div>
+      {/* CHOS-304: global ⌘K command palette, available across the portal. */}
+      <CommandPalette />
     </ProtectedRoute>
   );
 }

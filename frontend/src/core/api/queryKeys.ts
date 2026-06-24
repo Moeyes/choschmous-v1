@@ -4,6 +4,10 @@
  * Single source of truth for every queryKey used across the app.
  */
 export const queryKeys = {
+  // CHOS-304: ⌘K search. Keyed by query string (kept short-lived via staleTime).
+  search: {
+    query: (q: string) => ['search', q] as const,
+  },
   referenceData: {
     // Cascading reference data (events + organizations + sports) for the
     // registration flow. Kept distinct from events.all — that key holds a raw

@@ -269,3 +269,8 @@ report_limiter = RateLimiter(max_requests=10, window_seconds=60, prefix="rl:repo
 
 # PII reveal — very tight; a burst is a sign of bulk exfiltration. Per-user.
 reveal_limiter = RateLimiter(max_requests=15, window_seconds=60, prefix="rl:reveal")
+
+# Search (CHOS-304) — the ⌘K palette types fast, so allow a generous per-user
+# rate, but still cap it: search can touch athlete (PII) names, so a burst is a
+# scraping signal.
+search_limiter = RateLimiter(max_requests=60, window_seconds=60, prefix="rl:search")

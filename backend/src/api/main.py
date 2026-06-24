@@ -27,6 +27,7 @@ from .v1.routes import open_survey as v1_open_survey
 from .v1.routes import teams as v1_teams
 from .v1.routes import organizers as v1_organizers
 from .v1.routes import reports as v1_reports
+from .v1.routes import search as v1_search
 
 
 V1 = settings.API_V1_STR
@@ -129,6 +130,11 @@ api_router.include_router(
 # Reports
 api_router.include_router(
     v1_reports.router, prefix=V1, tags=["reports"], dependencies=_auth
+)
+
+# Global search (CHOS-304) — POST /api/v1/search for the ⌘K palette.
+api_router.include_router(
+    v1_search.router, prefix=V1, tags=["search"], dependencies=_auth
 )
 
 # Cloudinary Presign

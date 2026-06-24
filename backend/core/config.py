@@ -69,6 +69,16 @@ class Settings(BaseSettings):
     # from the seed REDIS_URL. Off in local dev (single Redis). The seed URL may
     # point at any one shard; the client learns the rest of the topology.
     REDIS_CLUSTER: bool = False
+    # Search (CHOS-304). "db" (default) runs ILIKE queries straight against
+    # Postgres — always available, no extra infra. "opensearch" uses a managed
+    # OpenSearch cluster for scale/typo-tolerance; it falls back to "db" if the
+    # URL is unset or opensearch-py is missing.
+    # TODO(infra): provision OpenSearch + inject OPENSEARCH_* (creds from Vault).
+    SEARCH_BACKEND: str = "db"
+    OPENSEARCH_URL: str | None = None
+    OPENSEARCH_INDEX_PREFIX: str = "moeys"
+    OPENSEARCH_USERNAME: str | None = None
+    OPENSEARCH_PASSWORD: str | None = None
     # Build-time guard (CHOS-102): the destructive maintenance routes
     # (/maintenance/sync-schema, /maintenance/drop) are excluded from the prod
     # image unless this is explicitly enabled. Always available in local dev.

@@ -1,4 +1,17 @@
 {
+  "search": {
+    "title": "Search",
+    "placeholder": "Search events, organizations, athletes…",
+    "minChars": "Type at least 2 characters to search.",
+    "searching": "Searching…",
+    "empty": "No results found.",
+    "hint": "↑↓ to navigate, ↵ to open",
+    "groups": {
+      "event": "Events",
+      "organization": "Organizations",
+      "athlete": "Athletes"
+    }
+  },
   "errors": {
     "title": "Something went wrong",
     "generic": "Something went wrong. Please try again.",

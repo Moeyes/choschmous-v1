@@ -2,6 +2,11 @@
 // targets this canonical prefix. Legacy /api/* paths still resolve via a 307
 // redirect on the server, but the client should always hit /api/v1 directly.
 export const API = {
+  // CHOS-304: global search powering the ⌘K palette. POST so the query (which
+  // may contain a person's name) never lands in a URL/history/access log.
+  search: {
+    base: '/api/v1/search',
+  },
   events: {
     base: '/api/v1/events',
     byId: (id: number) => `/api/v1/events/${id}`,
