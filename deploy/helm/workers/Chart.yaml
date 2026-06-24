@@ -1,0 +1,6 @@
+apiVersion: v2
+name: moeys-workers
+description: MOEYS background workers (arq) — report rendering off the request path (CHOS-202/205)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

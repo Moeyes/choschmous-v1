@@ -12,7 +12,7 @@ from tests.factories import (
     make_sports_event,
 )
 
-CONFIG_URL = "/api/sports-events/{id}/config"
+CONFIG_URL = "/api/v1/sports-events/{id}/config"
 
 
 async def test_staff_sets_sport_config(client, db_session, as_user):
@@ -91,7 +91,7 @@ async def test_my_eligible_sports_returns_surveyed_with_config(
     await link_org_sport(db_session, event, surveyed, org, status="APPROVED")
 
     as_user(make_user(UserRole.ORGANIZATION, organization_id=org.id))
-    resp = await client.get(f"/api/events/{event.id}/my-eligible-sports")
+    resp = await client.get(f"/api/v1/events/{event.id}/my-eligible-sports")
 
     assert resp.status_code == 200, resp.text
     rows = resp.json()

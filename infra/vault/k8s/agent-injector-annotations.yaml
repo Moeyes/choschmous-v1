@@ -1,0 +1,25 @@
+# Vault Agent Injector annotations (CHOS-201).
+#
+# These pod-template annotations make the Vault Agent Injector mutate the
+# api/worker pods to inject an init+sidecar agent that renders DYNAMIC Postgres
+# credentials into /vault/secrets/db.env, re-rendering as the lease renews. The
+# container sources that file at startup (the Helm chart's command wrapper).
+#
+# This is a REFERENCE snippet, not a standalone manifest. The deploy/helm charts
+# (CHOS-205) surface these under `values.yaml: vault.agentAnnotations` and stamp
+# them onto `spec.template.metadata.annotations`.
+podAnnotations:
+  vault.hashicorp.com/agent-inject: "true"
+  # Vault Kubernetes-auth role bound to the moeys-backend policy.
+  vault.hashicorp.com/role: "moeys-backend"
+  # TODO(infra): real in-cluster Vault address.
+  vault.hashicorp.com/service: "https://vault.example.internal:8200"
+  # Render dynamic DB creds as a sourceable env file.
+  vault.hashicorp.com/agent-inject-secret-db.env: "database/creds/moeys-backend"
+  vault.hashicorp.com/agent-inject-template-db.env: |
+    {{- with secret "database/creds/moeys-backend" -}}
+    export DB_USER={{ .Data.username }}
+    export DB_PASS={{ .Data.password }}
+    {{- end -}}
+  # Keep the sidecar running so credentials are renewed for the pod's lifetime.
+  vault.hashicorp.com/agent-pre-populate-only: "false"

@@ -1,5 +1,5 @@
 """Tests for the Phase-2 server-side registration validation rules in
-ParticipantService.register_participant (POST /api/registration)."""
+ParticipantService.register_participant (POST /api/v1/registration)."""
 
 from src.models.athlete_participation import athlete_participation
 from src.models.enroll import Enroll
@@ -15,7 +15,7 @@ from tests.factories import (
     make_sports_event,
 )
 
-REG_URL = "/api/registration"
+REG_URL = "/api/v1/registration"
 
 
 async def _valid_setup(db, **event_kwargs):

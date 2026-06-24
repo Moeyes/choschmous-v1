@@ -169,13 +169,13 @@ async def test_reference_validation_allows_owned_and_freeform(db_session):
     await assert_can_reference_files(
         db_session,
         uploader,
-        [f"/api/files/{f.id}", "https://example.com/x.jpg", "/uploads/y.jpg", None],
+        [f"/api/v1/files/{f.id}", "https://example.com/x.jpg", "/uploads/y.jpg", None],
     )
     # Same-org colleague may also reference it.
     await assert_can_reference_files(
         db_session,
         _inmem_user(UserRole.ORGANIZATION, org_id=org.id),
-        [f"/api/files/{f.id}"],
+        [f"/api/v1/files/{f.id}"],
     )
 
 
@@ -184,7 +184,7 @@ async def test_reference_validation_rejects_forged_uuid(db_session):
     caller = _inmem_user(UserRole.ORGANIZATION, org_id=1)
     with pytest.raises(HTTPException) as e:
         await assert_can_reference_files(
-            db_session, caller, [f"/api/files/{uuid.uuid4()}"]
+            db_session, caller, [f"/api/v1/files/{uuid.uuid4()}"]
         )
     assert e.value.status_code == 400
 
@@ -196,7 +196,7 @@ async def test_reference_validation_rejects_stolen_file(db_session):
     f = await _file(db_session, victim.id)
     attacker = _inmem_user(UserRole.ORGANIZATION, org_id=org_b.id)
     with pytest.raises(HTTPException) as e:
-        await assert_can_reference_files(db_session, attacker, [f"/api/files/{f.id}"])
+        await assert_can_reference_files(db_session, attacker, [f"/api/v1/files/{f.id}"])
     assert e.value.status_code == 403
 
 
@@ -259,7 +259,7 @@ async def test_user_create_rejects_stolen_file_ref(db_session):
         password="Str0ng!Passw0rd",
         role=UserRole.ORGANIZATION,
         organization_id=org_b.id,
-        photo_path=f"/api/files/{f.id}",
+        photo_path=f"/api/v1/files/{f.id}",
     )
     with pytest.raises(HTTPException) as e:
         await svc.create_user(payload, attacker)
@@ -281,7 +281,7 @@ async def test_user_create_rejects_forged_uuid(db_session):
         username="testuser2",
         password="Str0ng!Passw0rd",
         role=UserRole.SUPER_ADMIN,
-        photo_path=f"/api/files/{uuid.uuid4()}",
+        photo_path=f"/api/v1/files/{uuid.uuid4()}",
     )
     with pytest.raises(HTTPException) as e:
         await svc.create_user(payload, admin)
@@ -324,7 +324,7 @@ async def test_user_create_allows_own_file_ref(db_session):
         username="testuser4",
         password="Str0ng!Passw0rd",
         role=UserRole.SUPER_ADMIN,
-        photo_path=f"/api/files/{f.id}",
+        photo_path=f"/api/v1/files/{f.id}",
     )
     user = await svc.create_user(payload, admin)
     assert user is not None
@@ -340,7 +340,7 @@ async def test_user_update_rejects_stolen_file_ref(db_session):
     attacker = _inmem_user(UserRole.ORGANIZATION, org_id=org_b.id)
 
     svc = UserService(db_session)
-    payload = UserUpdate(photo_path=f"/api/files/{f.id}")
+    payload = UserUpdate(photo_path=f"/api/v1/files/{f.id}")
     with pytest.raises(HTTPException) as e:
         # user_id doesn't matter for this test — validation happens before lookup
         await svc.update_user(uuid.uuid4(), payload, attacker)
@@ -383,7 +383,7 @@ async def test_self_reference_bypass_should_be_denied(db_session):
         gender=genderEnum.MALE,
         date_of_birth=date(2000, 1, 1),
         id_document_type=list(IdDocumentType)[0],
-        national_id_path=f"/api/files/{f.id}",
+        national_id_path=f"/api/v1/files/{f.id}",
     )
     db_session.add(enroll)
     await db_session.flush()

@@ -1,0 +1,19 @@
+# CHOS-205: dev overrides for moeys-workers.
+environment: dev
+replicaCount: 1
+image:
+  tag: "dev"
+config:
+  ENVIRONMENT: development
+  DB_HOST: REPLACE_ME-dev-pg-host
+  DB_NAME: moeys
+  ARQ_REDIS_URL: "redis://REPLACE_ME-dev-broker-host:6379/0"
+vault:
+  csi:
+    vaultAddress: https://vault-dev.example.internal:8200
+  agentAnnotations:
+    vault.hashicorp.com/service: https://vault-dev.example.internal:8200
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3

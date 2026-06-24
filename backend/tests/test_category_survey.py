@@ -1,4 +1,4 @@
-"""Tests for the federation Survey-by-Category endpoints (`/api/surveys/category`).
+"""Tests for the federation Survey-by-Category endpoints (`/api/v1/surveys/category`).
 
 Covers: federation scoping (own sport forced, body sport_id ignored), org block,
 phase gating, admin free-targeting, the upsert delete-removed behaviour, and the
@@ -13,7 +13,7 @@ from src.models.events import Events
 from src.models.sport import Sport
 from tests.conftest import make_user
 
-CATEGORY_URL = "/api/surveys/category"
+CATEGORY_URL = "/api/v1/surveys/category"
 
 
 async def _make_sport(db: AsyncSession, name_kh: str = "បាល់ទាត់") -> Sport:

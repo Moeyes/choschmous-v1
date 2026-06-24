@@ -1,0 +1,14 @@
+# CHOS-205: dev overrides for moeys-bff.
+environment: dev
+replicaCount: 1
+image:
+  tag: "dev"
+config:
+  NODE_ENV: production
+  PORT: "3003"
+  API_PROXY_TARGET: "http://moeys-api:8000"   # match the api Service name in this namespace
+  API_URL: "http://moeys-api:8000"
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3

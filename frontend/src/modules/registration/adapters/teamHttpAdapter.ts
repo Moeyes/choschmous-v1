@@ -1,7 +1,7 @@
 import apiClient from '@/core/api/client';
 import type { TeamPayload, TeamDetail, TeamListResponse, TeamItem } from '../types/team';
 
-const BASE = '/api/teams';
+const BASE = '/api/v1/teams';
 
 export const teamHttpAdapter = {
     async create(payload: TeamPayload): Promise<TeamItem> {

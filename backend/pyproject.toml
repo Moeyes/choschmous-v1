@@ -29,6 +29,11 @@ dependencies = [
     "uvicorn[standard]==0.41.0",
     "openpyxl==3.1.5",
     "weasyprint==68.0",
+    # CHOS-202: arq (Redis-backed) job queue for off-request-path report rendering.
+    "arq==0.25.0",
+    "opentelemetry-sdk>=1.27",
+    "opentelemetry-exporter-otlp-proto-http>=1.27",
+    "opentelemetry-instrumentation-fastapi>=0.48b0",
 ]
 
 [dependency-groups]

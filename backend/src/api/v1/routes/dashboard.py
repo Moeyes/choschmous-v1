@@ -12,7 +12,7 @@ from src.schemas.dashboard import (
     format_sports,
     format_top_organizations,
 )
-from src.database.deps import get_db, get_current_user, get_effective_org_id
+from src.database.deps import get_read_db, get_current_user, get_effective_org_id
 from src.models.user import User
 from src.services import dashboard_service
 
@@ -23,7 +23,7 @@ router = APIRouter()
 async def get_dashboard(
     request: Request,
     response: Response,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_read_db),
     current_user: User = Depends(get_current_user),
 ) -> DashboardResponse:
     """

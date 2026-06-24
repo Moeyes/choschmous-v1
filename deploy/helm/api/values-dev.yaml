@@ -1,0 +1,21 @@
+# CHOS-205: dev overrides for moeys-api.
+environment: dev
+replicaCount: 1
+image:
+  tag: "dev"
+config:
+  ENVIRONMENT: development
+  DB_HOST: REPLACE_ME-dev-pg-host   # terraform output postgres_host (dev)
+  DB_NAME: moeys
+  BACKEND_CORS_ORIGINS: "https://dev.moeys.example.gov.kh"
+  WEB_CONCURRENCY: "2"
+vault:
+  csi:
+    vaultAddress: https://vault-dev.example.internal:8200
+  agentAnnotations:
+    vault.hashicorp.com/service: https://vault-dev.example.internal:8200
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 75

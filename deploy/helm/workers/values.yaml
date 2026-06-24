@@ -1,0 +1,73 @@
+# CHOS-205: default values for the MOEYS arq workers chart. Same backend image
+# as the API, but the command runs the arq worker instead of uvicorn.
+
+environment: dev
+replicaCount: 2
+
+image:
+  repository: ghcr.io/REPLACE_ME/moeys/backend
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+worker:
+  # arq WorkerSettings entrypoint (CHOS-202).
+  module: app.workers.report_worker.WorkerSettings
+
+# Non-secret runtime config → ConfigMap → env.
+config:
+  ENVIRONMENT: dev
+  DB_HOST: REPLACE_ME-pg-host
+  DB_PORT: "5432"
+  DB_NAME: moeys
+  # arq broker endpoint (the dedicated broker Redis from infra/terraform). If the
+  # broker requires AUTH, move this to the Vault-backed secret instead.
+  ARQ_REDIS_URL: "redis://REPLACE_ME-broker-host:6379/0"
+
+vault:
+  enabled: true
+  csi:
+    # Reuses the same static secrets as the API (JWT_*/REDIS_URL) — config.py
+    # requires all three at import even though workers don't mint tokens.
+    secretProviderClassName: moeys-backend-secrets
+    vaultAddress: https://vault.example.internal:8200
+    roleName: moeys-backend
+  agentAnnotations:
+    vault.hashicorp.com/agent-inject: "true"
+    vault.hashicorp.com/role: moeys-backend
+    vault.hashicorp.com/service: https://vault.example.internal:8200
+    vault.hashicorp.com/agent-inject-secret-db.env: database/creds/moeys-backend
+    vault.hashicorp.com/agent-inject-template-db.env: |
+      {{- with secret "database/creds/moeys-backend" -}}
+      export DB_USER={{ .Data.username }}
+      export DB_PASS={{ .Data.password }}
+      {{- end -}}
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+  # TODO(infra): queue-depth autoscaling (KEDA ScaledObject on the arq Redis
+  # list length) is a better signal than CPU for a job worker — wire it once KEDA
+  # is installed. CPU target is the interim scaffold.
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

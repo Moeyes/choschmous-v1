@@ -12,7 +12,7 @@ from tests.factories import (
     make_category,
 )
 
-TEAMS_URL = "/api/teams"
+TEAMS_URL = "/api/v1/teams"
 
 
 async def _register_athlete(
@@ -43,7 +43,7 @@ async def _register_athlete(
     from src.database.deps import get_current_user
     from main import app
 
-    api_reg_url = "/api/registration"
+    api_reg_url = "/api/v1/registration"
     prev = app.dependency_overrides.get(get_current_user)
     app.dependency_overrides[get_current_user] = lambda: user
     try:

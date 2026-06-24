@@ -4,8 +4,10 @@ from typing import Any
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Placeholder value shipped in source; must be overridden via the JWT_SECRET_KEY
-# environment variable in any non-local environment.
+# Known-bad JWT secret values. As of CHOS-201 the secrets carry NO in-source
+# default (they are required env injection — see Settings below), but these
+# historically-shipped / obviously-placeholder values are still rejected so a
+# copied-but-unedited config can never silently boot a non-local environment.
 _INSECURE_JWT_SECRETS = {
     "",
     "change-me",
@@ -38,19 +40,30 @@ class Settings(BaseSettings):
     """
 
     PROJECT_NAME: str = "Backend"
-    API_V1_STR: str = "/api"
+    # CHOS-203: the canonical API prefix is now versioned. Legacy /api/* requests
+    # are 307-redirected to /api/v1/* by the backward-compat router mounted in
+    # src/api/main.py, so existing clients keep working during the migration.
+    API_V1_STR: str = "/api/v1"
     SENTRY_DSN: str | None = None
     ENVIRONMENT: str = "local"
     # Store raw origins as a plain string to avoid dotenv/json decoding issues.
     # Example: "http://localhost:3000,http://localhost:3002" or a JSON array.
     BACKEND_CORS_ORIGINS: str = ""
-    JWT_SECRET_KEY: str = "change-me-change-me-change-me-change-me"
-    JWT_REFRESH_SECRET_KEY: str = "change-me-too-change-me-too-change-me-too"
+    # CHOS-201: these carry no in-source default — they are REQUIRED and must be
+    # injected from the environment (a Vault Agent-rendered env file in prod; see
+    # infra/vault/). With no default, instantiating Settings() raises if any are
+    # missing, so the app refuses to boot without real secrets rather than
+    # silently running on a placeholder. The validator below still enforces
+    # strength/placeholder rules on whatever value is injected.
+    JWT_SECRET_KEY: str
+    JWT_REFRESH_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14
     BCRYPT_ROUNDS: int = 13
-    REDIS_URL: str = "redis://localhost:6379/0"
+    # Required (no default): the connection target for rate limiting / idempotency
+    # / dashboard cache must be configured explicitly, not assumed to be localhost.
+    REDIS_URL: str
     # Build-time guard (CHOS-102): the destructive maintenance routes
     # (/maintenance/sync-schema, /maintenance/drop) are excluded from the prod
     # image unless this is explicitly enabled. Always available in local dev.
@@ -58,6 +71,19 @@ class Settings(BaseSettings):
     # Observability (CHOS-105): expose Prometheus metrics at /metrics when the
     # optional instrumentator package is installed. No-op if it is absent.
     ENABLE_METRICS: bool = True
+    # Observability (CHOS-204): OpenTelemetry distributed tracing. Disabled by
+    # default so neither local dev nor CI needs a collector. Enable with
+    # OTEL_ENABLED=1 and point OTEL_EXPORTER_OTLP_ENDPOINT at the OTLP/HTTP
+    # collector or Tempo (e.g. http://tempo:4318). Spans are correlated to the
+    # request id / error id; see core/observability.py.
+    # TODO(CHOS-204 / infra): inject OTEL_EXPORTER_OTLP_ENDPOINT in deployed envs.
+    OTEL_ENABLED: bool = False
+    OTEL_EXPORTER_OTLP_ENDPOINT: str | None = None
+    OTEL_SERVICE_NAME: str = "moeys-api"
+    # Emit structured (JSON) logs carrying request_id + trace_id/span_id so logs
+    # correlate with traces in Loki/Tempo (CHOS-204). Set LOG_JSON=0 for plain
+    # human-readable logs in local dev.
+    LOG_JSON: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",

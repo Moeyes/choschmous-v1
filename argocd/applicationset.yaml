@@ -1,0 +1,55 @@
+# CHOS-205: one ApplicationSet generates an Argo CD Application for every
+# (component × environment) pair — api/bff/workers across dev/uat/staging/prod —
+# from the Helm charts in deploy/helm. goTemplate lets dev/uat self-heal while
+# staging/prod require a reviewed (manual) sync.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: moeys
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - component: api
+                - component: bff
+                - component: workers
+          - list:
+              elements:
+                - env: dev
+                - env: uat
+                - env: staging
+                - env: prod
+  template:
+    metadata:
+      name: "moeys-{{.component}}-{{.env}}"
+      labels:
+        moeys.gov.kh/component: "{{.component}}"
+        moeys.gov.kh/environment: "{{.env}}"
+    spec:
+      project: moeys
+      source:
+        # TODO(infra): the real GitOps repo URL + tracked revision.
+        repoURL: "https://github.com/REPLACE_ME/moeys.git"
+        targetRevision: main
+        path: "deploy/helm/{{.component}}"
+        helm:
+          valueFiles:
+            - values.yaml
+            - "values-{{.env}}.yaml"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "moeys-{{.env}}"
+      syncPolicy:
+        {{- if or (eq .env "dev") (eq .env "uat") }}
+        automated:
+          prune: true
+          selfHeal: true
+        {{- end }}
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true

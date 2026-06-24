@@ -10,7 +10,11 @@ from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
+from opentelemetry import trace
+
 from core.config import settings
+from core.logging_config import configure_logging
+from core.observability import setup_tracing
 from core.logging_mw import LoggingMiddleware
 from core.content_type_validation import ContentTypeValidationMiddleware
 from core.csrf import CSRFMiddleware
@@ -19,7 +23,11 @@ from core.request_size_limit import RequestSizeLimitMiddleware
 from core.cache_control import CacheControlMiddleware
 from core.dashboard_invalidation import DashboardCacheMiddleware
 from core.redis_client import close_redis, ping_redis
-from src.api.main import api_router
+from src.api.main import api_router, legacy_redirect_router
+
+# Structured JSON logs with request_id + trace correlation (CHOS-204). Done at
+# import time so every log emitted during app setup is already structured.
+configure_logging(json_logs=settings.LOG_JSON)
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +61,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# OpenTelemetry tracing (CHOS-204). No-op unless OTEL_ENABLED is set, so local
+# dev / CI need no collector. Instrument the app before routes serve traffic.
+setup_tracing(app)
+
 
 @app.get("/health", tags=["health"], include_in_schema=False)
 async def health() -> dict[str, str]:
@@ -80,10 +92,24 @@ async def readiness() -> JSONResponse:
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     error_id = uuid.uuid4()
-    logger.exception("Unhandled exception %s: %s", error_id, exc)
+    request_id = getattr(request.state, "request_id", None)
+    # Correlate the failure with its trace: the error_id is searchable in Tempo,
+    # and the exception is recorded on the span.
+    span = trace.get_current_span()
+    if span.is_recording():
+        span.set_attribute("error_id", str(error_id))
+        span.record_exception(exc)
+    logger.exception(
+        "Unhandled exception %s: %s", error_id, exc, extra={"error_id": str(error_id)}
+    )
     return JSONResponse(
         status_code=500,
-        content={"detail": "An internal error occurred", "error_id": str(error_id)},
+        content={
+            "detail": "An internal error occurred",
+            "error_id": str(error_id),
+            # CHOS-204: surface the request id so a report can be traced end-to-end.
+            "request_id": request_id,
+        },
     )
 
 
@@ -98,6 +124,11 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         )
     if exc.status_code >= 500:
         logger.exception("Server error %s: %s", exc.status_code, exc.detail)
+    # The request id is returned via the X-Request-Id response header (set in
+    # LoggingMiddleware) rather than the body, so 4xx bodies stay constant — e.g.
+    # the login 401 must be byte-identical for unknown-user vs wrong-password to
+    # avoid account enumeration. Server errors (500) carry it in the body since
+    # they bypass the middleware response path.
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
@@ -156,7 +187,12 @@ if origins:
             "X-CSRF-Token",
             "X-Correlation-Id",
             "Accept",
+            # CHOS-204: let the browser send the trace context cross-origin so the
+            # backend continues the frontend's trace.
+            "traceparent",
         ],
+        # CHOS-204: let cross-origin frontends read the correlation id back.
+        expose_headers=["X-Request-Id"],
     )
 elif not _IS_LOCAL:
     # No CORS origins configured in a non-local environment. If the frontend is
@@ -169,6 +205,10 @@ elif not _IS_LOCAL:
     )
 
 app.include_router(api_router)
+
+# CHOS-203 backward-compat: must be included LAST so the explicit /api/v1/*
+# routes above always take precedence over this /api/<path> redirect catch-all.
+app.include_router(legacy_redirect_router)
 
 
 # Observability (CHOS-105): expose Prometheus metrics at /metrics. The

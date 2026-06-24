@@ -79,6 +79,40 @@ jobs:
       - name: Run tests
         run: uv run pytest -q
 
+  openapi-contract:
+    name: Backend (OpenAPI contract)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    # The schema is generated from the app object, not a running server, so no
+    # Postgres/Redis services are needed. The env below only has to satisfy the
+    # boot-time config validator (required secrets per CHOS-201).
+    env:
+      ENVIRONMENT: local
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: moeys_test
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET_KEY: ci-openapi-secret-key-not-for-production-001
+      JWT_REFRESH_SECRET_KEY: ci-openapi-refresh-secret-not-for-prod-002
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Sync dependencies
+        run: uv sync --frozen
+      - name: Export OpenAPI contract
+        run: uv run python scripts/export_openapi.py openapi.json
+      - name: Upload OpenAPI contract artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-contract
+          path: backend/openapi.json
+          if-no-files-found: error
+
   frontend:
     name: Frontend (lint + test + build)
     runs-on: ubuntu-latest

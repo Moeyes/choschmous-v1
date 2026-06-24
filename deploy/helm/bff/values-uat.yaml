@@ -1,0 +1,14 @@
+# CHOS-205: uat overrides for moeys-bff.
+environment: uat
+replicaCount: 2
+image:
+  tag: "uat"
+config:
+  NODE_ENV: production
+  PORT: "3003"
+  API_PROXY_TARGET: "http://moeys-api:8000"
+  API_URL: "http://moeys-api:8000"
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4

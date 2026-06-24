@@ -14,8 +14,10 @@ const apiClient: AxiosInstance = axios.create({
 
 // The auth endpoints must never be gated on / retried via a refresh: refreshing
 // before a login/refresh/logout call makes no sense and would recurse.
+// Matches both the canonical /api/v1/auth/* paths (CHOS-203) and the legacy
+// /api/auth/* form that still resolves via the server-side 307 redirect.
 const isAuthEndpoint = (url?: string): boolean =>
-    !!url && /\/api\/auth\/(login|refresh|logout)/.test(url);
+    !!url && /\/api\/(?:v1\/)?auth\/(login|refresh|logout)/.test(url);
 
 // A single in-flight refresh shared by BOTH the proactive request interceptor
 // and the reactive 401 handler, so concurrent requests trigger at most one
@@ -26,7 +28,7 @@ let refreshPromise: Promise<void> | null = null;
 function performRefresh(): Promise<void> {
     if (!refreshPromise) {
         refreshPromise = axios
-            .post<{ access_token_expires_at?: number }>('/api/auth/refresh', {}, { withCredentials: true })
+            .post<{ access_token_expires_at?: number }>('/api/v1/auth/refresh', {}, { withCredentials: true })
             .then(({ data }) => {
                 // Keep the expiry hint in sync with the rotated token.
                 recordAccessTokenExpiry(data?.access_token_expires_at);

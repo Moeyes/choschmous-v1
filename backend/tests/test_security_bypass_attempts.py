@@ -130,7 +130,7 @@ async def _make_enroll_referencing(db, file_id, *, org_id, sport_id):
         gender=genderEnum.MALE,
         date_of_birth=date(2000, 1, 1),
         id_document_type=_ID_DOC,
-        national_id_path=f"/api/files/{file_id}",
+        national_id_path=f"/api/v1/files/{file_id}",
     )
     db.add(enroll)
     await db.flush()
@@ -271,20 +271,20 @@ async def test_report_limiter_enforces_after_quota(monkeypatch, real_rate_limite
     assert raised
 
 
-@pytest.mark.asyncio
-async def test_render_offload_times_out(monkeypatch):
-    """A slow render is time-boxed to a 503 instead of blocking forever."""
-    monkeypatch.setattr(reports_route, "_RENDER_TIMEOUT_SECONDS", 0.1)
+def test_render_is_offloaded_and_worker_is_time_boxed():
+    """CHOS-202: a slow render can no longer block a request worker because
+    rendering does not run on the request path at all — the route only enqueues.
+    The DoS bound moved to the worker, which time-boxes every render via
+    ``job_timeout`` so a pathological report cannot pin a worker forever."""
+    from app.workers.report_worker import WorkerSettings
 
-    def slow_render(*_a):
-        import time
+    # The request handler holds no inline-render escape hatch anymore.
+    assert not hasattr(reports_route, "_render_offloaded")
+    assert not hasattr(reports_route, "_RENDER_TIMEOUT_SECONDS")
 
-        time.sleep(1.0)
-        return b"never"
-
-    with pytest.raises(HTTPException) as e:
-        await reports_route._render_offloaded(slow_render, "x")
-    assert e.value.status_code == 503
+    # The worker render is bounded.
+    assert isinstance(WorkerSettings.job_timeout, int)
+    assert 0 < WorkerSettings.job_timeout <= 300
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -321,7 +321,7 @@ async def test_admin_cannot_sync_schema(as_user):
             headers={"X-CSRF-Token": _CSRF_TOKEN},
             cookies={"csrf_token": _CSRF_TOKEN},
         ) as ac:
-            resp = await ac.post("/api/maintenance/sync-schema")
+            resp = await ac.post("/api/v1/maintenance/sync-schema")
     finally:
         app.dependency_overrides.clear()
 

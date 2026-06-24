@@ -3,7 +3,7 @@ import unauthenticatedApiClient from '@/core/api/unauthenticatedApiClient';
 import { LoginRequest, User } from '@/core/auth/types';
 import { recordAccessTokenExpiry } from '@/core/auth/tokenExpiry';
 
-const BASE = '/api/auth';
+const BASE = '/api/v1/auth';
 
 // --- Types -----------------------------------------------------------
 
@@ -15,7 +15,7 @@ type AuthResponse = {
 // --- API calls -------------------------------------------------------
 
 /**
- * POST /api/auth/login
+ * POST /api/v1/auth/login
  * Sends credentials → backend sets HttpOnly cookies and returns the access
  * token's expiry (not the token) in the body.
  */
@@ -27,7 +27,7 @@ export async function loginUser(credentials: LoginRequest): Promise<AuthResponse
 }
 
 /**
- * POST /api/auth/refresh
+ * POST /api/v1/auth/refresh
  * Browser sends refresh_token HttpOnly cookie automatically; backend rotates the
  * tokens (as cookies) and returns the new access token's expiry.
  */
@@ -39,7 +39,7 @@ export async function refreshAccessToken(): Promise<AuthResponse> {
 }
 
 /**
- * GET /api/auth/me
+ * GET /api/v1/auth/me
  * Resolve the current user straight from the HttpOnly `access_token` cookie —
  * a single-round-trip "who am I?" with no user id in the URL and no client-side
  * token decoding. This is what lets the session be restored on load without

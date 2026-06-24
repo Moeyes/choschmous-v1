@@ -7,6 +7,13 @@
 /** Header carrying a per-request id used to correlate client/server logs. */
 export const CORRELATION_ID_HEADER = 'X-Correlation-ID';
 
+/**
+ * W3C Trace Context header (CHOS-204). Carries the trace id so the backend's
+ * OpenTelemetry instrumentation continues the trace started in the browser —
+ * a client action and its server span/logs share one trace_id.
+ */
+export const TRACEPARENT_HEADER = 'traceparent';
+
 /** Cookie the backend sets with the double-submit CSRF token (when enabled). */
 export const CSRF_COOKIE_NAME = 'csrf_token';
 

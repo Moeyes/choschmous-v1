@@ -1,0 +1,74 @@
+# Vault Agent overlay (CHOS-201) — production secrets via Vault instead of host
+# environment variables.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.vault.yml up -d
+#
+# A vault-agent sidecar authenticates to Vault (AppRole) and renders
+# infra/vault/templates/backend.env.ctmpl into a shared volume; the backend
+# sources that file before launching uvicorn. With this overlay the JWT/Redis
+# secrets and the Postgres credentials are NO LONGER read from the host env —
+# they come from Vault. See infra/vault/README.md.
+#
+# TODO(infra): set VAULT_ADDR to the real endpoint and mount real, uncommitted
+# AppRole role-id/secret-id files at ./infra/vault/agent/{role-id,secret-id}.
+
+services:
+  vault-agent:
+    image: hashicorp/vault:1.17
+    # `vault agent` runs auto-auth + template rendering, then stays up to keep
+    # the dynamic DB lease (and rendered file) fresh.
+    command: ["vault", "agent", "-config=/vault/agent/vault-agent.hcl"]
+    environment:
+      # TODO(infra): real Vault endpoint (overrides the address in the .hcl).
+      - VAULT_ADDR=${VAULT_ADDR:?set VAULT_ADDR to the real Vault endpoint}
+    volumes:
+      - ./infra/vault/agent:/vault/agent       # vault-agent.hcl + role-id/secret-id (TODO)
+      - ./infra/vault/templates:/vault/templates:ro
+      - vault-secrets:/vault/secrets           # rendered backend.env (shared with backend)
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { memory: 128M }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  backend:
+    # Secrets now come from Vault. `!override` REPLACES the merged environment
+    # list from docker-compose.prod.yml (rather than merging into it), so the
+    # JWT/Redis/DB secret vars are gone from the container env entirely — only
+    # the non-secret connection coordinates remain. The Vault Agent supplies
+    # JWT_SECRET_KEY / JWT_REFRESH_SECRET_KEY / REDIS_URL / DB_USER / DB_PASS via
+    # the sourced env file at startup.
+    #
+    # NOTE: docker-compose.prod.yml still interpolates its ${JWT_SECRET_KEY:?…}
+    # presence checks when it is read. When using THIS overlay, set those host
+    # vars to any placeholder — Vault overwrites them at container start.
+    environment: !override
+      - ENVIRONMENT=production
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:?set production origins}
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-2}
+    volumes:
+      - vault-secrets:/vault/secrets:ro
+    depends_on:
+      vault-agent:
+        condition: service_started
+      db:
+        condition: service_healthy
+    # Wait for the agent to render the env file, source it (JWT_*/REDIS_URL +
+    # dynamic DB_USER/DB_PASS), then exec the same uvicorn command as the image.
+    command:
+      - sh
+      - -c
+      - |
+        echo "waiting for Vault Agent to render /vault/secrets/backend.env ..."
+        until [ -s /vault/secrets/backend.env ]; do sleep 1; done
+        set -a; . /vault/secrets/backend.env; set +a
+        exec uvicorn main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-2}
+
+volumes:
+  vault-secrets:

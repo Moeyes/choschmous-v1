@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, Cookie
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import SessionLocal
+from core.database import ReadSessionLocal, SessionLocal
 from core.security import decode_access_token
 from src.models.user import User
 from src.models.enum.user import UserRole
@@ -16,7 +16,21 @@ logger = logging.getLogger(__name__)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Primary (writable) session. Use for any handler that mutates state, and for
+    reads that must see the caller's own just-committed writes."""
     async with SessionLocal() as db:
+        yield db
+
+
+async def get_read_db() -> AsyncGenerator[AsyncSession, None]:
+    """Read-replica session (CHOS-301).
+
+    Routes read-only traffic — dashboards, reports, and list/search reads — to the
+    read replicas (via PgBouncer) so it never competes with writes on the primary.
+    Falls back to the primary session in single-DB dev / CI / test, so it is always
+    safe to depend on. Do NOT use for handlers that write: a replica is read-only
+    and lags the primary slightly, so it must not back read-after-write flows."""
+    async with ReadSessionLocal() as db:
         yield db
 
 

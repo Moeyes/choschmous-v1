@@ -1,0 +1,29 @@
+# CHOS-205: copy to <env>.tfvars and fill in real values. NEVER commit a filled
+# copy — only this example belongs in git.
+#
+#   terraform plan  -var-file=prod.tfvars
+#   terraform apply -var-file=prod.tfvars     # manual, never CI
+
+environment = "dev" # dev | uat | staging | prod
+region      = "ap-southeast-1"
+
+# TODO(infra): real network ids the platform deploys into.
+vpc_id             = "vpc-REPLACE_ME"
+private_subnet_ids = ["subnet-REPLACE_ME_A", "subnet-REPLACE_ME_B"]
+
+# Sizing (override per env; prod should be larger / multi-AZ).
+cluster_version     = "1.30"
+node_instance_types = ["t3.large"]
+node_min_size       = 2
+node_max_size       = 6
+
+db_instance_class    = "db.t3.medium"
+db_allocated_storage = 50
+
+redis_node_type  = "cache.t3.small"
+broker_node_type = "cache.t3.small"
+
+tags = {
+  Owner   = "platform-team"
+  CostCtr = "REPLACE_ME"
+}

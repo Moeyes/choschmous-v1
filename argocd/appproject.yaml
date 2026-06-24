@@ -1,0 +1,35 @@
+# CHOS-205: Argo CD AppProject scoping what the MOEYS platform may deploy.
+# Apply to the Argo CD control-plane namespace (commonly `argocd`).
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: moeys
+  namespace: argocd
+spec:
+  description: MOEYS national sports-event platform (api / bff / workers)
+
+  sourceRepos:
+    # TODO(infra): the real GitOps repo URL hosting deploy/helm.
+    - "https://github.com/REPLACE_ME/moeys.git"
+
+  # Restrict deploys to the platform's own per-env namespaces.
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "moeys-dev"
+    - server: https://kubernetes.default.svc
+      namespace: "moeys-uat"
+    - server: https://kubernetes.default.svc
+      namespace: "moeys-staging"
+    - server: https://kubernetes.default.svc
+      namespace: "moeys-prod"
+
+  # Namespaced resources only; allow the cluster-scoped kinds the charts need.
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Roughly: dev/uat self-heal; staging/prod changes go through a reviewed sync.
+  syncWindows: []

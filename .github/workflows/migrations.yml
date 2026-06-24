@@ -61,6 +61,10 @@ jobs:
       ENVIRONMENT: local
       JWT_SECRET_KEY: ci-test-secret-key-not-for-production-0001
       JWT_REFRESH_SECRET_KEY: ci-test-refresh-secret-not-for-prod-0002
+      # CHOS-201: REDIS_URL is now a required setting (no in-source default), and
+      # init_db_schema.py imports the app → config. No Redis service is needed
+      # here (alembic/bootstrap never connect to it); this just satisfies config.
+      REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v5
       - name: Install uv

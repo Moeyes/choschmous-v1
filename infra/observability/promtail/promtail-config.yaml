@@ -1,0 +1,36 @@
+# Promtail configuration (CHOS-204) — SCAFFOLD.
+#
+# Tails Docker container stdout/stderr and ships it to Loki. The backend emits
+# one JSON object per line (core/logging_config.py), so we parse it and promote
+# trace_id / request_id / level to labels for fast filtering and trace linking.
+# TODO(CHOS-204 / infra): in Kubernetes use the Loki Helm chart's Promtail/Alloy
+# DaemonSet instead of this Docker-socket scraper.
+server:
+  http_listen_port: 9080
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: container
+      - source_labels: ["__meta_docker_container_log_stream"]
+        target_label: stream
+    pipeline_stages:
+      # Parse the structured JSON log line and expose correlation fields.
+      - json:
+          expressions:
+            level: level
+            logger: logger
+            trace_id: trace_id
+            request_id: request_id
+      - labels:
+          level:
+          logger:
+          trace_id:

@@ -6,8 +6,8 @@ from src.models.enum.user import UserRole
 from tests.conftest import make_user
 from tests.factories import make_event, make_org
 
-ROLES_URL = "/api/organizer-roles"
-ORG_REG_URL = "/api/registration/organizer"
+ROLES_URL = "/api/v1/organizer-roles"
+ORG_REG_URL = "/api/v1/registration/organizer"
 
 
 async def _make_role(
