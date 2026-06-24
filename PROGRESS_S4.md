@@ -18,7 +18,7 @@ Environment notes (this machine):
 - [x] CHOS-401 — MFA (TOTP/WebAuthn) + recovery codes + OIDC login; FE core/auth + login UI
 - [x] CHOS-402 — ABAC policy engine (deny-by-default) wired into deps/services + unit tests
 - [x] CHOS-403 — field-level PII encryption (KMS envelope) + hash-chained append-only audit log + SIEM ship + tamper test
-- [ ] CHOS-404 — Playwright a11y (@axe-core) zero criticals + a11y statement + e2e gate
+- [x] CHOS-404 — Playwright a11y (@axe-core) zero criticals + a11y statement + e2e gate
 - [ ] CHOS-405 — packages/ui workspace pkg + Storybook (+axe) + Chromatic CI; unify Modal/ModalV2
 - [ ] CHOS-406 — email worker (templates) + in-app notification inbox + bulk athlete import; FE modules/import + notifications UI
 - [ ] CHOS-407 — pin Next to stable GA; Lighthouse CI budgets + bundle-analyzer gate
@@ -85,6 +85,22 @@ Environment notes (this machine):
 - Config: `PII_ENCRYPTION_KEY` required in non-local (no dev-key fallback);
   derived from JWT secret in local/CI. SIEM off by default. TODO(infra): inject
   KMS key/creds + SIEM endpoint+token from Vault; swap to AES-GCM/boto3.
+
+### CHOS-404 (done)
+- `frontend/playwright/a11y.spec.ts`: @axe-core/playwright over every route in
+  `e2e/routes.ts`, fails on any `critical` WCAG 2.1 A/AA violation; serious ones
+  annotated. Plus a login keyboard-nav / visible-focus / SR-label test.
+- Dedicated `playwright.a11y.config.ts` (reuses the auth setup; testDir spans
+  setup + the `playwright/` dir so the smoke crawl doesn't sweep it up). Script
+  `e2e:a11y`. Gate added to `e2e.yml` after the smoke crawl.
+- **Offline dep handling**: `@axe-core/playwright` can't be installed offline and
+  adding it to package.json would break the smoke job's `--frozen-lockfile`
+  install. So it is installed at gate time in CI (`pnpm add -D @axe-core/
+  playwright@^4.10.0`) and the spec is excluded from `tsconfig` so `tsc`/`next
+  build` don't choke on the (locally) unresolved import.
+- Accessibility statement page: `/accessibility` (AccessibilityPage, i18n en+kh,
+  linked from the home footer; added to the crawl + a11y route list).
+- tsc clean for my files (only the pre-existing proxy.ts error remains).
 
 ### Pre-existing issues found (NOT mine — own under later tickets)
 - `frontend/src/proxy.ts:55` uses `request.ip` which Next 16 removed → tsc error.

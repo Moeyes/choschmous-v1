@@ -25,6 +25,8 @@ const ENROLL_ID = process.env.E2E_ENROLL_ID || '1';
 export const ROUTES: RouteDef[] = [
   // --- Public / unauthenticated ---
   { name: 'home', path: '/', group: 'public', requiresAuth: false },
+  { name: 'privacy', path: '/privacy', group: 'public', requiresAuth: false },
+  { name: 'accessibility', path: '/accessibility', group: 'public', requiresAuth: false },
   { name: 'login', path: '/login', group: 'auth', requiresAuth: false },
   { name: 'unauthorized', path: '/unauthorized', group: 'auth', requiresAuth: false },
 

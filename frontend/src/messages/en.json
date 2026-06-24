@@ -76,8 +76,34 @@
       "support": "For access or technical help, contact your federation or organization administrator.",
       "legalLabel": "Legal",
       "privacy": "Privacy & data handling",
+      "accessibility": "Accessibility statement",
       "version": "Version",
       "rights": "Ministry of Education, Youth and Sport. All rights reserved."
+    },
+    "accessibility": {
+      "back": "Back to home",
+      "title": "Accessibility Statement",
+      "subtitle": "Our commitment to an accessible service for everyone",
+      "intro": "The Ministry of Education, Youth and Sport is committed to making this system usable by everyone, including people who rely on assistive technologies. We aim to meet recognised international accessibility standards across every page.",
+      "sections": {
+        "commitment": {
+          "title": "Our commitment",
+          "body": "We design and build this system so that people using screen readers, keyboard-only navigation, magnification, or other assistive technology can complete every task — registering participants, reviewing submissions, and producing reports."
+        },
+        "standard": {
+          "title": "Conformance target",
+          "body": "We target Web Content Accessibility Guidelines (WCAG) 2.1 Level AA. This covers text contrast, keyboard operability, visible focus, descriptive labels, and resilient page structure."
+        },
+        "measures": {
+          "title": "How we verify it",
+          "body": "Every route is checked automatically against the axe-core rules on each release, and the build fails on any critical issue. We also perform manual keyboard-navigation and screen-reader checks on the core registration and review flows."
+        },
+        "limitations": {
+          "title": "Known limitations",
+          "body": "Some third-party embedded content and complex data tables may not yet fully meet our target. We are actively remediating these and welcome reports so we can prioritise fixes."
+        }
+      },
+      "contact": "If you encounter an accessibility barrier, contact your federation or organization administrator, who can escalate to the Ministry so we can help and improve the service."
     },
     "privacy": {
       "back": "Back to home",

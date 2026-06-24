@@ -96,11 +96,23 @@ jobs:
       - name: Install frontend deps
         run: pnpm install --frozen-lockfile
         working-directory: frontend
+      # CHOS-404: the a11y gate's only extra dep is @axe-core/playwright. It is
+      # added here (not in package.json) so the repo lockfile stays clean and the
+      # `--frozen-lockfile` install above keeps working; CI has network to resolve
+      # it. Pinned to the 4.x line for reproducibility.
+      - name: Install a11y gate dependency (@axe-core/playwright)
+        run: pnpm add -D @axe-core/playwright@^4.10.0
+        working-directory: frontend
       - name: Install Playwright chromium
         run: pnpm exec playwright install --with-deps chromium
         working-directory: frontend
       - name: Run smoke crawl
         run: pnpm e2e
+        working-directory: frontend
+      # CHOS-404: accessibility gate — axe-core over every route, fails on any
+      # critical WCAG 2.1 A/AA violation ("zero criticals all routes").
+      - name: Run accessibility gate (axe-core, zero criticals)
+        run: pnpm e2e:a11y
         working-directory: frontend
 
       - name: Upload Playwright report

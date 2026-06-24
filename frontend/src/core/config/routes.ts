@@ -2,6 +2,7 @@ export const routes = {
   home:               '/',
   login:              '/login',
   privacy:            '/privacy',
+  accessibility:      '/accessibility',
   unauthorized:       '/unauthorized',
   survey:             '/survey',
   dashboard:          '/dashboard',

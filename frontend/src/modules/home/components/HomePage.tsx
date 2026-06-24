@@ -205,6 +205,12 @@ export function HomePage() {
                             >
                                 {t('footer.privacy')}
                             </Link>
+                            <Link
+                                href={routes.accessibility}
+                                className="mt-1 block text-sm font-medium text-primary hover:underline"
+                            >
+                                {t('footer.accessibility')}
+                            </Link>
                             <p className="mt-3 text-xs text-muted-foreground">
                                 {t('footer.version')} {APP_VERSION}
                             </p>
