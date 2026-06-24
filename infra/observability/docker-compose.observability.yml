@@ -1,14 +1,19 @@
-# Observability stack (CHOS-105) — SCAFFOLD.
+# Observability stack (CHOS-105 metrics; CHOS-204 traces + logs) — SCAFFOLD.
 #
-# Prometheus (scrape + alert rules) -> Alertmanager (routing/paging) and
-# Grafana (dashboards). Run alongside the app stack:
+# Prometheus (metrics) -> Alertmanager (paging); Tempo (traces); Loki (logs,
+# shipped by Promtail); Grafana ties all three together. Run alongside the app:
 #
 #   docker compose \
 #     -f docker-compose.yml \
 #     -f infra/observability/docker-compose.observability.yml up -d
 #
-# The backend exposes metrics at /metrics (wired in backend/main.py via
-# prometheus-fastapi-instrumentator). Prometheus scrapes `backend:8000`.
+# - Metrics: backend exposes /metrics; Prometheus scrapes `backend:8000`.
+# - Traces (CHOS-204): set OTEL_ENABLED=1 and
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318 on the backend; spans land in
+#   Tempo. Grafana's Tempo datasource links a span to its logs by trace_id.
+# - Logs (CHOS-204): Promtail tails container stdout (structured JSON from
+#   core/logging_config.py) into Loki; Grafana's Loki datasource links a log
+#   line back to its trace via the trace_id derived field.
 # TODO(CHOS-105): put Grafana behind auth / SSO and set GF_SECURITY_ADMIN_PASSWORD
 # from a secret. TODO(CHOS-105): wire the Alertmanager PagerDuty routing key.
 
@@ -52,7 +57,46 @@ services:
       - "127.0.0.1:3001:3000"
     depends_on:
       - prometheus
+      - tempo
+      - loki
+
+  # CHOS-204: distributed tracing backend. Receives OTLP from the app on 4317/4318.
+  tempo:
+    image: grafana/tempo:2.6.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./infra/observability/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "127.0.0.1:3200:3200"   # Tempo query API (Grafana datasource)
+      - "127.0.0.1:4318:4318"   # OTLP/HTTP receiver (backend exporter target)
+
+  # CHOS-204: log aggregation backend.
+  loki:
+    image: grafana/loki:3.2.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+    volumes:
+      - ./infra/observability/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+
+  # CHOS-204: ships container stdout (structured JSON) into Loki.
+  promtail:
+    image: grafana/promtail:3.2.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/promtail-config.yaml"]
+    volumes:
+      - ./infra/observability/promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+    depends_on:
+      - loki
 
 volumes:
   prometheus_data:
   grafana_data:
+  tempo_data:
+  loki_data:

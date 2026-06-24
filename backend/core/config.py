@@ -71,6 +71,19 @@ class Settings(BaseSettings):
     # Observability (CHOS-105): expose Prometheus metrics at /metrics when the
     # optional instrumentator package is installed. No-op if it is absent.
     ENABLE_METRICS: bool = True
+    # Observability (CHOS-204): OpenTelemetry distributed tracing. Disabled by
+    # default so neither local dev nor CI needs a collector. Enable with
+    # OTEL_ENABLED=1 and point OTEL_EXPORTER_OTLP_ENDPOINT at the OTLP/HTTP
+    # collector or Tempo (e.g. http://tempo:4318). Spans are correlated to the
+    # request id / error id; see core/observability.py.
+    # TODO(CHOS-204 / infra): inject OTEL_EXPORTER_OTLP_ENDPOINT in deployed envs.
+    OTEL_ENABLED: bool = False
+    OTEL_EXPORTER_OTLP_ENDPOINT: str | None = None
+    OTEL_SERVICE_NAME: str = "moeys-api"
+    # Emit structured (JSON) logs carrying request_id + trace_id/span_id so logs
+    # correlate with traces in Loki/Tempo (CHOS-204). Set LOG_JSON=0 for plain
+    # human-readable logs in local dev.
+    LOG_JSON: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",

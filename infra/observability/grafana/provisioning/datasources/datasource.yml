@@ -1,4 +1,9 @@
-# Grafana datasource provisioning (CHOS-105) — SCAFFOLD.
+# Grafana datasource provisioning (CHOS-105 metrics; CHOS-204 traces + logs).
+#
+# Three correlated sources: Prometheus (metrics), Tempo (traces), Loki (logs).
+# The app emits structured JSON logs carrying `trace_id` + `request_id` and OTLP
+# traces; the derived-field / tracesToLogs wiring below lets you pivot
+# log <-> trace by trace_id in Grafana Explore.
 apiVersion: 1
 datasources:
   - name: Prometheus
@@ -7,3 +12,40 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: false
+
+  # CHOS-204: distributed traces (OTLP -> Tempo).
+  - name: Tempo
+    type: tempo
+    access: proxy
+    uid: tempo
+    url: http://tempo:3200
+    editable: false
+    jsonData:
+      # Trace -> logs: jump from a span to the Loki logs sharing its trace_id.
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-5m"
+        spanEndTimeShift: "5m"
+        filterByTraceID: true
+        tags:
+          - key: service.name
+            value: service_name
+      nodeGraph:
+        enabled: true
+
+  # CHOS-204: structured JSON logs (Loki).
+  - name: Loki
+    type: loki
+    access: proxy
+    uid: loki
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      # Logs -> trace: every JSON log line carries `trace_id`; turn it into a
+      # clickable link into Tempo.
+      derivedFields:
+        - name: trace_id
+          matcherType: regex
+          matcherRegex: '"trace_id":\s*"([a-f0-9]+)"'
+          datasourceUid: tempo
+          url: "$${__value.raw}"

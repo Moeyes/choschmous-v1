@@ -1,0 +1,37 @@
+# Tempo configuration (CHOS-204) — SCAFFOLD.
+#
+# Receives OTLP traces from the backend (OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318)
+# and stores them on local disk. Single-binary, local storage — fine for dev /
+# small deployments. TODO(CHOS-204 / infra): for production swap `local` storage
+# for object storage (S3/GCS) and front Tempo with the distributor/ingester split
+# or a managed Tempo.
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        # Backend exports OTLP/HTTP on 4318; gRPC on 4317 is available too.
+        http:
+          endpoint: 0.0.0.0:4318
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+ingester:
+  max_block_duration: 5m
+
+compactor:
+  compaction:
+    block_retention: 48h   # TODO(infra): tune retention for prod
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/blocks
+    wal:
+      path: /var/tempo/wal
+
+usage_report:
+  reporting_enabled: false

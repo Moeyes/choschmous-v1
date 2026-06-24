@@ -9,7 +9,9 @@ import {
     CSRF_COOKIE_NAME,
     CSRF_HEADER_NAME,
     MUTATING_METHODS,
+    TRACEPARENT_HEADER,
 } from './constants';
+import { createTraceContext, setCurrentTrace } from '@/core/lib/logger';
 
 function readCookie(name: string): string | null {
     if (typeof document === 'undefined') return null;
@@ -39,6 +41,14 @@ export function attachCrossCuttingHeaders(
     config: InternalAxiosRequestConfig,
 ): InternalAxiosRequestConfig {
     config.headers.set(CORRELATION_ID_HEADER, correlationId());
+
+    // CHOS-204: propagate a W3C trace context so the backend's OpenTelemetry
+    // instrumentation continues this trace — the client action and its server
+    // span/logs share one trace_id. Mark it current so client logs emitted while
+    // the request is in flight carry the same trace id.
+    const trace = createTraceContext();
+    setCurrentTrace(trace);
+    config.headers.set(TRACEPARENT_HEADER, trace.traceparent);
 
     const method = (config.method ?? 'get').toUpperCase();
     if (MUTATING_METHODS.has(method)) {
