@@ -31,7 +31,12 @@ from src.schemas.enroll import (
     RoleEnum,
     FullRegistrationRequest,
 )
-from src.services.participant_service import ParticipantService
+from app.application.participants import (
+    RegisterParticipant,
+    ParticipantQuery,
+    RevealParticipantPii,
+    UpdateParticipant,
+)
 
 router = APIRouter()
 
@@ -120,8 +125,7 @@ async def create_participant(
     if idempotency_key is not None and not isinstance(idempotency_key, str):
         return idempotency_key
 
-    service = ParticipantService(db)
-    result = await service.register_participant(payload, current_user)
+    result = await RegisterParticipant(db).execute(payload, current_user)
 
     if isinstance(idempotency_key, str):
         await store_idempotency_result(idempotency_key, 201, result)
@@ -178,7 +182,6 @@ async def list_participants(
     of any organization_id query parameter supplied.
     """
     effective_org_id = get_effective_org_id(current_user, organization_id)
-    service = ParticipantService(db)
     params = ParticipantFilterParams(
         role=role,
         event_id=event_id,
@@ -190,7 +193,7 @@ async def list_participants(
         limit=limit,
         offset=offset,
     )
-    return await service.get_participants(params, detailed=detailed)
+    return await ParticipantQuery(db).list(params, detailed=detailed)
 
 
 @router.post("/search")
@@ -223,8 +226,7 @@ async def search_participants(
         limit=body.limit,
         offset=body.offset,
     )
-    service = ParticipantService(db)
-    return await service.get_participants(params)
+    return await ParticipantQuery(db).list(params)
 
 
 @router.post("/{enroll_id}/reveal")
@@ -247,8 +249,7 @@ async def reveal_participant_pii(
     await reveal_limiter.check(
         request, key_suffix=str(current_user.id), response=response
     )
-    service = ParticipantService(db)
-    phone = await service.get_participant_phone(enroll_id)
+    phone = await RevealParticipantPii(db).get_phone(enroll_id)
 
     db.add(
         PiiAccessLog(
@@ -287,12 +288,12 @@ async def get_participant(
     - `403 Forbidden`: Participant belongs to another organization.
     - `404 Not Found`: No record exists with the given ID and Role.
     """
-    service = ParticipantService(db)
-    owner_org_id = await service.get_owner_org_id(enroll_id, role)
+    query = ParticipantQuery(db)
+    owner_org_id = await query.get_owner_org_id(enroll_id, role)
     if owner_org_id is None:
         raise HTTPException(status_code=404, detail="Participant not found")
     enforce_org_access(current_user, owner_org_id)
-    return await service.get_participant_by_id(enroll_id, role)
+    return await query.get_by_id(enroll_id, role)
 
 
 @router.patch("/update")
@@ -314,12 +315,13 @@ async def update_participant(
     await participant_write_limiter.check(
         request, key_suffix=str(current_user.id), response=response
     )
-    service = ParticipantService(db)
-    owner_org_id = await service.get_owner_org_id(body.enroll_id, body.role)
+    owner_org_id = await ParticipantQuery(db).get_owner_org_id(
+        body.enroll_id, body.role
+    )
     if owner_org_id is None:
         raise HTTPException(status_code=404, detail="Participant not found")
     enforce_org_access(current_user, owner_org_id)
-    return await service.update_participant(
+    return await UpdateParticipant(db).update(
         body.enroll_id, body.role, body.data, current_user
     )
 
@@ -352,9 +354,8 @@ async def delete_participant(
     await participant_write_limiter.check(
         request, key_suffix=str(current_user.id), response=response
     )
-    service = ParticipantService(db)
-    owner_org_id = await service.get_owner_org_id(body.enroll_id)
+    owner_org_id = await ParticipantQuery(db).get_owner_org_id(body.enroll_id)
     if owner_org_id is None:
         raise HTTPException(status_code=404, detail="Participant not found")
     enforce_org_access(current_user, owner_org_id)
-    return await service.delete_participant(body.enroll_id)
+    return await UpdateParticipant(db).delete(body.enroll_id)
