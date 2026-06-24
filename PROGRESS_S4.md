@@ -16,7 +16,7 @@ Environment notes (this machine):
 
 ## Checklist
 - [x] CHOS-401 — MFA (TOTP/WebAuthn) + recovery codes + OIDC login; FE core/auth + login UI
-- [ ] CHOS-402 — ABAC policy engine (deny-by-default) wired into deps/services + unit tests
+- [x] CHOS-402 — ABAC policy engine (deny-by-default) wired into deps/services + unit tests
 - [ ] CHOS-403 — field-level PII encryption (KMS envelope) + hash-chained append-only audit log + SIEM ship + tamper test
 - [ ] CHOS-404 — Playwright a11y (@axe-core) zero criticals + a11y statement + e2e gate
 - [ ] CHOS-405 — packages/ui workspace pkg + Storybook (+axe) + Chromatic CI; unify Modal/ModalV2
@@ -43,6 +43,22 @@ Environment notes (this machine):
   i18n keys added en+kh.
 - Tests: `tests/test_mfa.py` 8 new (unit TOTP/recovery + integration login flow +
   enforcement). Backend 179 passed. FE auth vitest green; tsc clean for my files.
+
+### CHOS-402 (done)
+- `app/domain/policies/`: self-contained ABAC engine (no OPA-server/Casbin dep —
+  offline + must be unit-testable/versioned). Vocabulary: Subject(role,org,sport),
+  Resource(kind,org,sport,review_state,data_class,owner), Action (capability +
+  CRUD), DataClass, ReviewState. `engine.py` = **deny-by-default + deny-overrides**.
+  `rules.py` reproduces deps.py RBAC exactly (capability rules ABSTAIN for
+  super_admin so its allow-all isn't clobbered by deny-overrides).
+- Wired into `src/database/deps.py`: `require_admin`→MANAGE_GLOBAL,
+  `require_superadmin`→ADMINISTER, `require_staff`→STAFF, `enforce_org_access`→
+  org-scoped READ, new `require_pii_reveal`→REVEAL_PII+RESTRICTED_PII (used by the
+  participant reveal route). All HTTP messages/codes preserved.
+- Tests: `tests/test_policies.py` (27) assert engine==old RBAC truth table +
+  deny-by-default. Full backend suite **206 passed** (no behaviour change).
+- TODO(infra, optional): OPA adapter behind the same `authorize()` if a central
+  PDP is later mandated; this engine stays the fail-closed in-process fallback.
 
 ### Pre-existing issues found (NOT mine — own under later tickets)
 - `frontend/src/proxy.ts:55` uses `request.ip` which Next 16 removed → tsc error.

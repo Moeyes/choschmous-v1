@@ -19,7 +19,7 @@ from src.database.deps import (
     get_current_user,
     get_effective_org_id,
     enforce_org_access,
-    require_admin,
+    require_pii_reveal,
 )
 from src.models.user import User
 from src.models.pii_access_log import PiiAccessLog
@@ -235,7 +235,7 @@ async def reveal_participant_pii(
     request: FastAPIRequest,
     response: Response,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_pii_reveal),
 ):
     """Reveal a participant's masked phone number. **Admin / super-admin only.**
 

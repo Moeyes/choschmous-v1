@@ -12,7 +12,22 @@ from core.security import decode_access_token
 from src.models.user import User
 from src.models.enum.user import UserRole
 
+from app.domain.policies import Action, DataClass, Resource, Role, Subject, policy
+
 logger = logging.getLogger(__name__)
+
+
+def subject_of(current_user: User) -> Subject:
+    """Project a ``User`` onto the policy engine's ``Subject`` value object
+    (CHOS-402). The role string matches the ``Role`` vocabulary 1:1; org/sport
+    ids carry the scope attributes the ABAC rules reason over."""
+    role_value = getattr(current_user.role, "value", str(current_user.role))
+    return Subject(
+        role=Role(role_value),
+        user_id=str(current_user.id) if current_user.id is not None else None,
+        organization_id=current_user.organization_id,
+        sport_id=current_user.sport_id,
+    )
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -74,8 +89,14 @@ async def get_current_user(
 
 
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    """Allow only ADMIN / SUPER_ADMIN. 403 for everyone else."""
-    if current_user.role not in (UserRole.ADMIN, UserRole.SUPER_ADMIN):
+    """Allow only ADMIN / SUPER_ADMIN. 403 for everyone else.
+
+    Delegates to the ABAC engine (CHOS-402): the decision now lives in the policy
+    layer, but the HTTP contract (403 + this exact message) is unchanged.
+    """
+    if not policy.can(
+        subject_of(current_user), Action.MANAGE_GLOBAL, Resource(kind="admin")
+    ):
         raise HTTPException(
             status_code=403, detail="Admin access required for this action."
         )
@@ -84,9 +105,30 @@ async def require_admin(current_user: User = Depends(get_current_user)) -> User:
 
 async def require_superadmin(current_user: User = Depends(get_current_user)) -> User:
     """Allow only SUPER_ADMIN. 403 for everyone else."""
-    if current_user.role != UserRole.SUPER_ADMIN:
+    if not policy.can(
+        subject_of(current_user), Action.ADMINISTER, Resource(kind="superadmin")
+    ):
         raise HTTPException(
             status_code=403, detail="Super admin access required for this action."
+        )
+    return current_user
+
+
+async def require_pii_reveal(current_user: User = Depends(get_current_user)) -> User:
+    """ABAC gate for revealing Restricted-PII (CHOS-402).
+
+    Same allow-set as ``require_admin`` (ADMIN / SUPER_ADMIN), but expressed as a
+    data-class-aware ``REVEAL_PII`` decision against a RESTRICTED_PII resource —
+    so the authorization reason reflects WHAT is being protected (the data class),
+    not merely the caller's role. Behaviour (403 + message) is unchanged.
+    """
+    if not policy.can(
+        subject_of(current_user),
+        Action.REVEAL_PII,
+        Resource(kind="participant_pii", data_class=DataClass.RESTRICTED_PII),
+    ):
+        raise HTTPException(
+            status_code=403, detail="Admin access required for this action."
         )
     return current_user
 
@@ -97,7 +139,9 @@ async def require_staff(current_user: User = Depends(get_current_user)) -> User:
     Block plain ORGANIZATION users — they may only act on their own org's data
     via enforce_org_access, not manage global resources (events, sport links).
     """
-    if current_user.role == UserRole.ORGANIZATION:
+    if not policy.can(
+        subject_of(current_user), Action.STAFF, Resource(kind="staff")
+    ):
         raise HTTPException(
             status_code=403, detail="Staff access required for this action."
         )
@@ -156,16 +200,23 @@ def enforce_org_access(current_user: User, requested_org_id: int) -> int:
 
     - organization role: must match their own org; 403 otherwise
     - admin / super_admin / federation: pass through
+
+    The org-match decision is delegated to the ABAC engine (CHOS-402:
+    org-scoped READ on the target organization); the "no org linked" 400
+    precondition and the exact HTTP messages are preserved.
     """
-    if current_user.role == UserRole.ORGANIZATION:
-        if current_user.organization_id is None:
-            raise HTTPException(
-                status_code=400,
-                detail="Your account has no organization linked. Contact an admin.",
-            )
-        if current_user.organization_id != requested_org_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Access denied: you can only access your own organization's data.",
-            )
+    if current_user.role == UserRole.ORGANIZATION and current_user.organization_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Your account has no organization linked. Contact an admin.",
+        )
+    if not policy.can(
+        subject_of(current_user),
+        Action.READ,
+        Resource(kind="organization", organization_id=requested_org_id),
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: you can only access your own organization's data.",
+        )
     return requested_org_id
