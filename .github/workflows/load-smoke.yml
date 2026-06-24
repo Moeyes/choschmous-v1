@@ -60,7 +60,7 @@ jobs:
       LOAD_TEST_PASSWORD: LoadSmoke!2026Pass
       LOAD_TEST_USER_COUNT: "5"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Sync dependencies
