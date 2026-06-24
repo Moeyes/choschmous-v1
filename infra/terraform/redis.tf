@@ -33,11 +33,20 @@ resource "aws_security_group" "redis" {
 
 resource "aws_elasticache_replication_group" "cache" {
   replication_group_id = "${local.name}-cache"
-  description          = "Application cache / rate-limit / idempotency"
+  description          = "Application cache / rate-limit / idempotency (CHOS-302 cluster)"
   engine               = "redis"
   node_type            = var.redis_node_type
-  num_cache_clusters   = var.environment == "prod" ? 2 : 1
   port                 = 6379
+
+  # CHOS-302: cluster mode enabled — the app cache / rate-limit / idempotency run
+  # against a 3-shard Redis Cluster. Set REDIS_CLUSTER=1 + REDIS_URL=<config
+  # endpoint> on the app (the client discovers the other shards from the seed).
+  parameter_group_name = var.redis_cluster_parameter_group
+  num_node_groups      = var.redis_cache_shards
+  # A replica per shard gives intra-shard failover; 0 outside prod to save cost.
+  replicas_per_node_group   = var.environment == "prod" ? var.redis_cache_replicas_per_shard : 0
+  automatic_failover_enabled = true
+  multi_az_enabled           = var.environment == "prod"
 
   subnet_group_name          = aws_elasticache_subnet_group.redis.name
   security_group_ids         = [aws_security_group.redis.id]

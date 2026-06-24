@@ -106,11 +106,29 @@ variable "pgbouncer_namespace" {
   default     = "moeys"
 }
 
-# --- Managed Redis (cache) ----------------------------------------------------
+# --- Managed Redis (cache, cluster mode — CHOS-302) ---------------------------
 variable "redis_node_type" {
   description = "ElastiCache node type for the application cache Redis."
   type        = string
   default     = "cache.t3.small"
+}
+
+variable "redis_cache_shards" {
+  description = "Number of shards (node groups) for the cluster-mode cache Redis."
+  type        = number
+  default     = 3
+}
+
+variable "redis_cache_replicas_per_shard" {
+  description = "Read replicas per shard (intra-shard failover) in prod."
+  type        = number
+  default     = 1
+}
+
+variable "redis_cluster_parameter_group" {
+  description = "Cluster-mode-enabled ElastiCache parameter group."
+  type        = string
+  default     = "default.redis7.cluster.on"
 }
 
 # --- Message broker (arq job queue, CHOS-202) ---------------------------------

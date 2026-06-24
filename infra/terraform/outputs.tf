@@ -32,9 +32,9 @@ output "pgbouncer_service" {
   value       = "${kubernetes_service.pgbouncer.metadata[0].name}.${var.pgbouncer_namespace}.svc:6432"
 }
 
-output "redis_cache_endpoint" {
-  description = "Primary endpoint for the application cache Redis."
-  value       = aws_elasticache_replication_group.cache.primary_endpoint_address
+output "redis_cache_configuration_endpoint" {
+  description = "Cluster configuration endpoint for the cache Redis (CHOS-302). Feed into REDIS_URL with REDIS_CLUSTER=1."
+  value       = aws_elasticache_replication_group.cache.configuration_endpoint_address
 }
 
 output "redis_broker_endpoint" {

@@ -6,14 +6,14 @@ from typing import Any, Callable, TypeVar
 
 from redis.exceptions import RedisError
 
-from core.redis_client import get_redis
+from core.redis_client import get_redis, iter_keys
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
 async def cache_get(key: str) -> Any | None:
-    r = get_redis()
+    r = await get_redis()
     if r is None:
         return None
     try:
@@ -26,7 +26,7 @@ async def cache_get(key: str) -> Any | None:
 
 
 async def cache_set(key: str, value: Any, ttl_seconds: int = 300) -> None:
-    r = get_redis()
+    r = await get_redis()
     if r is None:
         return
     try:
@@ -36,7 +36,7 @@ async def cache_set(key: str, value: Any, ttl_seconds: int = 300) -> None:
 
 
 async def cache_delete(key: str) -> None:
-    r = get_redis()
+    r = await get_redis()
     if r is None:
         return
     try:
@@ -46,17 +46,16 @@ async def cache_delete(key: str) -> None:
 
 
 async def cache_delete_pattern(pattern: str) -> None:
-    r = get_redis()
+    r = await get_redis()
     if r is None:
         return
     try:
-        cursor = 0
-        while True:
-            cursor, keys = await r.scan(cursor=cursor, match=pattern, count=100)
-            if keys:
-                await r.delete(*keys)
-            if cursor == 0:
-                break
+        # ``iter_keys`` scans every shard in cluster mode and the single instance
+        # otherwise (CHOS-302). In cluster mode the matched keys may live on
+        # different shards (different hash slots), so a multi-key DELETE could
+        # CROSSSLOT — delete one key at a time, which is slot-safe everywhere.
+        async for key in iter_keys(r, pattern):
+            await r.delete(key)
     except (RedisError, ConnectionError) as e:
         logger.debug("cache_delete_pattern failed (Redis unavailable): %s", e)
 

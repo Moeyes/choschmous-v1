@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     # Required (no default): the connection target for rate limiting / idempotency
     # / dashboard cache must be configured explicitly, not assumed to be localhost.
     REDIS_URL: str
+    # CHOS-302: run against a Redis Cluster (3 shards) instead of a single node.
+    # When true, redis_client builds a RedisCluster that discovers every shard
+    # from the seed REDIS_URL. Off in local dev (single Redis). The seed URL may
+    # point at any one shard; the client learns the rest of the topology.
+    REDIS_CLUSTER: bool = False
     # Build-time guard (CHOS-102): the destructive maintenance routes
     # (/maintenance/sync-schema, /maintenance/drop) are excluded from the prod
     # image unless this is explicitly enabled. Always available in local dev.

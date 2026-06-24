@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import HTTPException, Request, Response
 from redis.exceptions import RedisError
 
-from core.redis_client import get_redis
+from core.redis_client import get_redis, inmemory_fallback_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -85,18 +85,35 @@ class RateLimiter:
         client_ip = request.client.host if request.client else "unknown"
         key = self._key(client_ip, key_suffix)
 
-        # Try Redis (shared, accurate across workers). On ANY Redis failure fall
-        # back to the in-memory limiter so a Redis outage degrades the limiter
-        # instead of taking down login/uploads/etc. A 429 (HTTPException) from
+        # Try Redis (shared, accurate across workers). A 429 (HTTPException) from
         # the Redis path is a real limit hit and must propagate unchanged.
+        #
+        # On a Redis outage the behaviour depends on the environment (CHOS-302):
+        #   * local  → degrade to the per-process in-memory limiter so dev keeps
+        #     working without Redis.
+        #   * else   → fail CLOSED with 503. The per-process limiter is useless
+        #     across many workers, so silently degrading to it would drop the
+        #     control; in a Redis-Cluster deployment an outage is the rare case we
+        #     would rather surface than quietly run unprotected.
+        fallback_ok = inmemory_fallback_enabled()
         try:
             redis = await get_redis()
             if redis is not None:
                 return await self._check_redis(redis, key, response)
+            if not fallback_ok:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Rate limiting is temporarily unavailable. Please retry shortly.",
+                )
         except HTTPException:
             raise
         except (RedisError, ConnectionError, OSError, asyncio.TimeoutError) as exc:
             _warn_redis_unavailable(exc)
+            if not fallback_ok:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Rate limiting is temporarily unavailable. Please retry shortly.",
+                ) from exc
 
         return self._check_memory(key, response)
 
