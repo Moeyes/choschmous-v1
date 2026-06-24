@@ -10,12 +10,13 @@ name: Migrations
 #   3. alembic upgrade head                     → must be a clean no-op; this is
 #                                                 what catches a newly-added
 #                                                 migration that is broken
-#   4. alembic check (ADVISORY)                 → model/metadata drift. Non-
-#                                                 blocking: autogenerate currently
-#                                                 reports a cosmetic enum
-#                                                 `schema='public'` diff on
-#                                                 users.role. Flip to a hard gate
-#                                                 once that noise is resolved.
+#   4. alembic check (BLOCKING gate)            → model/metadata drift. Hard gate
+#                                                 as of CHOS-305: the prior
+#                                                 cosmetic enum `schema='public'`
+#                                                 diff on users.role was resolved
+#                                                 (dropped the explicit schema in
+#                                                 the model), so any new drift now
+#                                                 fails the build.
 
 on:
   pull_request:
@@ -77,6 +78,5 @@ jobs:
         run: uv run alembic stamp head
       - name: alembic upgrade head (must be a clean no-op)
         run: uv run alembic upgrade head
-      - name: alembic check (model/metadata drift)
+      - name: alembic check (model/metadata drift — BLOCKING, CHOS-305)
         run: uv run alembic check
-        continue-on-error: true # advisory — see header note (cosmetic enum diff)

@@ -1,6 +1,7 @@
 from .user import User
 from .refresh_token import RefreshToken
 from .pii_access_log import PiiAccessLog
+from .audit_log import AuditLog
 from .enroll import Enroll
 from .athletes import athletes
 from .leader import leader
@@ -25,6 +26,7 @@ __all__ = [
     "User",
     "RefreshToken",
     "PiiAccessLog",
+    "AuditLog",
     "Enroll",
     "athletes",
     "leader",

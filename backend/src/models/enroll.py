@@ -1,4 +1,14 @@
-from sqlalchemy import Integer, String, Enum, DateTime, func, ForeignKey, Date, Computed
+from sqlalchemy import (
+    CheckConstraint,
+    Integer,
+    String,
+    Enum,
+    DateTime,
+    func,
+    ForeignKey,
+    Date,
+    Computed,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -16,6 +26,28 @@ from src.models.enum.user import IdDocumentType, genderEnum
 
 class Enroll(Base):  # haven't add phone number yet (check later)
     __tablename__ = "enrollments"
+
+    # CHOS-305 data-integrity CHECK constraints:
+    #  * ck_enroll_dob_range  — date_of_birth within a sane window (immutable
+    #    bounds; an upper bound vs now() isn't allowed in a CHECK).
+    #  * ck_enroll_phone_nonempty — phone is not blank/whitespace.
+    #
+    # NB: there is intentionally NO person-identity UNIQUE here. `enrollments` is
+    # a per-REGISTRATION snapshot (a new row per registration), not a deduplicated
+    # person master, and the app deliberately allows the same person across events
+    # (and an explicit per-event `force` override). The enrollment "natural key"
+    # that IS unique lives on athlete_participation (uq_athlete_participation_*):
+    # the same athlete record may not be linked twice to one event/sport/category.
+    __table_args__ = (
+        CheckConstraint(
+            "date_of_birth >= DATE '1900-01-01' AND date_of_birth <= DATE '2100-01-01'",
+            name="ck_enroll_dob_range",
+        ),
+        CheckConstraint(
+            "char_length(btrim(phonenumber)) > 0",
+            name="ck_enroll_phone_nonempty",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 

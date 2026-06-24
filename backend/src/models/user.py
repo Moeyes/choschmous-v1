@@ -68,7 +68,11 @@ class User(Base):
             UserRole,
             values_callable=lambda enum: [e.value for e in enum],
             name="user_role",
-            schema="public",
+            # NB: no explicit schema — "public" is the default, and stating it
+            # made autogenerate report a phantom modify_type (reflected type
+            # carries no schema), which kept `alembic check` permanently dirty.
+            # Dropping it is metadata-only (the enum already lives in public),
+            # and clears the drift so the CHOS-305 gate can be blocking.
         ),
         nullable=False,
         server_default="organization",

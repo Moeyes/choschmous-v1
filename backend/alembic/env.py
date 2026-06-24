@@ -1,6 +1,7 @@
 import asyncio
 import os
 from logging.config import fileConfig
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 from sqlalchemy import pool
@@ -21,11 +22,16 @@ target_metadata = Base.metadata
 
 # Override sqlalchemy.url from environment (Alembic runs standalone, not via the app)
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
+# Quote user/pass so an injected secret with special characters (@, !, :, etc.)
+# — e.g. a Vault-minted DB password (CHOS-201) — can't break the URI parser.
+# Mirrors core/database.py; without this the migration gate fails on such creds.
 DB_URL = (
-    f"postgresql+asyncpg://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}"
+    f"postgresql+asyncpg://{quote(os.getenv('DB_USER', ''))}:{quote(os.getenv('DB_PASS', ''))}"
     f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 )
-config.set_main_option("sqlalchemy.url", DB_URL)
+# Escape '%' as '%%' so a percent-encoded credential isn't mangled by
+# ConfigParser's interpolation (no-op for simple passwords like CI's).
+config.set_main_option("sqlalchemy.url", DB_URL.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:

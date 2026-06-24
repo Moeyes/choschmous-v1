@@ -26,7 +26,15 @@ class PiiAccessLog(Base):
         index=True,
     )
     actor_role: Mapped[str] = mapped_column(String(32), nullable=False)
-    target_enroll_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    # CHOS-305: FK to the enrollment whose PII was revealed. SET NULL + nullable
+    # so the audit record SURVIVES deletion of the enrollment (an audit log must
+    # outlive the data it governs), mirroring actor_user_id above.
+    target_enroll_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("enrollments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     # Comma-separated field names revealed (e.g. "phone"). Never the values.
     fields: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
