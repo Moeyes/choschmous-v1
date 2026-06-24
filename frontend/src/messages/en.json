@@ -229,7 +229,19 @@
     "forgotPassword": "Forgot password?",
     "forgotPasswordHelp": "Contact your administrator for help.",
     "capsLockOn": "Caps Lock is on",
-    "accountLocked": "Account temporarily locked or too many attempts. Please try again later."
+    "accountLocked": "Account temporarily locked or too many attempts. Please try again later.",
+    "mfaTitle": "Two-factor authentication",
+    "mfaSubtitle": "Enter the code from your authenticator app to finish signing in",
+    "mfaCode": "Verification code",
+    "mfaCodePlaceholder": "123456",
+    "mfaRecoveryCode": "Recovery code",
+    "mfaRecoveryPlaceholder": "XXXXX-XXXXX",
+    "mfaVerify": "Verify",
+    "mfaVerifying": "Verifying...",
+    "mfaUseRecovery": "Use a recovery code instead",
+    "mfaUseAuthenticator": "Use your authenticator app instead",
+    "mfaBack": "Back to sign in",
+    "mfaEnrollRequired": "Your account requires two-factor authentication. Please set it up in account settings or contact your administrator."
   },
   "dashboard": {
     "title": "Dashboard",

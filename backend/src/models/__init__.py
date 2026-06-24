@@ -1,4 +1,5 @@
 from .user import User
+from .user_mfa import UserMfa
 from .refresh_token import RefreshToken
 from .pii_access_log import PiiAccessLog
 from .audit_log import AuditLog
@@ -24,6 +25,7 @@ from .category_survey_review import category_survey_review
 
 __all__ = [
     "User",
+    "UserMfa",
     "RefreshToken",
     "PiiAccessLog",
     "AuditLog",

@@ -15,6 +15,7 @@ import {
     refreshAccessToken,
     getCurrentUser,
 } from '@/core/auth/services';
+import { MfaMethod, MfaRequiredError, verifyMfaLogin } from '@/core/auth/mfa';
 import { queryClient } from '@/core/api/queryClient';
 import { logger } from '@/core/lib/logger';
 import { isAccessTokenExpired, clearAccessTokenExpiry } from '@/core/auth/tokenExpiry';
@@ -39,6 +40,7 @@ type Action =
     | { type: 'SET_USER'; user: User; role: UserRole }
     | { type: 'SET_ERROR'; error: string }
     | { type: 'CLEAR_ERROR' }
+    | { type: 'STOP_LOADING' }
     | { type: 'LOGOUT' };
 
 const EMPTY: AuthState = {
@@ -52,6 +54,9 @@ function reducer(state: AuthState, action: Action): AuthState {
         case 'SET_USER':    return { ...EMPTY, isAuthenticated: true, user: action.user, role: action.role };
         case 'SET_ERROR':   return { ...state, isLoading: false, error: action.error };
         case 'CLEAR_ERROR': return { ...state, error: null };
+        // Settle out of the loading state WITHOUT an error — used when login is
+        // suspended awaiting a second factor (an MFA challenge is not a failure).
+        case 'STOP_LOADING': return { ...state, isLoading: false, error: null };
         case 'LOGOUT':      return { ...EMPTY };
         default:            return state;
     }
@@ -161,10 +166,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             dispatch({ type: 'SET_USER', user, role });
             return role;
         } catch (err) {
+            // An MFA challenge is not a login failure — the password was correct,
+            // we just need the second factor. Settle out of loading (no error
+            // banner) and let the login UI render the second-factor step.
+            if (err instanceof MfaRequiredError) {
+                dispatch({ type: 'STOP_LOADING' });
+                throw err;
+            }
             dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : 'Login failed' });
             throw err;
         }
     }, []);
+
+    const completeMfa = useCallback(
+        async (mfaToken: string, method: MfaMethod, code: string): Promise<UserRole> => {
+            dispatch({ type: 'LOADING' });
+            try {
+                // Verify the second factor (backend sets the session cookies on
+                // success), then resolve the session the same way `login` does.
+                await verifyMfaLogin({ mfaToken, method, code });
+                const user = await getCurrentUser();
+                const role = normalizeRole(user.role as unknown as string);
+                dispatch({ type: 'SET_USER', user, role });
+                return role;
+            } catch (err) {
+                dispatch({
+                    type: 'SET_ERROR',
+                    error: err instanceof Error ? err.message : 'Verification failed',
+                });
+                throw err;
+            }
+        },
+        [],
+    );
 
     const logout = useCallback(async () => {
         try { await logoutUser(); } catch { /* intentional no-op */ }
@@ -207,7 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return (
-        <AuthContext.Provider value={{ ...state, login, logout, refresh, clearError, hasRole, canAccess }}>
+        <AuthContext.Provider value={{ ...state, login, completeMfa, logout, refresh, clearError, hasRole, canAccess }}>
             {children}
         </AuthContext.Provider>
     );

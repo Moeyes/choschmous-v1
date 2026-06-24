@@ -100,6 +100,50 @@ class Settings(BaseSettings):
     # human-readable logs in local dev.
     LOG_JSON: bool = True
 
+    # ── Multi-factor authentication (CHOS-401) ──────────────────────────────
+    # Issuer label shown in the authenticator app (the "Account" prefix in the
+    # otpauth:// provisioning URI / QR code).
+    MFA_ISSUER: str = "MoEYS Sports"
+    # Roles for which a second factor is offered/enforced. Privileged roles only —
+    # plain ORGANIZATION users are out of scope.
+    MFA_REQUIRED_ROLES: str = "super_admin,admin,federation"
+    # When True, a user in a required role who has NOT enrolled a second factor is
+    # blocked from completing login until they enrol (hard enforcement). Default
+    # False so enrolment is opt-in and pre-existing accounts are never locked out;
+    # an enrolled user is ALWAYS challenged regardless of this flag.
+    # TODO(ops): flip MFA_ENFORCED=1 in the government production environment once
+    # all privileged operators have enrolled.
+    MFA_ENFORCED: bool = False
+    # Lifetime of the short-lived "password verified, awaiting second factor"
+    # token returned by /auth/login and consumed by /auth/mfa/verify.
+    MFA_CHALLENGE_EXPIRE_MINUTES: int = 5
+    # Relying-Party id/name for WebAuthn (the registrable domain). Defaults are
+    # dev-only; set WEBAUTHN_RP_ID to the public host in deployed envs.
+    # TODO(infra): set WEBAUTHN_RP_ID / WEBAUTHN_RP_ORIGIN to the production host.
+    WEBAUTHN_RP_ID: str = "localhost"
+    WEBAUTHN_RP_NAME: str = "MoEYS Sports"
+    WEBAUTHN_RP_ORIGIN: str = "http://localhost:3003"
+
+    # ── OIDC login for a government IdP (CHOS-401) ──────────────────────────
+    # Authorization-code + PKCE flow against the national IdP. All fields are
+    # optional: when OIDC_CLIENT_ID / OIDC_DISCOVERY_URL are unset the OIDC routes
+    # return 503 (feature disabled) and password+MFA login is unaffected.
+    # TODO(infra/IdP): register this app with the government IdP and inject
+    # OIDC_CLIENT_ID / OIDC_CLIENT_SECRET (Vault) + OIDC_DISCOVERY_URL.
+    OIDC_ENABLED: bool = False
+    OIDC_DISCOVERY_URL: str | None = None
+    OIDC_CLIENT_ID: str | None = None
+    OIDC_CLIENT_SECRET: str | None = None
+    OIDC_REDIRECT_URI: str | None = None
+    # Comma-separated scopes; "openid" is mandatory and always included.
+    OIDC_SCOPES: str = "openid,email,profile"
+
+    @property
+    def mfa_required_roles(self) -> set[str]:
+        return {
+            r.strip().lower() for r in self.MFA_REQUIRED_ROLES.split(",") if r.strip()
+        }
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,

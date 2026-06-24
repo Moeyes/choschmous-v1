@@ -3,9 +3,11 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLogin } from '@/core/auth/hooks';
+import { UserRole } from '@/core/auth/types';
+import { MfaMethod } from '@/core/auth/mfa';
 import { Button } from '@/shared/ui/button';
 import { Input, LanguageSwitcher } from '@/shared/ui';
-import { AlertCircle, LogIn, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, LogIn, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { ROLE_DEFAULT_ROUTE } from '@/core/config/constants';
 import { useTranslations } from 'next-intl';
 
@@ -14,7 +16,10 @@ function LoginFormInner() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [capsLockOn, setCapsLockOn] = useState(false);
-    const { login, isPending, error, status, clearError } = useLogin();
+    const [mfaCode, setMfaCode] = useState('');
+    const [useRecovery, setUseRecovery] = useState(false);
+    const { login, submitMfa, cancelMfa, mfaChallenge, isPending, error, status, clearError } =
+        useLogin();
     const router = useRouter();
     const searchParams = useSearchParams();
     const t = useTranslations('auth');
@@ -26,17 +31,35 @@ function LoginFormInner() {
         setCapsLockOn(e.getModifierState('CapsLock'));
     };
 
+    const goAfterLogin = (role: UserRole) => {
+        const returnUrl = searchParams.get('returnUrl');
+        const destination = returnUrl
+            ? decodeURIComponent(returnUrl)
+            : ROLE_DEFAULT_ROUTE[role] ?? '/dashboard';
+        router.push(destination);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         clearError();
         const role = await login(username, password);
-        if (role) {
-            const returnUrl = searchParams.get('returnUrl');
-            const destination = returnUrl
-                ? decodeURIComponent(returnUrl)
-                : ROLE_DEFAULT_ROUTE[role] ?? '/dashboard';
-            router.push(destination);
-        }
+        // A null role with an active challenge means the password was correct but
+        // a second factor is now required — the MFA panel renders below.
+        if (role) goAfterLogin(role);
+    };
+
+    const handleVerify = async (e: React.FormEvent) => {
+        e.preventDefault();
+        clearError();
+        const method: MfaMethod = useRecovery ? 'recovery' : 'totp';
+        const role = await submitMfa(method, mfaCode.trim());
+        if (role) goAfterLogin(role);
+    };
+
+    const handleCancelMfa = () => {
+        setMfaCode('');
+        setUseRecovery(false);
+        cancelMfa();
     };
 
     return (
@@ -48,11 +71,19 @@ function LoginFormInner() {
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center gap-2 mb-4">
                         <div className="p-3 bg-primary/10 rounded-lg">
-                            <LogIn className="w-6 h-6 text-primary" />
+                            {mfaChallenge ? (
+                                <ShieldCheck className="w-6 h-6 text-primary" />
+                            ) : (
+                                <LogIn className="w-6 h-6 text-primary" />
+                            )}
                         </div>
                     </div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">{t('welcomeBack')}</h1>
-                    <p className="text-muted-foreground">{t('signInSubtitle')}</p>
+                    <h1 className="text-3xl font-bold text-foreground mb-2">
+                        {mfaChallenge ? t('mfaTitle') : t('welcomeBack')}
+                    </h1>
+                    <p className="text-muted-foreground">
+                        {mfaChallenge ? t('mfaSubtitle') : t('signInSubtitle')}
+                    </p>
                 </div>
 
                 <div className="bg-card rounded-lg shadow-sm border border-border p-8">
@@ -66,6 +97,80 @@ function LoginFormInner() {
                         </div>
                     )}
 
+                    {mfaChallenge ? (
+                        mfaChallenge.enrollmentRequired ? (
+                            <div className="space-y-5">
+                                <p className="text-sm text-muted-foreground">
+                                    {t('mfaEnrollRequired')}
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleCancelMfa}
+                                    className="w-full h-11 font-medium"
+                                >
+                                    {t('mfaBack')}
+                                </Button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleVerify} className="space-y-5">
+                                <div>
+                                    <label
+                                        htmlFor="mfa-code"
+                                        className="block text-sm font-medium text-foreground mb-2"
+                                    >
+                                        {useRecovery ? t('mfaRecoveryCode') : t('mfaCode')}
+                                    </label>
+                                    <Input
+                                        id="mfa-code"
+                                        type="text"
+                                        inputMode={useRecovery ? 'text' : 'numeric'}
+                                        value={mfaCode}
+                                        onChange={(e) => setMfaCode(e.target.value)}
+                                        placeholder={
+                                            useRecovery
+                                                ? t('mfaRecoveryPlaceholder')
+                                                : t('mfaCodePlaceholder')
+                                        }
+                                        autoComplete="one-time-code"
+                                        autoFocus
+                                        required
+                                    />
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    disabled={isPending || !mfaCode.trim()}
+                                    className="w-full h-11 font-medium"
+                                >
+                                    {isPending ? t('mfaVerifying') : t('mfaVerify')}
+                                </Button>
+
+                                <div className="flex items-center justify-between text-sm">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setUseRecovery((v) => !v);
+                                            setMfaCode('');
+                                            clearError();
+                                        }}
+                                        className="font-medium text-primary hover:underline"
+                                    >
+                                        {useRecovery
+                                            ? t('mfaUseAuthenticator')
+                                            : t('mfaUseRecovery')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleCancelMfa}
+                                        className="text-muted-foreground hover:text-foreground"
+                                    >
+                                        {t('mfaBack')}
+                                    </button>
+                                </div>
+                            </form>
+                        )
+                    ) : (
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-foreground mb-2">
@@ -129,11 +234,14 @@ function LoginFormInner() {
                             {isPending ? t('signingIn') : t('signIn')}
                         </Button>
                     </form>
+                    )}
 
+                    {!mfaChallenge && (
                     <p className="mt-6 text-center text-sm text-muted-foreground">
                         <span className="font-medium text-foreground">{t('forgotPassword')}</span>{' '}
                         {t('forgotPasswordHelp')}
                     </p>
+                    )}
                 </div>
             </div>
         </div>

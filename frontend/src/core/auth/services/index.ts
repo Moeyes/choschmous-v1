@@ -2,6 +2,7 @@ import apiClient from '@/core/api/client';
 import unauthenticatedApiClient from '@/core/api/unauthenticatedApiClient';
 import { LoginRequest, User } from '@/core/auth/types';
 import { recordAccessTokenExpiry } from '@/core/auth/tokenExpiry';
+import { isMfaChallenge, MfaLoginChallenge, MfaRequiredError } from '@/core/auth/mfa';
 
 const BASE = '/api/v1/auth';
 
@@ -20,7 +21,16 @@ type AuthResponse = {
  * token's expiry (not the token) in the body.
  */
 export async function loginUser(credentials: LoginRequest): Promise<AuthResponse> {
-    const { data } = await apiClient.post<AuthResponse>(`${BASE}/login`, credentials);
+    const { data } = await apiClient.post<AuthResponse | MfaLoginChallenge>(
+        `${BASE}/login`,
+        credentials,
+    );
+    // MFA-enrolled accounts get a challenge instead of a session: no cookies were
+    // set, so surface it as a typed signal the login UI can branch on rather than
+    // letting the caller proceed to /me (which would 401).
+    if (isMfaChallenge(data)) {
+        throw new MfaRequiredError(data);
+    }
     // Record the expiry so the next page load knows whether to refresh before /me.
     recordAccessTokenExpiry(data.access_token_expires_at);
     return data;

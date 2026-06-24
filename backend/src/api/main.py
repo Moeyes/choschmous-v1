@@ -12,6 +12,8 @@ from .v1.routes import events as v1_events
 from .v1.routes import organization as v1_organization
 from .v1.routes import participant as v1_reregister
 from .v1.routes import auth as v1_auth
+from .v1.routes import mfa as v1_mfa
+from .v1.routes import oidc as v1_oidc
 from .v1.routes import dashboard as v1_dashboard
 from .v1.routes import maintenance as v1_maintenance
 from .v1.routes import cloudinary as v1_cloudinary
@@ -42,6 +44,11 @@ api_router = APIRouter()
 # Public — no auth required
 api_router.include_router(v1_root.router, prefix=V1 + "/root", tags=["root"])
 api_router.include_router(v1_auth.router, prefix=V1 + "/auth", tags=["auth"])
+# MFA (CHOS-401): /verify is the public second leg of login (authenticated by the
+# challenge token); the management endpoints declare get_current_user themselves.
+api_router.include_router(v1_mfa.router, prefix=V1 + "/auth/mfa", tags=["mfa"])
+# OIDC login for the government IdP (CHOS-401). 503 when OIDC_* is unconfigured.
+api_router.include_router(v1_oidc.router, prefix=V1 + "/auth/oidc", tags=["oidc"])
 
 # Protected — require valid access_token cookie
 api_router.include_router(

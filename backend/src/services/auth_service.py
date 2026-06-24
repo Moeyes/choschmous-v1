@@ -24,6 +24,8 @@ from core.csrf import CSRF_COOKIE_NAME
 
 from src.models.user import User
 from src.models.refresh_token import RefreshToken
+from src.services.mfa import challenge as mfa_challenge
+from src.services.mfa.service import MfaService, role_requires_mfa
 
 
 # A precomputed bcrypt hash used to equalize login timing when the username does
@@ -143,32 +145,68 @@ class AuthService:
 
         role_value = user.role.value if hasattr(user.role, "value") else str(user.role)
 
-        access_token = create_access_token(
-            sub=str(user.id),
-            role=role_value,
-        )
+        # ── Second factor (CHOS-401) ────────────────────────────────────────
+        # Password is the FIRST factor. If this user has an active MFA enrolment,
+        # do NOT issue session cookies yet — return a short-lived challenge token
+        # the client trades for cookies at /auth/mfa/verify with a second factor.
+        mfa = MfaService(self.db)
+        if await mfa.login_requires_second_factor(user):
+            return {
+                "mfa_required": True,
+                "mfa_token": mfa_challenge.create_challenge_token(
+                    sub=str(user.id), role=role_value
+                ),
+                "methods": await self._mfa_methods(mfa, user.id),
+            }
+        # Hard enforcement: a privileged-role user who has NOT enrolled is sent to
+        # enrol before any session is granted (only when MFA_ENFORCED is on).
+        if (
+            settings.MFA_ENFORCED
+            and role_requires_mfa(user)
+            and not await mfa.is_enrolled(user.id)
+        ):
+            return {
+                "mfa_required": True,
+                "mfa_enrollment_required": True,
+                "mfa_token": mfa_challenge.create_challenge_token(
+                    sub=str(user.id), role=role_value
+                ),
+                "methods": [],
+            }
 
-        refresh_token, jti = create_refresh_token(
-            sub=str(user.id),
-            role=role_value,
-        )
+        return await self._issue_session(user, role_value, response)
+
+    async def _mfa_methods(self, mfa: MfaService, user_id) -> list[str]:
+        record = await mfa.get(user_id)
+        methods: list[str] = []
+        if record and record.totp_enabled:
+            methods.append("totp")
+        if record and record.webauthn_enabled:
+            methods.append("webauthn")
+        if record and record.recovery_codes:
+            methods.append("recovery")
+        return methods
+
+    async def _issue_session(self, user: User, role_value: str, response: Response):
+        """Mint the access+refresh pair, persist the refresh record, and set the
+        auth cookies. Shared by password-only login and the post-MFA verify path
+        so both flows issue an identical session."""
+        access_token = create_access_token(sub=str(user.id), role=role_value)
+        refresh_token, jti = create_refresh_token(sub=str(user.id), role=role_value)
 
         expires_at = datetime.now(timezone.utc) + timedelta(
             days=settings.REFRESH_TOKEN_EXPIRE_DAYS
         )
-
         token_record = RefreshToken(
             user_id=user.id,
             jti=jti,
             token_hash=hash_token_value(refresh_token),
             expires_at=expires_at,
         )
-
         self.db.add(token_record)
         await self.db.commit()
 
         self._set_auth_cookies(response, access_token, refresh_token)
-
         return {
             "detail": "Authenticated successfully",
             # Epoch seconds when the access_token cookie expires. The token itself
@@ -176,6 +214,76 @@ class AuthService:
             # the client refresh just-in-time instead of eating a 401 on load.
             "access_token_expires_at": self._access_expires_at(),
         }
+
+    async def verify_mfa(
+        self,
+        *,
+        mfa_token: str | None,
+        method: str,
+        code: str | None,
+        response: Response,
+        webauthn_credential: dict | None = None,
+        webauthn_challenge: str | None = None,
+    ):
+        """Second leg of an MFA login: validate the challenge token + the supplied
+        second factor, then issue the real session. ``method`` is
+        ``totp`` | ``recovery`` | ``webauthn``."""
+        if not mfa_token:
+            raise HTTPException(status_code=401, detail="Missing MFA challenge token")
+        try:
+            claims = mfa_challenge.decode_challenge_token(mfa_token)
+        except InvalidTokenError:
+            raise HTTPException(
+                status_code=401, detail="MFA challenge expired or invalid"
+            )
+
+        sub = claims.get("sub")
+        result = await self.db.execute(
+            select(User).where(User.id == uuid.UUID(sub))
+        )
+        user = result.scalars().first()
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        mfa = MfaService(self.db)
+        ok = False
+        if method == "totp":
+            ok = await mfa.verify_totp(user.id, code or "")
+        elif method == "recovery":
+            ok = await mfa.verify_recovery(user.id, code or "")
+        elif method == "webauthn":
+            ok = await mfa.verify_webauthn_assertion(
+                user.id,
+                credential=webauthn_credential or {},
+                expected_challenge=webauthn_challenge or "",
+            )
+        else:
+            raise HTTPException(status_code=400, detail="Unknown MFA method")
+
+        if not ok:
+            raise HTTPException(status_code=401, detail="Invalid second factor")
+
+        role_value = user.role.value if hasattr(user.role, "value") else str(user.role)
+        return await self._issue_session(user, role_value, response)
+
+    async def complete_oidc_login(self, *, email: str, response: Response):
+        """Issue a session for a user identified by a verified OIDC email claim.
+
+        Deliberately does NOT auto-provision: the email must already map to a
+        local account (operators are onboarded explicitly). Unknown emails get a
+        401 rather than silently creating privileged accounts."""
+        if not email:
+            raise HTTPException(status_code=401, detail="OIDC token missing email")
+        result = await self.db.execute(
+            select(User).where(User.email == email.lower())
+        )
+        user = result.scalars().first()
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=401, detail="No active account for this identity"
+            )
+        role_value = user.role.value if hasattr(user.role, "value") else str(user.role)
+        return await self._issue_session(user, role_value, response)
 
     @staticmethod
     def _access_expires_at() -> int:

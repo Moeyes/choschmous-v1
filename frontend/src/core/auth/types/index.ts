@@ -50,6 +50,14 @@ export interface AuthState {
 
 export interface AuthContextType extends AuthState {
     login:      (username: string, password: string) => Promise<UserRole>;
+    // Second leg of an MFA login: verify the second factor against the challenge
+    // token returned by `login` (which throws MfaRequiredError when MFA is on),
+    // then establish the session. See core/auth/mfa.ts.
+    completeMfa: (
+        mfaToken: string,
+        method: import('@/core/auth/mfa').MfaMethod,
+        code: string,
+    ) => Promise<UserRole>;
     logout:     () => Promise<void>;
     refresh:    () => Promise<void>;
     clearError: () => void;
