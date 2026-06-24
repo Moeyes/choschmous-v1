@@ -50,3 +50,14 @@ podAnnotations: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+# CHOS-303: Origin secret injected by Vault Agent at runtime.
+# Cloudflare sends this on every request; middleware rejects requests without it.
+env:
+  - name: CF_ORIGIN_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: moeys-cloudflare-secret
+        key: cf_origin_secret
+  - name: NODE_ENV
+    value: "production"

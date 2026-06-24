@@ -146,3 +146,58 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# ── Cloudflare (CHOS-303) ────────────────────────────────────────────────────
+
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token (Zone:Edit, Firewall Services:Edit, Cache Purge:Purge). From Vault."
+  type        = string
+  sensitive   = true
+  default     = null  # Injected by Vault Agent at runtime; never in tfvars
+}
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare Account ID (not sensitive — visible in dashboard URL)"
+  type        = string
+  default     = ""  # TODO(infra): set in terraform.tfvars
+}
+
+variable "cloudflare_zone_name" {
+  description = "Primary DNS zone (e.g. moeys.gov.kh)"
+  type        = string
+  default     = ""  # TODO(infra): set in terraform.tfvars
+}
+
+variable "cf_origin_secret" {
+  description = ">=32-char random secret shared between Cloudflare (origin rule) and Next.js middleware. From Vault."
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "bff_alb_dns" {
+  description = "AWS ALB DNS name for the BFF (Next.js) service"
+  type        = string
+  default     = ""  # Exported from EKS/ALB Terraform, or set manually
+}
+
+variable "logs_s3_bucket" {
+  description = "S3 bucket name for Cloudflare Logpush (security events + HTTP logs)"
+  type        = string
+  default     = ""  # TODO(infra): create bucket in s3.tf
+}
+
+variable "vpc_cidr" {
+  description = "VPC CIDR block (for internal health check ingress rule)"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+# NOTE: `environment` is already declared at the top of this file (no default,
+# set per-env). A second declaration here would be a duplicate-variable error.
+
+variable "enable_bot_management" {
+  description = "Enable full Cloudflare Bot Management (Enterprise). Set false for Pro/Business (Super Bot Fight Mode only)."
+  type        = bool
+  default     = false
+}

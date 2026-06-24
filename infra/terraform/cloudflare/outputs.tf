@@ -1,16 +1,16 @@
-# CHOS-303: outputs (no secrets).
-
-output "app_record_hostname" {
-  description = "Proxied hostname served by Cloudflare."
-  value       = cloudflare_record.app.hostname
+output "zone_id" {
+  description = "Cloudflare Zone ID — needed for external Terraform modules"
+  value       = cloudflare_zone.moeys.id
+  sensitive   = false
 }
 
-output "managed_waf_ruleset_id" {
-  description = "ID of the managed WAF ruleset (OWASP CRS + Cloudflare Managed)."
-  value       = cloudflare_ruleset.managed_waf.id
+output "nameservers" {
+  description = "Cloudflare nameservers — delegate DNS from registrar to these"
+  value       = cloudflare_zone.moeys.name_servers
 }
 
-output "origin_lock_header" {
-  description = "Header the origin must verify to enforce the edge lock."
-  value       = var.origin_lock_header
+output "cf_origin_secret_reminder" {
+  description = "Reminder: cf_origin_secret is in Vault at secret/moeys/cloudflare"
+  value       = "secret/moeys/cloudflare/cf_origin_secret"
+  sensitive   = false
 }

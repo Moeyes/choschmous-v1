@@ -1,41 +1,17 @@
-# CHOS-303: origin lock — ensure the origin only ever serves traffic that came
-# THROUGH Cloudflare (so attackers can't hit the ALB directly and skip the WAF).
+# CHOS-303: origin lock (mTLS layer).
 #
-# Two independent layers (defense in depth):
-#   1. Authenticated Origin Pulls (mTLS) — Cloudflare presents a client cert the
-#      origin verifies.
-#   2. A shared-secret header Cloudflare injects on every edge->origin request;
-#      the origin rejects any request missing/with the wrong value.
+# Complements the shared-secret header injected in main.tf
+# (cloudflare_ruleset.inject_origin_secret → X-CF-Origin-Secret, verified by the
+# BFF middleware). This adds the SECOND, independent layer: Authenticated Origin
+# Pulls (mTLS) — Cloudflare presents a client certificate the origin verifies, so
+# a request that did not come through Cloudflare cannot complete the TLS handshake.
 #
 # TODO(infra) — the THIRD layer lives on the origin, not here: restrict the
 # ALB/ingress security group to Cloudflare's published IP ranges
-# (https://www.cloudflare.com/ips/) and have the app/ingress verify the
-# `${var.origin_lock_header}` header equals the injected secret.
+# (https://www.cloudflare.com/ips/), and configure the ALB/origin to require +
+# verify the Cloudflare Authenticated Origin Pull CA certificate.
 
 resource "cloudflare_authenticated_origin_pulls" "this" {
-  zone_id = var.zone_id
+  zone_id = cloudflare_zone.moeys.id
   enabled = true
-}
-
-# Inject the shared secret on every request forwarded to the origin.
-resource "cloudflare_ruleset" "origin_lock_header" {
-  zone_id     = var.zone_id
-  name        = "moeys-origin-lock"
-  description = "Inject shared-secret header on edge->origin requests"
-  kind        = "zone"
-  phase       = "http_request_late_transform"
-
-  rules {
-    ref         = "set_origin_lock_header"
-    description = "Set ${var.origin_lock_header}"
-    expression  = "true"
-    action      = "rewrite"
-    action_parameters {
-      headers {
-        name      = var.origin_lock_header
-        operation = "set"
-        value     = var.origin_lock_secret
-      }
-    }
-  }
 }

@@ -1,24 +1,35 @@
-# CHOS-303: inputs. Real values come from a per-env *.tfvars (never committed);
-# secrets are injected from the environment / a secret store.
+# CHOS-303: inputs for the Cloudflare edge module. Real values come from a
+# per-env *.tfvars (never committed); secrets are injected from the environment /
+# a secret store (Vault) and carry no default.
 
-variable "zone_id" {
-  description = "TODO(infra): Cloudflare Zone ID for the app domain."
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token (Zone:Edit, Firewall Services:Edit, Cache Rules:Edit, Bot Management:Edit). Injected from Vault — never committed."
+  type        = string
+  sensitive   = true
+}
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare Account ID (not secret — visible in the dashboard URL)."
   type        = string
 }
 
-variable "account_id" {
-  description = "TODO(infra): Cloudflare Account ID."
+variable "zone_name" {
+  description = "The DNS zone managed by Cloudflare (e.g. moeys.gov.kh)."
   type        = string
 }
 
-variable "app_hostname" {
-  description = "Public hostname served by Cloudflare (e.g. moeys.gov.kh)."
+variable "origin_alb_dns" {
+  description = "AWS ALB DNS name for the BFF origin Cloudflare proxies to."
   type        = string
 }
 
-variable "origin_hostname" {
-  description = "Origin hostname behind Cloudflare (the ingress/ALB DNS)."
+# Shared secret Cloudflare injects (X-CF-Origin-Secret) on every edge->origin
+# request; the BFF middleware rejects any request missing it, so traffic that
+# bypasses Cloudflare is dropped. >= 32 random chars; injected from Vault.
+variable "cf_origin_secret" {
+  description = "Shared origin-lock secret sent in X-CF-Origin-Secret. From Vault; never committed."
   type        = string
+  sensitive   = true
 }
 
 variable "environment" {
@@ -26,29 +37,19 @@ variable "environment" {
   type        = string
 }
 
-# Shared secret Cloudflare injects on every edge->origin request; the origin
-# rejects any request missing it, so traffic that bypasses Cloudflare is dropped.
-variable "origin_lock_secret" {
-  description = "TODO(infra): inject from a secret store (Vault/SM). The origin verifies this header."
+variable "enable_bot_management" {
+  description = "Enable Cloudflare Bot Management (Enterprise). false on Pro/Business (Super Bot Fight Mode only)."
+  type        = bool
+  default     = false
+}
+
+variable "logs_s3_bucket" {
+  description = "S3 bucket for Cloudflare Logpush (security events + sampled HTTP logs)."
   type        = string
-  sensitive   = true
 }
 
-variable "origin_lock_header" {
-  description = "Header name carrying the origin-lock secret."
+variable "aws_region" {
+  description = "AWS region of the Logpush destination bucket."
   type        = string
-  default     = "X-Edge-Auth"
-}
-
-# Edge rate limit (defense-in-depth on top of the app's Redis limiter, CHOS-302).
-variable "edge_rate_limit_requests" {
-  description = "Requests per period per client IP before the edge mitigates."
-  type        = number
-  default     = 600
-}
-
-variable "edge_rate_limit_period" {
-  description = "Rate-limit window in seconds (10, 60, 120, ...)."
-  type        = number
-  default     = 60
+  default     = "ap-southeast-1"
 }

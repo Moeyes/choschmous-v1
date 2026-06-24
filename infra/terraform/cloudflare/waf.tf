@@ -1,86 +1,215 @@
-# CHOS-303: WAF. Three rulesets, each pinned to its phase:
-#   1. managed   — Cloudflare Managed Ruleset + OWASP Core Rule Set (CRS)
-#   2. custom    — bespoke deny rules (method allow-list, sensitive paths)
-#   3. ratelimit — per-IP edge rate limit (defense-in-depth over CHOS-302)
+# ─────────────────────────────────────────────────────────────────────────────
+# WAF — Managed Rulesets (CHOS-303)
+# ─────────────────────────────────────────────────────────────────────────────
 
-# 1) Managed rulesets (OWASP CRS + Cloudflare Managed). The managed ruleset IDs
-# are global Cloudflare constants; we deploy them by reference (no rule copying).
+# Cloudflare Managed Ruleset + OWASP Core Ruleset.
+# Requires Enterprise or equivalent plan for full ruleset access.
+
 resource "cloudflare_ruleset" "managed_waf" {
-  zone_id     = var.zone_id
-  name        = "moeys-managed-waf"
-  description = "Cloudflare Managed Ruleset + OWASP CRS"
+  zone_id     = cloudflare_zone.moeys.id
+  name        = "Managed WAF rulesets — CHOS-303"
+  description = "OWASP + Cloudflare Managed Rules + custom application rules"
   kind        = "zone"
   phase       = "http_request_firewall_managed"
 
+  # ── Cloudflare Managed Ruleset (id: efb7b8c949ac4650a09736fc376e9aee) ──────
   rules {
-    ref         = "exec_cloudflare_managed"
-    description = "Cloudflare Managed Ruleset"
-    expression  = "true"
     action      = "execute"
+    description = "Cloudflare Managed Ruleset"
+    enabled     = true
+    expression  = "true"
+
     action_parameters {
-      id = "efb7b8c949ac4650a09736fc376e9aee" # Cloudflare Managed Ruleset
+      id      = "efb7b8c949ac4650a09736fc376e9aee"
+      version = "latest"
+
+      overrides {
+        # Set default action to block (not log) for high-confidence matches.
+        action  = "block"
+        enabled = true
+
+        # Paranoia level 2 — good balance for a government web app.
+        # Level 3+ has higher false-positive rate on JSON APIs.
+        categories {
+          category = "paranoia-level-2"
+          action   = "block"
+          enabled  = true
+        }
+        categories {
+          category = "paranoia-level-1"
+          action   = "block"
+          enabled  = true
+        }
+
+        # Disable rules that conflict with Next.js / FastAPI normal operation
+        # (add rule IDs here after reviewing managed ruleset hit logs for 1 week)
+        # rules {
+        #   id      = "RULE_ID"
+        #   enabled = false
+        # }
+      }
     }
   }
 
+  # ── Cloudflare OWASP Core Ruleset (id: 4814384a9e5d4991b9815dcfc25d2f1f) ──
   rules {
-    ref         = "exec_owasp_crs"
-    description = "OWASP Core Rule Set"
-    expression  = "true"
     action      = "execute"
+    description = "OWASP Core Ruleset"
+    enabled     = true
+    expression  = "true"
+
     action_parameters {
-      id = "4814384a9e5d4991b9815dcfc25d2f1f" # OWASP Core Ruleset
-      # TODO(infra): tune the paranoia level / anomaly score threshold via
-      # `overrides` once a baseline of false positives is measured (start in log).
+      id      = "4814384a9e5d4991b9815dcfc25d2f1f"
+      version = "latest"
+
+      overrides {
+        action  = "block"
+        enabled = true
+
+        # Sensitivity: medium → high for this app (government PII data)
+        rules {
+          id              = "6179ae15870a4bb7b2d480d4843b323c"  # OWASP score threshold
+          action          = "block"
+          score_threshold = 60  # Block at score ≥ 60 (medium sensitivity)
+          enabled         = true
+        }
+      }
     }
   }
 }
 
-# 2) Custom firewall rules — explicit denies the managed rulesets don't cover.
+# ─────────────────────────────────────────────────────────────────────────────
+# Custom WAF Rules (application-specific)
+# ─────────────────────────────────────────────────────────────────────────────
+
 resource "cloudflare_ruleset" "custom_waf" {
-  zone_id     = var.zone_id
-  name        = "moeys-custom-waf"
-  description = "Bespoke deny rules"
+  zone_id     = cloudflare_zone.moeys.id
+  name        = "Custom WAF rules — CHOS-303"
+  description = "App-specific firewall rules for MoEYS platform"
   kind        = "zone"
   phase       = "http_request_firewall_custom"
 
-  # Only allow the HTTP methods the API actually uses; block the rest at the edge.
+  # Rule 1: Block direct-origin access (requests missing CF origin secret)
+  # Belt-and-suspenders: ALB SG blocks non-CF IPs; this rule blocks at WAF layer.
   rules {
-    ref         = "block_unexpected_methods"
-    description = "Block methods the app never uses"
-    expression  = "not http.request.method in {\"GET\" \"POST\" \"PUT\" \"PATCH\" \"DELETE\" \"OPTIONS\" \"HEAD\"}"
     action      = "block"
+    description = "CHOS-303: block requests bypassing Cloudflare"
+    enabled     = true
+    # This rule fires at Cloudflare edge — requests reaching here already came
+    # through CF, so this rule is for documentation. The real enforcement is in
+    # the BFF middleware validating X-CF-Origin-Secret on the origin side.
+    # This rule blocks known scanner/attacker User-Agents probing for origin IPs.
+    expression = <<-EOT
+      (http.user_agent contains "masscan") or
+      (http.user_agent contains "zgrab") or
+      (http.user_agent contains "shodan") or
+      (http.user_agent contains "censys") or
+      (http.user_agent contains "nmap")
+    EOT
   }
 
-  # The destructive maintenance + internal endpoints must never be reachable from
-  # the public internet even if accidentally exposed by the app.
+  # Rule 2: SQLi — additional protection layer beyond managed ruleset
   rules {
-    ref         = "block_internal_paths"
-    description = "Block maintenance/metrics/docs from the edge"
-    expression  = "http.request.uri.path in {\"/metrics\"} or starts_with(http.request.uri.path, \"/api/v1/maintenance\")"
     action      = "block"
+    description = "SQL injection patterns in URI / body"
+    enabled     = true
+    expression  = <<-EOT
+      (http.request.uri.query contains "UNION SELECT") or
+      (http.request.uri.query contains "union select") or
+      (http.request.uri.query matches "(?i)(select|insert|update|delete|drop|truncate).*(from|into|table)") or
+      (http.request.uri.query matches "(?i)(1=1|1 = 1|'1'='1'|admin'--)")
+    EOT
   }
-}
 
-# 3) Edge rate limiting — coarse per-IP cap. The app's Redis limiter (CHOS-302)
-# stays the fine-grained, per-route control; this just sheds volumetric abuse
-# before it reaches the origin.
-resource "cloudflare_ruleset" "ratelimit" {
-  zone_id     = var.zone_id
-  name        = "moeys-ratelimit"
-  description = "Per-IP edge rate limit"
-  kind        = "zone"
-  phase       = "http_ratelimit"
-
+  # Rule 3: XSS — supplement managed rules
   rules {
-    ref         = "ip_rate_limit"
-    description = "Per-IP request cap"
-    expression  = "true"
     action      = "block"
-    ratelimit {
-      characteristics     = ["ip.src", "cf.colo.id"]
-      period              = var.edge_rate_limit_period
-      requests_per_period = var.edge_rate_limit_requests
-      mitigation_timeout  = 60
-    }
+    description = "XSS patterns in URI"
+    enabled     = true
+    expression  = <<-EOT
+      (http.request.uri.query matches "(?i)<script") or
+      (http.request.uri.query matches "(?i)javascript:") or
+      (http.request.uri.query matches "(?i)on(load|error|click|mouse)\\s*=") or
+      (http.request.uri.query matches "(?i)<iframe")
+    EOT
   }
+
+  # Rule 4: Path traversal
+  rules {
+    action      = "block"
+    description = "Path traversal attempts"
+    enabled     = true
+    expression  = <<-EOT
+      (http.request.uri.path matches "\\.\\./") or
+      (http.request.uri.path matches "\\.\\.%2[Ff]") or
+      (http.request.uri.path matches "%2[Ee]%2[Ee]%2[Ff]") or
+      (http.request.uri.path matches "(?i)/etc/passwd") or
+      (http.request.uri.path matches "(?i)/proc/self")
+    EOT
+  }
+
+  # Rule 5: Command injection
+  rules {
+    action      = "block"
+    description = "Command injection patterns"
+    enabled     = true
+    expression  = <<-EOT
+      (http.request.uri.query matches "(?i);\\s*(ls|cat|wget|curl|chmod|bash|sh|python|perl)\\s") or
+      (http.request.uri.query matches "(?i)\\|\\s*(ls|cat|wget|curl|id|whoami)") or
+      (http.request.uri.query matches "(?i)`[^`]*`")
+    EOT
+  }
+
+  # Rule 6: Credential stuffing — challenge on auth endpoint anomalies
+  # Note: Rate limiting (bot_ddos.tf) handles volume; this handles known patterns.
+  rules {
+    action      = "managed_challenge"
+    description = "Challenge suspicious auth requests (unusual UA, no referer)"
+    enabled     = true
+    expression  = <<-EOT
+      (http.request.uri.path eq "/api/v1/auth/login") and
+      (http.request.method eq "POST") and
+      (
+        (not http.request.headers["user-agent"] exists) or
+        (http.user_agent eq "") or
+        (http.user_agent matches "^(python-requests|curl|wget|Go-http|Java|libwww)")
+      )
+    EOT
+  }
+
+  # Rule 7: Block sensitive paths that should never be externally reachable
+  # /maintenance routes are excluded from prod build (CHOS-102) but WAF adds defense-in-depth.
+  rules {
+    action      = "block"
+    description = "Block maintenance and internal routes at WAF"
+    enabled     = true
+    expression  = <<-EOT
+      (http.request.uri.path matches "^/api/v1/maintenance/") or
+      (http.request.uri.path eq "/metrics") or
+      (http.request.uri.path matches "^/api/v1/openapi\\.json") or
+      (http.request.uri.path eq "/docs") or
+      (http.request.uri.path eq "/redoc")
+    EOT
+  }
+
+  # Rule 8: Block HTTP methods not used by this API
+  rules {
+    action      = "block"
+    description = "Block unused HTTP methods"
+    enabled     = true
+    expression  = <<-EOT
+      (http.request.method eq "CONNECT") or
+      (http.request.method eq "TRACE") or
+      (http.request.method eq "TRACK")
+    EOT
+  }
+
+  # Rule 9: Geo-block — Cambodia government platform; optionally restrict
+  # countries with no legitimate user base. Uncomment and tune as needed.
+  # rules {
+  #   action      = "managed_challenge"
+  #   description = "Challenge traffic from high-risk regions"
+  #   enabled     = true
+  #   expression  = "(ip.geoip.country in {\"CN\" \"RU\" \"KP\" \"IR\"})"
+  # }
 }

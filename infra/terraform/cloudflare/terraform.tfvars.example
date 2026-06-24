@@ -1,15 +1,16 @@
 # CHOS-303: copy to a per-env tfvars (e.g. prod.tfvars) and fill in. NEVER commit
-# the real file. `origin_lock_secret` should come from the environment instead:
-#   export TF_VAR_origin_lock_secret="$(openssl rand -hex 32)"
+# the real file. Secrets come from the environment, not this file:
+#   export TF_VAR_cloudflare_api_token="<scoped token from Vault>"
+#   export TF_VAR_cf_origin_secret="$(openssl rand -hex 32)"
 
-zone_id         = "REPLACE_ME_ZONE_ID"
-account_id      = "REPLACE_ME_ACCOUNT_ID"
-app_hostname    = "moeys.example.gov.kh"
-origin_hostname = "origin.moeys.internal.example"
-environment     = "prod"
+cloudflare_account_id = "REPLACE_ME_ACCOUNT_ID"
+zone_name             = "moeys.example.gov.kh"
+origin_alb_dns        = "moeys-bff-123.ap-southeast-1.elb.amazonaws.com"
+environment           = "prod"
 
-# origin_lock_secret = injected via TF_VAR_origin_lock_secret (do not put here)
-origin_lock_header = "X-Edge-Auth"
+# cloudflare_api_token = injected via TF_VAR_cloudflare_api_token (do not put here)
+# cf_origin_secret     = injected via TF_VAR_cf_origin_secret (do not put here)
 
-edge_rate_limit_requests = 600
-edge_rate_limit_period   = 60
+enable_bot_management = false # true only on Enterprise
+logs_s3_bucket        = "moeys-cloudflare-logs"
+aws_region            = "ap-southeast-1"

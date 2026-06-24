@@ -4,6 +4,8 @@
 provider "aws" {
   region = var.region
 
+  api_token = var.cloudflare_api_token
+
   default_tags {
     tags = merge(
       {
