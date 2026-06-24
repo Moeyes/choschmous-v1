@@ -40,6 +40,30 @@ const nextConfig: NextConfig = {
           { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
         ],
       },
+      // CHOS-303: cache headers. Content-hashed build assets are immutable, so
+      // the CDN (Cloudflare) + browser may hold them for a year — this is what
+      // offloads the origin. Cloudflare honours these on proxied responses.
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source:
+          '/:all*(woff2|woff|ttf|otf|eot|svg|png|jpg|jpeg|gif|webp|avif|ico)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // The API proxy carries authenticated / PII responses — it must NEVER be
+      // cached at the edge, in a shared cache, or in the browser (governance).
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+        ],
+      },
     ];
   },
 };

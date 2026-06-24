@@ -1,0 +1,15 @@
+# CHOS-303: copy to a per-env tfvars (e.g. prod.tfvars) and fill in. NEVER commit
+# the real file. `origin_lock_secret` should come from the environment instead:
+#   export TF_VAR_origin_lock_secret="$(openssl rand -hex 32)"
+
+zone_id         = "REPLACE_ME_ZONE_ID"
+account_id      = "REPLACE_ME_ACCOUNT_ID"
+app_hostname    = "moeys.example.gov.kh"
+origin_hostname = "origin.moeys.internal.example"
+environment     = "prod"
+
+# origin_lock_secret = injected via TF_VAR_origin_lock_secret (do not put here)
+origin_lock_header = "X-Edge-Auth"
+
+edge_rate_limit_requests = 600
+edge_rate_limit_period   = 60
