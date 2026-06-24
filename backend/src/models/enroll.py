@@ -15,6 +15,7 @@ import uuid
 from datetime import datetime, date
 
 from core.database import Base
+from app.infrastructure.db.encrypted_types import EncryptedString
 
 from src.models.athletes import athletes
 from typing import TYPE_CHECKING
@@ -67,16 +68,30 @@ class Enroll(Base):  # haven't add phone number yet (check later)
         String(100), nullable=False, comment="Given name (Latin)"
     )
 
+    # CHOS-403: phone is Restricted-PII, envelope-encrypted at rest. The column
+    # is widened to hold the (larger) ciphertext; the ORM still reads/writes
+    # plaintext transparently, so masking + the audited reveal endpoint are
+    # unchanged. The ck_enroll_phone_nonempty CHECK still holds (ciphertext is
+    # non-empty). NB: phone was removed from the search_text index below — PII
+    # must not sit in a plaintext, searchable column.
     phonenumber: Mapped[str] = mapped_column(
-        String(100), nullable=False, comment="Phone number"
+        EncryptedString(255), nullable=False, comment="Phone number (PII, encrypted at rest)"
+    )
+
+    # CHOS-403: national-id NUMBER (distinct from national_id_path, the document
+    # scan). Restricted-PII, envelope-encrypted at rest, nullable until captured.
+    national_id: Mapped[str | None] = mapped_column(
+        EncryptedString(255),
+        nullable=True,
+        comment="National ID number (PII, encrypted at rest)",
     )
 
     search_text: Mapped[str | None] = mapped_column(
         String(605),
         Computed(
+            # Names only — phone (now encrypted/PII) is deliberately NOT indexed.
             "COALESCE(kh_family_name, '') || ' ' || COALESCE(kh_given_name, '') || ' ' || "
-            "COALESCE(en_family_name, '') || ' ' || COALESCE(en_given_name, '') || ' ' || "
-            "COALESCE(phonenumber, '')"
+            "COALESCE(en_family_name, '') || ' ' || COALESCE(en_given_name, '')"
         ),
         nullable=True,
     )

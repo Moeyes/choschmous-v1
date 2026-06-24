@@ -1,10 +1,11 @@
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 import uuid
 from datetime import datetime
 
 from core.database import Base
+from app.infrastructure.db.encrypted_types import EncryptedString
 
 
 class UserMfa(Base):
@@ -15,10 +16,8 @@ class UserMfa(Base):
     surface) and an un-enrolled user simply has no row.
 
     Security notes:
-      * ``totp_secret`` is shared-secret key material. CHOS-403 wraps it with the
-        field-level encryption type so it is encrypted at rest; until then it is
-        stored verbatim here (TODO(CHOS-403): swap ``String`` for the
-        ``EncryptedString`` type once that infra lands).
+      * ``totp_secret`` is shared-secret key material, so it is envelope-encrypted
+        at rest via the ``EncryptedString`` type (CHOS-403).
       * ``recovery_codes`` holds **hashes only** (see services/mfa/recovery.py) —
         never the plaintext codes.
       * ``webauthn_credentials`` holds public keys + signature counters only;
@@ -36,7 +35,9 @@ class UserMfa(Base):
     # Pending until the user proves possession by entering a code; flipped to True
     # by activate(). A pending secret is set but totp_enabled stays False, so a
     # half-finished enrolment never gates login.
-    totp_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    totp_secret: Mapped[str | None] = mapped_column(
+        EncryptedString(255), nullable=True
+    )
     totp_enabled: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )

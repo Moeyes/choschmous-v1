@@ -59,3 +59,13 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
+
+    # CHOS-403: tamper-evident hash chain. Each row commits to the previous row's
+    # ``row_hash`` (``prev_hash``) and to its own canonical content
+    # (``row_hash = sha256(prev_hash || canonical(fields))``). Recomputing the
+    # chain detects any after-the-fact edit, deletion, reorder, or insertion (see
+    # app/application/audit/chain.py + writer.py). Written by AuditLogWriter only;
+    # an append-only DB trigger (CHOS-403 migration) blocks UPDATE/DELETE as
+    # defence in depth.
+    prev_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    row_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)

@@ -138,6 +138,26 @@ class Settings(BaseSettings):
     # Comma-separated scopes; "openid" is mandatory and always included.
     OIDC_SCOPES: str = "openid,email,profile"
 
+    # ── Field-level PII encryption (CHOS-403) ───────────────────────────────
+    # Envelope encryption of national-id / phone at rest. Provider "local" uses
+    # an in-process KEK (dev/offline); "aws" uses AWS KMS (TODO: needs boto3 +
+    # creds). PII_ENCRYPTION_KEY is the base64 KEK for the local provider; it is
+    # REQUIRED in non-local environments (no silent dev-key fallback) and should
+    # be Vault-injected. PII_KMS_KEY_ID is the AWS KMS key id for the aws provider.
+    # TODO(infra/CHOS-403): inject PII_ENCRYPTION_KEY (or KMS key id + IAM creds).
+    PII_KMS_PROVIDER: str = "local"
+    PII_ENCRYPTION_KEY: str | None = None
+    PII_KMS_KEY_ID: str | None = None
+
+    # ── Audit log → SIEM shipping (CHOS-403) ────────────────────────────────
+    # Each append to the hash-chained audit_log is mirrored to the SIEM. Disabled
+    # by default (local/CI); enable + point at the collector in deployed envs.
+    # TODO(infra/CHOS-403): provision the SIEM HTTP collector and inject
+    # AUDIT_SIEM_ENDPOINT + AUDIT_SIEM_TOKEN (Vault).
+    AUDIT_SIEM_ENABLED: bool = False
+    AUDIT_SIEM_ENDPOINT: str | None = None
+    AUDIT_SIEM_TOKEN: str | None = None
+
     @property
     def mfa_required_roles(self) -> set[str]:
         return {

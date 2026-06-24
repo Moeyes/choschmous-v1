@@ -17,7 +17,7 @@ Environment notes (this machine):
 ## Checklist
 - [x] CHOS-401 — MFA (TOTP/WebAuthn) + recovery codes + OIDC login; FE core/auth + login UI
 - [x] CHOS-402 — ABAC policy engine (deny-by-default) wired into deps/services + unit tests
-- [ ] CHOS-403 — field-level PII encryption (KMS envelope) + hash-chained append-only audit log + SIEM ship + tamper test
+- [x] CHOS-403 — field-level PII encryption (KMS envelope) + hash-chained append-only audit log + SIEM ship + tamper test
 - [ ] CHOS-404 — Playwright a11y (@axe-core) zero criticals + a11y statement + e2e gate
 - [ ] CHOS-405 — packages/ui workspace pkg + Storybook (+axe) + Chromatic CI; unify Modal/ModalV2
 - [ ] CHOS-406 — email worker (templates) + in-app notification inbox + bulk athlete import; FE modules/import + notifications UI
@@ -59,6 +59,32 @@ Environment notes (this machine):
   deny-by-default. Full backend suite **206 passed** (no behaviour change).
 - TODO(infra, optional): OPA adapter behind the same `authorize()` if a central
   PDP is later mandated; this engine stays the fail-closed in-process fallback.
+
+### CHOS-403 (done)
+- `app/infrastructure/db/crypto.py`: envelope encryption — KMS provider boundary
+  (`LocalKms` dev / `AwsKmsProvider` TODO-stub) + `PiiCipher` (per-value random
+  DEK wrapped by KEK). **Offline constraint**: no `cryptography`/AES available →
+  the local AEAD is a stdlib HMAC-CTR encrypt-then-MAC cipher (documented; prod
+  swaps to AES-GCM + AWS KMS behind the same API). `EncryptedString` TypeDecorator
+  = transparent encrypt-on-write/decrypt-on-read; legacy plaintext (no `kms1:`
+  marker) passes through so no forced backfill.
+- Applied to `Enroll.phonenumber` (+ new `Enroll.national_id`) and
+  `UserMfa.totp_secret` (closes the 401 TODO). Phone dropped from the plaintext
+  `search_text` computed index. Masking + audited reveal UNCHANGED (ORM reads
+  decrypt transparently — verified).
+- Hash-chained append-only `audit_log`: `prev_hash`/`row_hash` columns,
+  `AuditLogWriter.append` (advisory-lock-serialised chain) + `verify_chain`,
+  `siem.py` best-effort shipper (gated, never blocks txn). Migration adds an
+  append-only DB trigger (UPDATE/DELETE → RAISE).
+- Migration `d403a1b2c3d4`: idempotent/delta-only; **reversibility PROVEN** on a
+  scratch DB (up→down→up: phone 100↔255, national_id, totp 64↔255, chain cols,
+  search_text phone-toggle, trigger). Trigger verified to block UPDATE/DELETE.
+- Tests: `test_pii_encryption.py` (round-trip, ciphertext-at-rest vs plaintext-
+  via-ORM, auth/tamper, reveal unchanged) + `test_audit_chain.py` (chain links,
+  content-tamper detected, deletion detected). Full backend suite **215 passed**.
+- Config: `PII_ENCRYPTION_KEY` required in non-local (no dev-key fallback);
+  derived from JWT secret in local/CI. SIEM off by default. TODO(infra): inject
+  KMS key/creds + SIEM endpoint+token from Vault; swap to AES-GCM/boto3.
 
 ### Pre-existing issues found (NOT mine — own under later tickets)
 - `frontend/src/proxy.ts:55` uses `request.ip` which Next 16 removed → tsc error.
