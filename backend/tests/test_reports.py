@@ -1,12 +1,23 @@
-"""Tests for Phase 5 — reports engine. Verifies all 8 report keys render to
-XLSX (with populated data cells), a real WeasyPrint PDF render, and the
-error / org-scoping paths."""
+"""Tests for the reports engine (CHOS-202 async refactor).
+
+Rendering moved off the request path into an arq worker. These tests split into:
+
+* **Render parity** — call ``render_report_document`` (the moved pipeline)
+  directly with the test session and assert the *bytes are identical in shape*
+  to the old in-route render: all 8 keys produce a valid XLSX with populated
+  cells, the WeasyPrint PDF renders, and real seeded participants show up. This
+  is the parity proof that the logic was moved, not changed.
+* **Route contract** — ``GET /reports/{key}`` now validates + authorizes +
+  enqueues and returns ``202 {job_id}`` (no live worker needed for the validation
+  paths); the job-status endpoint 404s on an unknown job.
+"""
 
 import io
 
 import pytest
 from openpyxl import load_workbook
 
+from app.application.reports.render import ReportRenderError, render_report_document
 from src.models.enum.user import UserRole
 from tests.conftest import make_user
 from tests.factories import (
@@ -52,69 +63,88 @@ async def _event_with_sport(db_session, sport_name="បាល់ទះ"):
     return event, sport, org
 
 
+# ── Render parity: the moved pipeline produces the same documents ──────────
+
+
 @pytest.mark.parametrize("key", REPORT_KEYS)
-async def test_report_renders_xlsx(client, db_session, as_user, key):
-    """Every one of the 8 documents must return a valid XLSX (not a 500)."""
+async def test_report_renders_xlsx(db_session, key):
+    """Every one of the 8 documents must render to a valid XLSX (not raise)."""
     event, _, _ = await _event_with_sport(db_session)
-    as_user(make_user(UserRole.ADMIN))
+    art = await render_report_document(
+        db_session,
+        key=key,
+        event_id=event.id,
+        actor=make_user(UserRole.ADMIN),
+        source=None,
+        fmt="xlsx",
+    )
+    assert art.media_type == XLSX_MIME
+    assert art.content[:2] == b"PK"  # xlsx is a zip container
+    assert art.filename == f"{key}_{event.id}.xlsx"
 
-    resp = await client.get(f"/api/v1/reports/{key}?event_id={event.id}&format=xlsx")
-    assert resp.status_code == 200, resp.text
-    assert resp.headers["content-type"].startswith(XLSX_MIME)
-    assert resp.content[:2] == b"PK"  # xlsx is a zip container
 
-
-async def test_sport_list_xlsx_cells_are_populated(client, db_session, as_user):
-    """Regression guard: render_xlsx must key cells by col_keys, not the display
+async def test_sport_list_xlsx_cells_are_populated(db_session):
+    """Regression guard: render_xlsx keys cells by col_keys, not the display
     header — otherwise every data cell renders blank."""
     event, sport, _ = await _event_with_sport(db_session, sport_name="កីឡាសាកល្បង")
-    as_user(make_user(UserRole.ADMIN))
-
-    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=xlsx")
-    assert resp.status_code == 200, resp.text
-
-    ws = load_workbook(io.BytesIO(resp.content)).active
+    art = await render_report_document(
+        db_session,
+        key="sport-list",
+        event_id=event.id,
+        actor=make_user(UserRole.ADMIN),
+        source=None,
+        fmt="xlsx",
+    )
+    ws = load_workbook(io.BytesIO(art.content)).active
     assert ws.cell(row=1, column=2).value  # header row present
     assert ws.cell(row=2, column=1).value == 1  # "no"
     assert ws.cell(row=2, column=2).value == "កីឡាសាកល្បង"  # sport_name_kh, not blank
 
 
-async def test_report_pdf_renders(client, db_session, as_user):
+async def test_report_pdf_renders(db_session):
     """Exercises the WeasyPrint pipeline end-to-end (Khmer font embedded)."""
     event, _, _ = await _event_with_sport(db_session)
-    as_user(make_user(UserRole.ADMIN))
-
-    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=pdf")
-    assert resp.status_code == 200, resp.text
-    assert resp.headers["content-type"] == "application/pdf"
-    assert resp.content[:4] == b"%PDF"
-
-
-async def test_report_unknown_key_rejected(client, db_session, as_user):
-    event = await make_event(db_session)
-    as_user(make_user(UserRole.ADMIN))
-    resp = await client.get(
-        f"/api/v1/reports/not-a-report?event_id={event.id}&format=xlsx"
+    art = await render_report_document(
+        db_session,
+        key="sport-list",
+        event_id=event.id,
+        actor=make_user(UserRole.ADMIN),
+        source=None,
+        fmt="pdf",
     )
-    assert resp.status_code == 400, resp.text
+    assert art.media_type == "application/pdf"
+    assert art.content[:4] == b"%PDF"
 
 
-async def test_report_missing_event_404(client, db_session, as_user):
-    as_user(make_user(UserRole.ADMIN))
-    resp = await client.get("/api/v1/reports/sport-list?event_id=999999&format=xlsx")
-    assert resp.status_code == 404, resp.text
+async def test_render_unknown_key_raises(db_session):
+    with pytest.raises(ReportRenderError):
+        await render_report_document(
+            db_session,
+            key="not-a-report",
+            event_id=1,
+            actor=make_user(UserRole.ADMIN),
+            source=None,
+            fmt="xlsx",
+        )
 
 
-async def test_report_bad_format_rejected(client, db_session, as_user):
-    event, _, _ = await _event_with_sport(db_session)
-    as_user(make_user(UserRole.ADMIN))
-    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=docx")
-    assert resp.status_code == 422, resp.text  # Query pattern validation
+async def test_render_missing_event_raises_404(db_session):
+    with pytest.raises(ReportRenderError) as exc:
+        await render_report_document(
+            db_session,
+            key="sport-list",
+            event_id=999999,
+            actor=make_user(UserRole.ADMIN),
+            source=None,
+            fmt="xlsx",
+        )
+    assert exc.value.code == 404
 
 
 async def test_reports_populated_with_real_participants(client, db_session, as_user):
     """End-to-end: seed an event with survey-③ counts, registered athletes, a
-    coach, and an organizer, then assert each report carries that real data."""
+    coach, and an organizer (via the real registration routes), then render each
+    report from the moved pipeline and assert it carries that real data."""
     from src.models.participation_per_sport import participation_per_sport
     from src.models.organizer_role import OrganizerRole
 
@@ -204,39 +234,71 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
     )
     assert org_reg.status_code == 201, org_reg.text
 
+    admin = make_user(UserRole.ADMIN)
+
+    async def _render(key, fmt="xlsx"):
+        art = await render_report_document(
+            db_session, key=key, event_id=event.id, actor=admin, source=None, fmt=fmt
+        )
+        return art.content
+
     # sport-list: planned M=3 / F=2 (cols 4,5)
-    sl = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=xlsx")
-    ws = load_workbook(io.BytesIO(sl.content)).active
+    ws = load_workbook(io.BytesIO(await _render("sport-list"))).active
     assert ws.cell(row=2, column=4).value == 3
     assert ws.cell(row=2, column=5).value == 2
 
     # counts: actual coaches=1 (col5), athletes=2 (col6)
-    cnt = await client.get(f"/api/v1/reports/counts?event_id={event.id}&format=xlsx")
-    wc = load_workbook(io.BytesIO(cnt.content)).active
+    wc = load_workbook(io.BytesIO(await _render("counts"))).active
     assert wc.cell(row=2, column=5).value == 1
     assert wc.cell(row=2, column=6).value == 2
 
     # album / name-list carry the actual people
-    album = _xlsx_values(
-        (
-            await client.get(f"/api/v1/reports/album?event_id={event.id}&format=xlsx")
-        ).content
-    )
-    assert {"ម៉េង", "សុភា", "ច័ន្ទនី"} <= album
-    name_list = _xlsx_values(
-        (
-            await client.get(f"/api/v1/reports/name-list?event_id={event.id}&format=xlsx")
-        ).content
-    )
-    assert "រតនៈ" in name_list  # the coach
-    delegation = _xlsx_values(
-        (
-            await client.get(f"/api/v1/reports/delegation?event_id={event.id}&format=xlsx")
-        ).content
-    )
-    assert {"ខេមរា", "ប្រធាន"} <= delegation  # organizer + their role
+    assert {"ម៉េង", "សុភា", "ច័ន្ទនី"} <= _xlsx_values(await _render("album"))
+    assert "រតនៈ" in _xlsx_values(await _render("name-list"))  # the coach
+    assert {"ខេមរា", "ប្រធាន"} <= _xlsx_values(await _render("delegation"))
 
     # a fully-populated PDF renders
-    pdf = await client.get(f"/api/v1/reports/album?event_id={event.id}&format=pdf")
-    assert pdf.status_code == 200
-    assert pdf.content[:4] == b"%PDF"
+    pdf = await _render("album", fmt="pdf")
+    assert pdf[:4] == b"%PDF"
+
+
+# ── Route contract: validate + authorize + enqueue ────────────────────────
+
+
+async def test_report_enqueue_returns_job_id(client, db_session, as_user):
+    """The route enqueues and returns 202 + a job id without rendering inline."""
+    event, _, _ = await _event_with_sport(db_session)
+    as_user(make_user(UserRole.ADMIN))
+    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=xlsx")
+    assert resp.status_code == 202, resp.text
+    body = resp.json()
+    assert body["status"] == "queued"
+    assert body["job_id"]
+
+
+async def test_report_unknown_key_rejected(client, db_session, as_user):
+    event = await make_event(db_session)
+    as_user(make_user(UserRole.ADMIN))
+    resp = await client.get(
+        f"/api/v1/reports/not-a-report?event_id={event.id}&format=xlsx"
+    )
+    assert resp.status_code == 400, resp.text
+
+
+async def test_report_missing_event_404(client, db_session, as_user):
+    as_user(make_user(UserRole.ADMIN))
+    resp = await client.get("/api/v1/reports/sport-list?event_id=999999&format=xlsx")
+    assert resp.status_code == 404, resp.text
+
+
+async def test_report_bad_format_rejected(client, db_session, as_user):
+    event, _, _ = await _event_with_sport(db_session)
+    as_user(make_user(UserRole.ADMIN))
+    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=docx")
+    assert resp.status_code == 422, resp.text  # Query pattern validation
+
+
+async def test_report_job_status_unknown_returns_404(client, as_user):
+    as_user(make_user(UserRole.ADMIN))
+    resp = await client.get("/api/v1/reports/jobs/does-not-exist")
+    assert resp.status_code == 404, resp.text

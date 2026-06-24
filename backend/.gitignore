@@ -14,3 +14,6 @@ makefile
 
 # Local-only bootstrap utility — must never carry plaintext credentials in the repo
 create_superadmin.py
+
+# CHOS-202: locally-stored report artifacts (used when no S3 bucket is configured)
+var/
