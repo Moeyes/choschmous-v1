@@ -37,14 +37,18 @@ const CLOUDFLARE_TRUSTED_PROXIES = [
 const nextConfig: NextConfig = {
   output: 'standalone',
 
-  // CHOS-303: Trust Cloudflare as a reverse proxy for correct IP attribution.
-  // Without this, req.ip returns the Cloudflare edge IP, not the client IP.
-  // The actual client IP is in the CF-Connecting-IP header, which Cloudflare
-  // sets and which cannot be spoofed by clients (CF strips it from inbound requests).
-  experimental: {
-    // Next.js 15+: trust proxy declaration
-    serverExternalPackages: [],
-  },
+  // CHOS-303: the real client IP arrives in the CF-Connecting-IP / X-Real-IP
+  // header (set by Cloudflare, stripped from inbound client requests); code that
+  // needs it reads those headers (see src/proxy.ts). Next 16's NextRequest has
+  // no `.ip`, and there is no valid proxy-trust config key to set here —
+  // `experimental.serverExternalPackages` is unrelated (and not a real key), so
+  // it is removed.
+
+  // CHOS-407: allow the build output dir to be overridden. Lets the Lighthouse/
+  // bundle-analyzer CI gates and local builds write to a scratch dir without
+  // colliding with a `.next` produced by another process (e.g. a Dockerized
+  // `next dev`). Defaults to `.next`, so normal builds are unchanged.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
 
   async rewrites() {
     return [

@@ -20,6 +20,14 @@ const eslintConfig = defineConfig([
       "no-console": "off",
     },
   },
+  {
+    // CHOS-407: standalone Node CLI build scripts (run in CI, not shipped in the
+    // bundle) — console is their sanctioned output channel, like env.ts.
+    files: ["scripts/**/*.{mjs,js,ts}"],
+    rules: {
+      "no-console": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

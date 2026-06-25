@@ -21,7 +21,7 @@ Environment notes (this machine):
 - [x] CHOS-404 — Playwright a11y (@axe-core) zero criticals + a11y statement + e2e gate
 - [x] CHOS-405 — packages/ui workspace pkg + Storybook (+axe) + Chromatic CI; unify Modal/ModalV2
 - [x] CHOS-406 — email worker (templates) + in-app notification inbox + bulk athlete import; FE modules/import + notifications UI
-- [ ] CHOS-407 — pin Next to stable GA; Lighthouse CI budgets + bundle-analyzer gate
+- [x] CHOS-407 — pin Next to stable GA; Lighthouse CI budgets + bundle-analyzer gate
 
 ## Notes per ticket
 
@@ -172,9 +172,41 @@ Environment notes (this machine):
   clean on new files. ruff clean on my files (note: main carries pre-existing
   ruff format/lint drift in unrelated files — left untouched).
 
-### Pre-existing issues found (NOT mine — own under later tickets)
-- `frontend/src/proxy.ts:55` uses `request.ip` which Next 16 removed → tsc error.
-  Belongs to CHOS-303/407 (build green). Fix under **CHOS-407**. (next.config.ts
-  cleanup for this is staged-but-deferred to the 407 commit.)
+### CHOS-407 (done)
+- **Pin Next to GA**: `next` `16.3.0-preview.3` → **`16.2.9`** (the registry
+  `latest`/GA in the 16.x line) in package.json + lockfile updated (lockfile diff
+  is ONLY next + @next/swc-* binaries — no eslint/other dep drift). `pnpm build`
+  **green** (all 31 routes compiled, incl. /import).
+- **proxy.ts**: the old origin-lock/auth middleware that read `request.ip`
+  (removed in Next 16) is dropped; the active `proxy()` keeps only the cookie
+  auth-guard. Clears the long-standing tsc error. next.config.ts: removed the
+  bogus `experimental.serverExternalPackages` block; added env-driven
+  `distDir` (defaults `.next`) so CI/local builds can use a scratch dir.
+- **Bundle gate**: `scripts/check-bundle-size.mjs` sums client JS under
+  `${distDir}/static` and fails over `BUNDLE_MAX_BYTES` (default 3 MB; baseline
+  measured **2.17 MB raw / 0.67 MB gzip**, ~30% headroom). `pnpm bundle:check` +
+  `pnpm analyze` (ANALYZE=true) scripts. eslint override lets `scripts/**` use
+  console.
+- **Lighthouse CI**: `lighthouserc.json` budgets over the PUBLIC pages (/login,
+  /privacy, /accessibility — hermetic, no backend): LCP < 2.0s (error), TBT < 200ms
+  (error — the lab proxy for INP < 200ms, which is field-only), CLS/script-size
+  (warn). `.github/workflows/lighthouse.yml`: one ANALYZE build → bundle gate +
+  analyzer artifact + `lhci autorun` (@lhci/cli gate-installed, Chrome via
+  setup-chrome). Lighthouse thresholds may need first-run tuning on the runner
+  (same caveat as the CHOS-404 a11y gate).
+- Verified: tsc clean (stale `tsconfig.tsbuildinfo` had masked it), build green,
+  bundle gate pass + fail-on-tiny-budget proven, vitest 99 pass / 2 pre-existing
+  fails. `.gitignore` extended for `.next-*`/`.next_*` scratch dirs.
+- **Env note**: local `pnpm build` into the default `.next` is blocked by the
+  running Dockerized `moeys-frontend-1` dev server (it owns `.next` as root);
+  verified the GA build via `NEXT_DIST_DIR=<scratch>`. CI builds in a clean tree
+  so this is local-only.
+
+### Pre-existing issues found (NOT mine)
 - `frontend/src/modules/sports/schema/sports.schema.test.ts` — 2 failing tests
   (`categoryFormSchema` gender) on baseline, untouched by me.
+- Frontend `pnpm lint` (eslint) carries a large pre-existing error backlog
+  (e.g. `react-hooks/incompatible-library` on RHF `watch()` in many untouched
+  components) — present on HEAD, not introduced here (my new files lint clean).
+- Backend `ruff format`/`ruff check` carry pre-existing drift in unrelated files
+  (my files are clean).

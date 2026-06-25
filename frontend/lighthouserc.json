@@ -1,0 +1,31 @@
+{
+  "//": "CHOS-407: Lighthouse CI performance budgets. Run by .github/workflows/lighthouse.yml. Targets the PUBLIC pages (no backend/auth needed) so the gate is hermetic — the Next server is started on its own. INP is a field-only metric (not available in a Lighthouse lab run); Total Blocking Time is its lab proxy, so the INP<200ms budget is enforced via total-blocking-time. Thresholds may need first-run tuning on the CI runner (same as the CHOS-404 a11y gate).",
+  "ci": {
+    "collect": {
+      "startServerCommand": "pnpm start",
+      "startServerReadyPattern": "Ready in|started server on|Local:",
+      "startServerReadyTimeout": 60000,
+      "url": [
+        "http://localhost:3003/login",
+        "http://localhost:3003/privacy",
+        "http://localhost:3003/accessibility"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.8 }],
+        "largest-contentful-paint": ["error", { "maxNumericValue": 2000 }],
+        "total-blocking-time": ["error", { "maxNumericValue": 200 }],
+        "cumulative-layout-shift": ["warn", { "maxNumericValue": 0.1 }],
+        "resource-summary:script:size": ["warn", { "maxNumericValue": 921600 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

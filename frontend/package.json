@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "next dev -p 3003",
     "build": "next build --webpack",
+    "analyze": "ANALYZE=true next build --webpack",
+    "bundle:check": "node scripts/check-bundle-size.mjs",
     "start": "next start -p 3003",
     "lint": "eslint",
     "test": "vitest run",
@@ -26,7 +28,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.8.0",
-    "next": "16.3.0-preview.3",
+    "next": "16.2.9",
     "next-intl": "^4.9.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",

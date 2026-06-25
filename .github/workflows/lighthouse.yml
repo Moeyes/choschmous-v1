@@ -1,0 +1,75 @@
+name: Lighthouse & bundle budgets
+
+# CHOS-407: performance gates for the frontend.
+#  • Bundle threshold — deterministic client-JS budget (scripts/check-bundle-size.mjs).
+#  • Bundle analyzer — @next/bundle-analyzer report uploaded for triage.
+#  • Lighthouse CI — LCP < 2.0s and TBT < 200ms (the lab proxy for INP < 200ms)
+#    budgets over the public pages (see frontend/lighthouserc.json).
+#
+# @lhci/cli is installed at gate time (not in the committed lockfile) so the main
+# `frontend` CI job's --frozen-lockfile install is untouched — same offline-safe
+# pattern as CHOS-404's @axe-core/playwright.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: Lighthouse CI + bundle budget
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # The public pages under test make no backend calls on load; this only
+      # satisfies the rewrite config so the server starts.
+      API_PROXY_TARGET: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Single production build WITH the analyzer enabled — the build output is
+      # identical to a normal build (the analyzer just additionally writes its
+      # static report), so this one build feeds the bundle gate, the analyzer
+      # artifact, and the Lighthouse run (which serves this .next via `pnpm start`).
+      - name: Build (+ bundle analyzer report)
+        run: pnpm analyze
+
+      - name: Bundle size gate
+        run: pnpm bundle:check
+
+      - name: Upload bundle analyzer report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bundle-analyzer
+          path: frontend/.next/analyze
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Install Lighthouse CI
+        run: pnpm add -D @lhci/cli@^0.15.0
+
+      - name: Install Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Lighthouse CI (LCP/TBT budgets)
+        run: pnpm exec lhci autorun
+        env:
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
