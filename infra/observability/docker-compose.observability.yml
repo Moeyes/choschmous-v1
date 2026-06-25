@@ -24,6 +24,8 @@ services:
     volumes:
       - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infra/observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      # CHOS-504: SLO burn-rate rules (loaded via rule_files in prometheus.yml).
+      - ./infra/observability/slo/slo-rules.yaml:/etc/prometheus/slo-rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"

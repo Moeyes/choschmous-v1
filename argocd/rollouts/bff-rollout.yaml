@@ -1,0 +1,75 @@
+# CHOS-504: progressive delivery for the BFF / frontend tier — BLUE-GREEN.
+#
+# The BFF (Next.js server) ships UI + server routes as one versioned bundle:
+# splitting a user's session across two BFF versions mid-render risks hydration
+# mismatches and asset 404s. So instead of a traffic-split canary we use
+# BLUE-GREEN — stand the new (green) version up in full, smoke it via
+# pre-promotion analysis, then cut the active Service over atomically. If the
+# analysis fails the cutover never happens; blue keeps serving.
+#
+# A previewService lets the SLO analysis (and a human, via the preview route)
+# exercise green before any real traffic moves.
+#
+# TODO(infra): create the `moeys-bff` (active) and `moeys-bff-preview` Services.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: moeys-bff
+  namespace: moeys-prod
+  labels:
+    moeys.gov.kh/component: bff
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: moeys-bff
+  strategy:
+    blueGreen:
+      activeService: moeys-bff
+      previewService: moeys-bff-preview
+      # Promote automatically only if the pre-promotion SLO analysis passes.
+      autoPromotionEnabled: true
+      # Keep the old (blue) ReplicaSet for 5m after cutover for instant rollback.
+      scaleDownDelaySeconds: 300
+      prePromotionAnalysis:
+        templates:
+          - templateName: slo-success-rate
+          - templateName: slo-latency-p95
+        args:
+          - name: service-name
+            value: moeys-bff
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: moeys-bff
+    spec:
+      serviceAccountName: moeys-bff
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bff
+          # TODO(infra): real registry/repo + tag (matches docker.yml output).
+          image: ghcr.io/REPLACE_ME/moeys/frontend:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 1Gi

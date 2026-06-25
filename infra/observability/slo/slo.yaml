@@ -1,0 +1,85 @@
+# CHOS-504: SLO catalogue for the MOEYS API (declarative source of truth).
+#
+# This file documents the service-level objectives and the error-budget /
+# burn-rate alert windows. The Prometheus rules that actually run live in
+# `slo-rules.yaml` (recording rules + multi-window multi-burn-rate alerts) and
+# are loaded by prometheus.yml. Keep the two in sync: when an objective here
+# changes, regenerate/adjust slo-rules.yaml.
+#
+# Format is intentionally Sloth-compatible (https://sloth.dev,
+# version prometheus/v1) so the committed rules CAN be regenerated once the
+# `sloth` generator is available online:
+#
+#     sloth generate -i infra/observability/slo/slo.yaml \
+#         -o infra/observability/slo/slo-rules.yaml
+#
+# TODO(infra): run the generator in CI to prevent slo.yaml ⇄ slo-rules.yaml drift.
+
+version: "prometheus/v1"
+service: "moeys-api"
+labels:
+  team: "platform"
+  tier: "0"            # citizen-facing national system → highest tier
+
+slos:
+  # ---- Availability ------------------------------------------------------
+  # 99.9% of HTTP requests are served without a 5xx over a rolling 30 days.
+  # Error budget = 0.1% of requests = ~43m13s of "all-error" time per 30d.
+  - name: "requests-availability"
+    objective: 99.9
+    description: >
+      Proportion of successful (non-5xx) HTTP responses from the API.
+    sli:
+      events:
+        error_query: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[{{.window}}]))
+        total_query: |
+          sum(rate(http_requests_total{job="moeys-backend"}[{{.window}}]))
+    alerting:
+      name: MoeysAPIAvailability
+      labels:
+        slo: "requests-availability"
+      page_alert:
+        labels:
+          severity: critical
+      ticket_alert:
+        labels:
+          severity: warning
+
+  # ---- Latency -----------------------------------------------------------
+  # 99% of requests complete in < 750ms over a rolling 30 days. The "error"
+  # for this SLI is a request slower than the 0.75s histogram bucket.
+  - name: "requests-latency"
+    objective: 99.0
+    description: >
+      Proportion of HTTP requests served faster than 750ms.
+    sli:
+      events:
+        error_query: |
+          (
+            sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[{{.window}}]))
+            -
+            sum(rate(http_request_duration_seconds_bucket{job="moeys-backend",le="0.75"}[{{.window}}]))
+          )
+        total_query: |
+          sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[{{.window}}]))
+    alerting:
+      name: MoeysAPILatency
+      labels:
+        slo: "requests-latency"
+      page_alert:
+        labels:
+          severity: critical
+      ticket_alert:
+        labels:
+          severity: warning
+
+# Burn-rate alert windows (Google SRE workbook, 30-day budget). The same
+# windows are encoded as concrete Prometheus alerts in slo-rules.yaml.
+#
+#   | Severity | Long win | Short win | Burn rate | Budget consumed |
+#   |----------|----------|-----------|-----------|-----------------|
+#   | page     | 1h       | 5m        | 14.4      | 2%  in 1h       |
+#   | page     | 6h       | 30m       | 6         | 5%  in 6h       |
+#   | ticket   | 24h      | 2h        | 3         | 10% in 1d       |
+#   | ticket   | 72h      | 6h        | 1         | budget in 3d    |

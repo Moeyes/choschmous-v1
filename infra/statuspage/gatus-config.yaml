@@ -1,0 +1,76 @@
+# CHOS-504: public status page configuration (Gatus — https://gatus.io).
+#
+# Gatus is a self-hosted health-dashboard: it actively probes each endpoint on a
+# schedule, renders a public status page, and alerts when a probe's conditions
+# fail. Chosen over a SaaS (Statuspage/Cachet) because this is a government
+# system whose health data should stay on infrastructure we control.
+#
+# This config is NOT deployed here (no live status-page host). See README.md for
+# the deploy/cred notes. Probe targets use REPLACE_ME placeholders.
+
+# Persist history so the page survives restarts.
+storage:
+  type: sqlite
+  path: /data/gatus.db
+
+# Public UI.
+ui:
+  title: "MOEYS Sports Platform — Status"
+  header: "MOEYS National Sports-Event Platform"
+  logo: ""   # TODO(infra): MOEYS crest asset URL
+
+# Alerting providers. Mirrors the Alertmanager severity model (CHOS-105):
+# PagerDuty for paging, a chat webhook for awareness.
+alerting:
+  pagerduty:
+    # TODO(infra): inject from a secret/env — never commit the integration key.
+    integration-key: "${PAGERDUTY_INTEGRATION_KEY}"
+  slack:
+    webhook-url: "${SLACK_STATUS_WEBHOOK_URL}"
+
+endpoints:
+  # ---- Public API ------------------------------------------------------
+  - name: "API"
+    group: "core"
+    # TODO(infra): the real public API base URL.
+    url: "https://REPLACE_ME.moeys.gov.kh/health/ready"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 750"   # mirrors the latency SLO target
+    alerts:
+      - type: pagerduty
+        send-on-resolved: true
+        description: "MOEYS API readiness probe failing"
+
+  - name: "API liveness"
+    group: "core"
+    url: "https://REPLACE_ME.moeys.gov.kh/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: slack
+        send-on-resolved: true
+
+  # ---- Frontend / BFF --------------------------------------------------
+  - name: "Web app"
+    group: "core"
+    url: "https://REPLACE_ME.moeys.gov.kh/"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: slack
+        send-on-resolved: true
+
+  # ---- Auth (OIDC discovery is a good upstream-dependency canary) ------
+  - name: "Login / OIDC"
+    group: "auth"
+    url: "https://REPLACE_ME.moeys.gov.kh/api/v1/auth/health"
+    interval: 120s
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: slack
+        send-on-resolved: true

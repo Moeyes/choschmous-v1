@@ -1,0 +1,67 @@
+# CHOS-504: Argo Rollouts AnalysisTemplates — the auto-rollback mechanism.
+#
+# A Rollout runs these queries against Prometheus while a new version is taking
+# traffic (canary steps / blue-green pre-promotion). If a metric breaches its
+# SLO-derived threshold `failureLimit` times, the AnalysisRun fails, which makes
+# Argo Rollouts ABORT the rollout — traffic shifts back to the stable
+# ReplicaSet automatically. No human in the loop, no degraded version promoted.
+#
+# Thresholds mirror infra/observability/slo/slo.yaml so a deploy that would burn
+# the error budget never reaches 100% of users.
+#
+# TODO(infra): set `address` to the in-cluster Prometheus
+# (e.g. http://prometheus.monitoring.svc:9090) — REPLACE_ME below.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: slo-success-rate
+  namespace: argocd
+spec:
+  args:
+    - name: service-name        # e.g. "moeys-api"
+    - name: prometheus-address
+      value: "http://REPLACE_ME-prometheus.monitoring.svc:9090"
+  metrics:
+    - name: success-rate
+      # Evaluate every 30s; need 3 consecutive bad reads before aborting so a
+      # single scrape blip can't roll us back.
+      interval: 30s
+      count: 5
+      failureLimit: 3
+      # Availability SLO is 99.9% -> require >=99% success during the canary
+      # (one nine of headroom; a brand-new version is allowed to be slightly
+      # worse than steady-state but not budget-destroying).
+      successCondition: result[0] >= 0.99
+      provider:
+        prometheus:
+          address: "{{args.prometheus-address}}"
+          query: |
+            sum(rate(http_requests_total{job="{{args.service-name}}",status!~"5.."}[2m]))
+            /
+            sum(rate(http_requests_total{job="{{args.service-name}}"}[2m]))
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: slo-latency-p95
+  namespace: argocd
+spec:
+  args:
+    - name: service-name
+    - name: prometheus-address
+      value: "http://REPLACE_ME-prometheus.monitoring.svc:9090"
+  metrics:
+    - name: latency-p95
+      interval: 30s
+      count: 5
+      failureLimit: 3
+      # Latency SLO target is p95 < 750ms; allow up to 1s during a canary.
+      successCondition: result[0] <= 1.0
+      provider:
+        prometheus:
+          address: "{{args.prometheus-address}}"
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="{{args.service-name}}"}[2m])) by (le)
+            )

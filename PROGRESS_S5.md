@@ -23,7 +23,7 @@ Environment notes (this machine):
       docs/DR_RUNBOOK.md (validated RPO/RTO)
 - [x] CHOS-503 — backend/tests/contract (Schemathesis/Pact vs OpenAPI) + mutation testing
       (>=70% killed) + coverage gate >=85% blocking in CI
-- [ ] CHOS-504 — argocd/rollouts canary/blue-green + infra/observability/slo + auto-rollback on
+- [x] CHOS-504 — argocd/rollouts canary/blue-green + infra/observability/slo + auto-rollback on
       SLO breach + error-budget policy + status page config
 - [ ] CHOS-505 — docs/THREAT_MODEL.md (STRIDE) + HIBP breached-password screening in
       core/security.py + cosign image signing + mTLS between tiers + SECURITY.md
@@ -32,6 +32,27 @@ Environment notes (this machine):
       update all imports; tests green
 
 ## Notes per ticket
+
+### CHOS-504 (done)
+- **SLO source of truth** `infra/observability/slo/slo.yaml` (Sloth-compatible
+  `prometheus/v1`): availability 99.9% + latency 99%<750ms over 30d, with the burn-rate
+  window table. **`slo-rules.yaml`** = hand-authored recording rules + multi-window
+  multi-burn-rate alerts (Google SRE workbook: 14.4x/6x page, 3x/1x ticket). Wired into
+  `prometheus.yml` `rule_files` + mounted in the observability compose. Severity labels reuse
+  the existing Alertmanager routing (critical→PagerDuty).
+- **Argo Rollouts** `argocd/rollouts/`: `analysis-templates.yaml` = Prometheus AnalysisTemplates
+  (success-rate ≥0.99, p95 ≤1s; `failureLimit:3` → AnalysisRun fail → **auto-abort/rollback**).
+  `api-rollout.yaml` = **canary** (10→30→60→100, background analysis); `bff-rollout.yaml` =
+  **blue-green** (prePromotionAnalysis, scaleDownDelay for instant rollback). README explains
+  canary-vs-blue-green rationale + the two SLO enforcement points (deploy-time + run-time).
+- **Error-budget policy** `docs/ERROR_BUDGET_POLICY.md`: budget states (>50 healthy / 10-50
+  caution / <10 freeze / exhausted breach), fast-burn-pages-now, automated deploy-time
+  enforcement, SLO-change process (ADR + sign-off).
+- **Status page** `infra/statuspage/`: Gatus declarative config (probes /health/ready, /health,
+  web app, auth; 750ms bar mirrors latency SLO) + compose + README. Key rule documented: deploy
+  OUTSIDE the cluster. All placeholders `REPLACE_ME`/secret-env; **not deployed** (no live host).
+- No live infra applied; no backend behaviour change. All new YAML parses clean (9/9).
+- Alerts reference `docs/runbooks/slo-*-burn.md` → created in CHOS-506.
 
 ### CHOS-501 (done)
 - **Retention worker** `backend/app/workers/retention/`: `policies.py` declares per-data-class

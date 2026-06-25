@@ -13,6 +13,7 @@ three pillars (metrics, traces, logs) correlated by `trace_id`.
 | `loki/loki-config.yaml` | Loki log backend — CHOS-204 |
 | `promtail/promtail-config.yaml` | ships container JSON logs into Loki — CHOS-204 |
 | `grafana/provisioning/` | Prometheus + Tempo + Loki datasources (log↔trace links) |
+| `slo/` | SLO catalogue + recording/burn-rate rules + error-budget enforcement (CHOS-504) |
 
 ## Tracing & structured logs (CHOS-204)
 

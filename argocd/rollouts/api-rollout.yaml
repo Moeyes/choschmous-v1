@@ -1,0 +1,93 @@
+# CHOS-504: progressive delivery for the API tier — CANARY.
+#
+# The API is stateless and horizontally scaled, so a canary (shift a slice of
+# real traffic, analyse, then widen) gives the cheapest blast radius: a bad
+# version only ever sees 10% of users before the SLO analysis aborts it.
+#
+# This Rollout is the canary-enabled replacement for deploy/helm/api's
+# Deployment. The pod template is intentionally kept in sync with that chart
+# (probes, securityContext, Vault wiring) — only `kind: Rollout` + `strategy`
+# differ. When migrating, the chart's Deployment is removed and this drives the
+# `moeys-api` ReplicaSets.
+#
+# Auto-rollback: each canary step runs the slo-success-rate + slo-latency-p95
+# AnalysisTemplates. A failing AnalysisRun aborts the rollout and routes 100% of
+# traffic back to the stable ReplicaSet.
+#
+# TODO(infra): requires the argo-rollouts controller + a traffic router
+# (the Gateway API / SMI / nginx integration referenced under strategy.canary).
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: moeys-api
+  namespace: moeys-prod
+  labels:
+    moeys.gov.kh/component: api
+spec:
+  replicas: 4
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: moeys-api
+  strategy:
+    canary:
+      # Run the SLO analysis continuously in the background for the whole
+      # rollout — not just at a step — so a regression that only appears under
+      # sustained load still aborts.
+      analysis:
+        templates:
+          - templateName: slo-success-rate
+          - templateName: slo-latency-p95
+        args:
+          - name: service-name
+            value: moeys-api
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 30
+        - pause: { duration: 5m }
+        - setWeight: 60
+        - pause: { duration: 10m }
+        - setWeight: 100
+      # TODO(infra): pick the traffic router that matches the cluster. Example
+      # (Gateway API): configure spec.strategy.canary.trafficRouting.plugins.
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: moeys-api
+    spec:
+      serviceAccountName: moeys-api
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          # TODO(infra): real registry/repo + tag (matches docker.yml output).
+          image: ghcr.io/REPLACE_ME/moeys/backend:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 1Gi

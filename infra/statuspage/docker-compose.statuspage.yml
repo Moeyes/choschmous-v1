@@ -1,0 +1,25 @@
+# CHOS-504: run the Gatus status page locally / on the status-page host.
+#
+#   docker compose -f infra/statuspage/docker-compose.statuspage.yml up -d
+#
+# In production this is deployed OUTSIDE the main cluster (ideally a different
+# provider/region) so it can still report — and page — when the platform itself
+# is down. TODO(infra): deploy to that independent host and set the secrets
+# below from the secret store, not the shell.
+services:
+  statuspage:
+    image: twinproduction/gatus:v5.13.1
+    restart: unless-stopped
+    environment:
+      # Probe-failure alerting keys (see gatus-config.yaml). Provided by the
+      # host's secret store; do NOT commit real values.
+      - PAGERDUTY_INTEGRATION_KEY=${PAGERDUTY_INTEGRATION_KEY:-}
+      - SLACK_STATUS_WEBHOOK_URL=${SLACK_STATUS_WEBHOOK_URL:-}
+    volumes:
+      - ./gatus-config.yaml:/config/config.yaml:ro
+      - statuspage_data:/data
+    ports:
+      - "8080:8080"   # public status page
+
+volumes:
+  statuspage_data:

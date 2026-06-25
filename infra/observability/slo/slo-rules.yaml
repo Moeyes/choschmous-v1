@@ -1,0 +1,160 @@
+# CHOS-504: SLO recording + multi-window multi-burn-rate alert rules for the
+# MOEYS API. Loaded by prometheus.yml. Mirrors the objectives declared in
+# slo.yaml (regenerable via `sloth generate`; hand-maintained while offline).
+#
+# Error-budget maths (30-day rolling window):
+#   availability SLO = 99.9%  ->  budget = 0.001  (errors allowed / total)
+#   latency      SLO = 99.0%  ->  budget = 0.010  (too-slow / total)
+# Burn rate = observed_error_ratio / budget. A sustained burn rate of 1 exhausts
+# the whole budget in exactly 30 days; 14.4 exhausts 2% of it in 1h.
+#
+# Each alert requires BOTH a long-window AND a short-window burn to fire, so a
+# brief spike self-resolves before paging but a real regression pages fast.
+groups:
+  # ----------------------------------------------------------------------
+  # Recording rules: error ratios per window (cheap to alert on repeatedly).
+  # ----------------------------------------------------------------------
+  - name: moeys-slo-availability-recordings
+    rules:
+      - record: job:slo_availability_errors:ratio_rate5m
+        expr: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[5m]))
+            / sum(rate(http_requests_total{job="moeys-backend"}[5m]))
+      - record: job:slo_availability_errors:ratio_rate30m
+        expr: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[30m]))
+            / sum(rate(http_requests_total{job="moeys-backend"}[30m]))
+      - record: job:slo_availability_errors:ratio_rate1h
+        expr: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[1h]))
+            / sum(rate(http_requests_total{job="moeys-backend"}[1h]))
+      - record: job:slo_availability_errors:ratio_rate2h
+        expr: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[2h]))
+            / sum(rate(http_requests_total{job="moeys-backend"}[2h]))
+      - record: job:slo_availability_errors:ratio_rate6h
+        expr: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[6h]))
+            / sum(rate(http_requests_total{job="moeys-backend"}[6h]))
+      - record: job:slo_availability_errors:ratio_rate1d
+        expr: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[1d]))
+            / sum(rate(http_requests_total{job="moeys-backend"}[1d]))
+      - record: job:slo_availability_errors:ratio_rate3d
+        expr: |
+          sum(rate(http_requests_total{job="moeys-backend",status=~"5.."}[3d]))
+            / sum(rate(http_requests_total{job="moeys-backend"}[3d]))
+
+  - name: moeys-slo-latency-recordings
+    rules:
+      - record: job:slo_latency_errors:ratio_rate5m
+        expr: |
+          (
+            sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[5m]))
+            - sum(rate(http_request_duration_seconds_bucket{job="moeys-backend",le="0.75"}[5m]))
+          ) / sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[5m]))
+      - record: job:slo_latency_errors:ratio_rate1h
+        expr: |
+          (
+            sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[1h]))
+            - sum(rate(http_request_duration_seconds_bucket{job="moeys-backend",le="0.75"}[1h]))
+          ) / sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[1h]))
+      - record: job:slo_latency_errors:ratio_rate6h
+        expr: |
+          (
+            sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[6h]))
+            - sum(rate(http_request_duration_seconds_bucket{job="moeys-backend",le="0.75"}[6h]))
+          ) / sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[6h]))
+      - record: job:slo_latency_errors:ratio_rate30m
+        expr: |
+          (
+            sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[30m]))
+            - sum(rate(http_request_duration_seconds_bucket{job="moeys-backend",le="0.75"}[30m]))
+          ) / sum(rate(http_request_duration_seconds_count{job="moeys-backend"}[30m]))
+
+  # ----------------------------------------------------------------------
+  # Availability burn-rate alerts (budget = 0.001).
+  #   14.4 * 0.001 = 0.0144   |   6 * 0.001 = 0.006
+  #    3   * 0.001 = 0.003    |   1 * 0.001 = 0.001
+  # ----------------------------------------------------------------------
+  - name: moeys-slo-availability-burn
+    rules:
+      - alert: MoeysAPIAvailabilityBudgetBurnFast
+        expr: |
+          job:slo_availability_errors:ratio_rate1h > 0.0144
+          and job:slo_availability_errors:ratio_rate5m > 0.0144
+        for: 2m
+        labels:
+          severity: critical
+          slo: requests-availability
+        annotations:
+          summary: "API availability budget burning fast (14.4x)"
+          description: "Burning the 30d error budget 14.4x — 2% consumed in 1h. Page."
+          runbook: "docs/runbooks/slo-availability-burn.md"
+      - alert: MoeysAPIAvailabilityBudgetBurnMedium
+        expr: |
+          job:slo_availability_errors:ratio_rate6h > 0.006
+          and job:slo_availability_errors:ratio_rate30m > 0.006
+        for: 15m
+        labels:
+          severity: critical
+          slo: requests-availability
+        annotations:
+          summary: "API availability budget burning (6x)"
+          description: "Burning the 30d error budget 6x — 5% consumed in 6h. Page."
+          runbook: "docs/runbooks/slo-availability-burn.md"
+      - alert: MoeysAPIAvailabilityBudgetBurnSlow
+        expr: |
+          job:slo_availability_errors:ratio_rate1d > 0.003
+          and job:slo_availability_errors:ratio_rate2h > 0.003
+        for: 1h
+        labels:
+          severity: warning
+          slo: requests-availability
+        annotations:
+          summary: "API availability budget burning slowly (3x)"
+          description: "Burning 3x — 10% consumed in 1d. Open a ticket."
+          runbook: "docs/runbooks/slo-availability-burn.md"
+      - alert: MoeysAPIAvailabilityBudgetBurnTrickle
+        expr: |
+          job:slo_availability_errors:ratio_rate3d > 0.001
+          and job:slo_availability_errors:ratio_rate6h > 0.001
+        for: 3h
+        labels:
+          severity: warning
+          slo: requests-availability
+        annotations:
+          summary: "API availability budget eroding (1x)"
+          description: "Sustained 1x burn will exhaust the 30d budget. Open a ticket."
+          runbook: "docs/runbooks/slo-availability-burn.md"
+
+  # ----------------------------------------------------------------------
+  # Latency burn-rate alerts (budget = 0.010).
+  #   14.4 * 0.01 = 0.144   |   6 * 0.01 = 0.06
+  # ----------------------------------------------------------------------
+  - name: moeys-slo-latency-burn
+    rules:
+      - alert: MoeysAPILatencyBudgetBurnFast
+        expr: |
+          job:slo_latency_errors:ratio_rate1h > 0.144
+          and job:slo_latency_errors:ratio_rate5m > 0.144
+        for: 2m
+        labels:
+          severity: critical
+          slo: requests-latency
+        annotations:
+          summary: "API latency budget burning fast (14.4x)"
+          description: ">14.4% of requests slower than 750ms over 1h. Page."
+          runbook: "docs/runbooks/slo-latency-burn.md"
+      - alert: MoeysAPILatencyBudgetBurnMedium
+        expr: |
+          job:slo_latency_errors:ratio_rate6h > 0.06
+          and job:slo_latency_errors:ratio_rate30m > 0.06
+        for: 15m
+        labels:
+          severity: warning
+          slo: requests-latency
+        annotations:
+          summary: "API latency budget burning (6x)"
+          description: ">6% of requests slower than 750ms over 6h. Open a ticket."
+          runbook: "docs/runbooks/slo-latency-burn.md"
