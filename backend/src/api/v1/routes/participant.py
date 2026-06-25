@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from fastapi import (
@@ -38,7 +39,38 @@ from app.application.participants import (
     UpdateParticipant,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
+
+
+async def _dispatch_registration_confirmation(
+    db: AsyncSession, current_user: User, payload: FullRegistrationRequest
+) -> None:
+    """CHOS-406 best-effort: notify the registrar that a registration was
+    received. Wrapped so nothing here can affect the registration response."""
+    try:
+        from src.models.events import Events
+        from src.services.notification_dispatch import (
+            notify_registration_confirmation,
+        )
+
+        event = await db.get(Events, payload.eventId)
+        event_name = getattr(event, "name_kh", None) or f"event #{payload.eventId}"
+        participant_name = (
+            f"{payload.en_given_name} {payload.en_family_name}".strip()
+            or f"{payload.kh_given_name} {payload.kh_family_name}".strip()
+        )
+        await notify_registration_confirmation(
+            db,
+            recipient=current_user,
+            participant_name=participant_name,
+            event_name=event_name,
+            role=payload.role,
+            link="/participation",
+        )
+    except Exception:
+        logger.warning("registration confirmation dispatch failed", exc_info=True)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -129,6 +161,10 @@ async def create_participant(
 
     if isinstance(idempotency_key, str):
         await store_idempotency_result(idempotency_key, 201, result)
+
+    # CHOS-406: confirm the registration to the registrar (in-app inbox + email).
+    # Best-effort — notification/email failures must never affect the 201.
+    await _dispatch_registration_confirmation(db, current_user, payload)
 
     return result
 

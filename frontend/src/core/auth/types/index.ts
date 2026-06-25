@@ -95,7 +95,8 @@ export type FeatureKey =
     | 'organizerregistration'
     | 'organizerroles'
     | 'sportsubmissions'
-    | 'categorysubmissions';
+    | 'categorysubmissions'
+    | 'import';
 
 const { SUPER_ADMIN, ADMIN, ORGANIZATION, FEDERATION } = UserRole;
 
@@ -129,5 +130,7 @@ export const FEATURE_ACCESS: Record<FeatureKey, UserRole[]> = {
     // Admin review queues for the by-sport / by-category surveys.
     sportsubmissions:   [SUPER_ADMIN, ADMIN],
     categorysubmissions: [SUPER_ADMIN, ADMIN],
+    // CHOS-406: bulk athlete import — same access as single registration.
+    import:             [SUPER_ADMIN, ADMIN, ORGANIZATION],
 };
 

@@ -12,6 +12,7 @@ owns the Redis connection pool used to enqueue + poll, derived from the same
 from __future__ import annotations
 
 import asyncio
+import logging
 
 from arq import create_pool
 from arq.connections import RedisSettings
@@ -19,7 +20,10 @@ from arq.jobs import Job, JobStatus
 
 from core.config import settings
 
+logger = logging.getLogger(__name__)
+
 REPORT_JOB = "render_report_job"
+EMAIL_JOB = "send_email_job"
 
 # One pool per running event loop. The test suite and the app run on different
 # loops across sessions; keying by loop id avoids reusing a pool bound to a
@@ -59,6 +63,24 @@ async def enqueue_report(
     # enqueue_job returns None if a job with the same id already exists; for our
     # auto-id jobs that does not happen, but guard anyway.
     return job.job_id if job is not None else ""
+
+
+async def enqueue_email(*, to: str, template: str, context: dict) -> str | None:
+    """Enqueue a transactional email (CHOS-406). Best-effort: returns the job id,
+    or ``None`` if enqueue fails (e.g. Redis down) — email is a side effect and
+    must never break the business action that triggered it. The caller does NOT
+    await delivery; the email worker renders + sends it."""
+    try:
+        pool = await get_arq_pool()
+        job = await pool.enqueue_job(
+            EMAIL_JOB, to=to, template=template, context=context
+        )
+        return job.job_id if job is not None else None
+    except Exception as exc:  # Redis unavailable / enqueue error
+        logger.warning(
+            "enqueue_email failed (to=%s template=%s): %s", to, template, exc
+        )
+        return None
 
 
 async def get_report_job(job_id: str) -> dict:

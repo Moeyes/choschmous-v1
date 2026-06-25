@@ -26,6 +26,7 @@ from app.application.reports.render import (
     actor_from_payload,
     render_report_document,
 )
+from app.workers.email.worker import send_email_job
 from app.workers.queue import redis_settings
 from app.workers.storage import store_artifact
 
@@ -73,7 +74,10 @@ async def render_report_job(
 class WorkerSettings:
     """arq worker entrypoint. ``arq app.workers.report_worker.WorkerSettings``."""
 
-    functions = [render_report_job]
+    # CHOS-406: this worker also serves the transactional-email queue so a small
+    # deployment can run a single worker process. send_email_job has its own
+    # dedicated EmailWorkerSettings too, for deployments that scale it separately.
+    functions = [render_report_job, send_email_job]
     redis_settings = redis_settings()
     # A render can take a few seconds (WeasyPrint); allow generous headroom but
     # keep it bounded so a pathological job cannot pin a worker forever.

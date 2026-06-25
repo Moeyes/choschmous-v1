@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.participation_per_sport_service import (
@@ -21,7 +23,33 @@ from src.database.deps import (
 )
 from src.models.user import User
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
+
+
+async def _dispatch_review_outcome(
+    db: AsyncSession, id: int, obj: dict, action: str, note: str | None
+) -> None:
+    """CHOS-406 best-effort: notify the reviewed org of an approve/reject."""
+    try:
+        from src.services.notification_dispatch import notify_review_outcome
+
+        org_id = obj.get("org_id")
+        if org_id is None:
+            return
+        await notify_review_outcome(
+            db,
+            org_id=org_id,
+            participant_name=obj.get("org_name") or "Your organization",
+            event_name=obj.get("event_name") or "the event",
+            sport_name=None,
+            outcome=action,
+            note=note,
+            link=f"/participation-per-sport/{id}",
+        )
+    except Exception:
+        logger.warning("review outcome dispatch failed", exc_info=True)
 
 
 @router.post("", response_model=ParticipationPerSportPublic)
@@ -171,6 +199,12 @@ async def review_participation_per_sport(
         raise HTTPException(status_code=exc.code, detail=str(exc))
     if not obj:
         raise HTTPException(status_code=404, detail="Not found")
+
+    # CHOS-406: notify the reviewed org of a terminal decision (in-app + email).
+    # Best-effort — never let a notification failure affect the review response.
+    if body.action in ("approve", "reject"):
+        await _dispatch_review_outcome(db, id, obj, body.action, body.note)
+
     return obj
 
 

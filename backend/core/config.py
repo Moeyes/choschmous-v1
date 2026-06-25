@@ -158,6 +158,25 @@ class Settings(BaseSettings):
     AUDIT_SIEM_ENDPOINT: str | None = None
     AUDIT_SIEM_TOKEN: str | None = None
 
+    # ── Transactional email (CHOS-406) ──────────────────────────────────────
+    # The email worker (app/workers/email) sends registration-confirmation and
+    # review-outcome messages. Disabled by default (local/CI): with EMAIL_ENABLED
+    # off the sender is a no-op that only logs, so nothing leaves the box and the
+    # tests need no SMTP server. Turn it on + provide SMTP creds in deployed envs.
+    # TODO(infra/CHOS-406): provision the SMTP relay (or SES) and inject
+    # SMTP_HOST/PORT/USERNAME/PASSWORD (Vault). EMAIL_FROM is the From: address.
+    EMAIL_ENABLED: bool = False
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_USE_TLS: bool = True
+    EMAIL_FROM: str = "no-reply@moeys.gov.kh"
+    EMAIL_FROM_NAME: str = "MoEYS Sports Registration"
+    # Absolute base URL used to build deep links in emails/notifications (e.g.
+    # the review page). Falls back to a relative path when unset.
+    PUBLIC_APP_URL: str | None = None
+
     @property
     def mfa_required_roles(self) -> set[str]:
         return {

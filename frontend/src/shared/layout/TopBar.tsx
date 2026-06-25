@@ -8,6 +8,7 @@ import { ChevronRight, LogOut, Menu } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useAuth, UserRole } from "@/core/auth";
 import { Button, LanguageSwitcher } from "@/shared/ui";
+import { NotificationBell } from "@/modules/notifications";
 import { queryKeys } from "@/core/api/queryKeys";
 import { cn } from "@/shared/utils/cn";
 
@@ -227,6 +228,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <NotificationBell />
           <LanguageSwitcher />
 
           <div className="relative" ref={menuRef}>

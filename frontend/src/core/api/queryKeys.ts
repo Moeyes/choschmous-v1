@@ -8,6 +8,11 @@ export const queryKeys = {
   search: {
     query: (q: string) => ['search', q] as const,
   },
+  // CHOS-406: in-app notifications.
+  notifications: {
+    list: (params?: unknown) => ['notifications', 'list', params] as const,
+    unreadCount: ['notifications', 'unread-count'] as const,
+  },
   referenceData: {
     // Cascading reference data (events + organizations + sports) for the
     // registration flow. Kept distinct from events.all — that key holds a raw

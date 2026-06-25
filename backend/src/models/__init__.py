@@ -22,6 +22,7 @@ from .organizer_role import OrganizerRole
 from .organizer_participation import OrganizerParticipation
 from .open_survey import OpenSurveyField, OpenSurveyResponse
 from .category_survey_review import category_survey_review
+from .notification import Notification
 
 __all__ = [
     "User",
@@ -49,4 +50,5 @@ __all__ = [
     "OpenSurveyField",
     "OpenSurveyResponse",
     "category_survey_review",
+    "Notification",
 ]

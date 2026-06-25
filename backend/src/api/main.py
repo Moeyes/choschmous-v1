@@ -30,6 +30,8 @@ from .v1.routes import teams as v1_teams
 from .v1.routes import organizers as v1_organizers
 from .v1.routes import reports as v1_reports
 from .v1.routes import search as v1_search
+from .v1.routes import notifications as v1_notifications
+from .v1.routes import imports as v1_imports
 
 
 V1 = settings.API_V1_STR
@@ -142,6 +144,19 @@ api_router.include_router(
 # Global search (CHOS-304) — POST /api/v1/search for the ⌘K palette.
 api_router.include_router(
     v1_search.router, prefix=V1, tags=["search"], dependencies=_auth
+)
+
+# In-app notification inbox (CHOS-406). Each endpoint is scoped to the caller.
+api_router.include_router(
+    v1_notifications.router,
+    prefix=V1 + "/notifications",
+    tags=["notifications"],
+    dependencies=_auth,
+)
+
+# Bulk athlete import (CHOS-406) — validated .xlsx upload with a per-row report.
+api_router.include_router(
+    v1_imports.router, prefix=V1 + "/imports", tags=["imports"], dependencies=_auth
 )
 
 # Cloudinary Presign

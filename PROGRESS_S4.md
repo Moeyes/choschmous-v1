@@ -20,7 +20,7 @@ Environment notes (this machine):
 - [x] CHOS-403 — field-level PII encryption (KMS envelope) + hash-chained append-only audit log + SIEM ship + tamper test
 - [x] CHOS-404 — Playwright a11y (@axe-core) zero criticals + a11y statement + e2e gate
 - [x] CHOS-405 — packages/ui workspace pkg + Storybook (+axe) + Chromatic CI; unify Modal/ModalV2
-- [ ] CHOS-406 — email worker (templates) + in-app notification inbox + bulk athlete import; FE modules/import + notifications UI
+- [x] CHOS-406 — email worker (templates) + in-app notification inbox + bulk athlete import; FE modules/import + notifications UI
 - [ ] CHOS-407 — pin Next to stable GA; Lighthouse CI budgets + bundle-analyzer gate
 
 ## Notes per ticket
@@ -132,6 +132,45 @@ Environment notes (this machine):
 - Did NOT verify the Storybook/Chromatic build locally (heavy toolchain, offline
   pattern) — like other CI gates it may need first-run tuning; structure + deps
   are pinned to the app's versions.
+
+### CHOS-406 (done)
+- **Email worker** `backend/app/workers/email/`: `templates.py` (registration_
+  confirmation + review_outcome, stdlib str-format, HTML-escaped), `sender.py`
+  (EmailSender protocol + SmtpEmailSender via stdlib smtplib + LoggingEmailSender
+  no-op default), `worker.py` (`send_email_job` + `EmailWorkerSettings`).
+  `send_email_job` also registered on the report worker's functions so one worker
+  serves both. `enqueue_email()` added to `app/workers/queue.py` (best-effort,
+  swallows Redis-down). Config: EMAIL_ENABLED off by default (no-op sender) +
+  SMTP_*/EMAIL_FROM/PUBLIC_APP_URL. TODO(infra): provision SMTP relay + inject
+  creds (Vault); EMAIL_ENABLED stays off until then so nothing leaves the box.
+- **In-app inbox**: `notifications` table/model + migration `d406a1b2c3d4`
+  (idempotent/delta-only, head d403→d406), `NotificationService`,
+  `schemas/notification.py`, routes `/notifications` (list/unread-count/
+  {id}/read/read-all — all scoped to current_user). `notification_dispatch.py`
+  orchestrates in-app + email, FULLY best-effort (guards None ids, never
+  propagates) — wired into create_participant (registration_confirmation → the
+  registrar) and participation review approve/reject (review_outcome → reviewed
+  org's users). No behaviour change to those endpoints (dispatch is post-commit,
+  wrapped).
+- **Bulk import**: `routes/imports.py` (GET template / POST validate dry-run /
+  POST commit), `import_service.BulkAthleteImporter` parses .xlsx (openpyxl) and
+  runs each row through the SAME validate_registration / RegisterParticipant path
+  (no rule bypass); per-row error report (`schemas/import_athlete.py`). Template
+  header = recognized field keys (round-trips) with human labels as cell comments.
+  Org users forced to own org. 5 MB cap.
+- **Frontend**: `modules/notifications` (NotificationBell dropdown in TopBar:
+  unread badge + poll, list, mark-read on click + mark-all-read) and
+  `modules/import` (ImportPage: event/org/sport/category selectors reusing
+  registration's useCascadingData/useCategories + file upload + validate/import +
+  ImportReportTable). New route `/import` + sidebar link + `import` FEATURE_ACCESS
+  (SUPER_ADMIN/ADMIN/ORGANIZATION) + i18n en+kh (notifications, import, nav).
+  endpoints.ts + queryKeys.ts extended.
+- Tests: `test_notifications.py` (service+routes+isolation), `test_email_worker.py`
+  (templates/sender/job, html-escape), `test_bulk_import.py` (parse/dry-run
+  report/commit). Backend suite **238 passed** (215 + 23). FE tsc clean (only the
+  pre-existing proxy.ts error), vitest 99 pass / 2 pre-existing fails, eslint
+  clean on new files. ruff clean on my files (note: main carries pre-existing
+  ruff format/lint drift in unrelated files — left untouched).
 
 ### Pre-existing issues found (NOT mine — own under later tickets)
 - `frontend/src/proxy.ts:55` uses `request.ip` which Next 16 removed → tsc error.

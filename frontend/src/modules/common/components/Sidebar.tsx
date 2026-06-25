@@ -15,6 +15,7 @@ import {
   Layers,
   ListChecks,
   Trophy,
+  Upload,
   Users,
   UserCheck,
   UserCog,
@@ -67,6 +68,7 @@ const MENU_SECTIONS: MenuSections = [
       { labelKey: "openSurvey", href: "/open-survey", icon: FileText, feature: "opensurvey" },
       { labelKey: "athleteRegistration", href: "/register", icon: CreditCard, feature: "register" },
       { labelKey: "leaderRegistration", href: "/leader-registration", icon: ClipboardCheck, feature: "leaderregistration" },
+      { labelKey: "bulkImport", href: "/import", icon: Upload, feature: "import" },
     ],
   },
   {

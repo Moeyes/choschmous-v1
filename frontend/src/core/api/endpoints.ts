@@ -7,6 +7,19 @@ export const API = {
   search: {
     base: '/api/v1/search',
   },
+  // CHOS-406: in-app notification inbox (scoped to the current user server-side).
+  notifications: {
+    base: '/api/v1/notifications',
+    unreadCount: '/api/v1/notifications/unread-count',
+    read: (id: number) => `/api/v1/notifications/${id}/read`,
+    readAll: '/api/v1/notifications/read-all',
+  },
+  // CHOS-406: validated bulk athlete import.
+  imports: {
+    template: '/api/v1/imports/athletes/template',
+    validate: '/api/v1/imports/athletes/validate',
+    commit: '/api/v1/imports/athletes',
+  },
   events: {
     base: '/api/v1/events',
     byId: (id: number) => `/api/v1/events/${id}`,
