@@ -11,8 +11,11 @@ module "eks" {
   cluster_name    = local.name
   cluster_version = var.cluster_version
 
-  vpc_id     = var.vpc_id
-  subnet_ids = var.private_subnet_ids
+  # CHOS-502: multi-AZ subnets (managed VPC or passed-in). The managed node group
+  # spreads across every subnet here, so nodes land in each AZ — surviving the
+  # loss of one AZ (validated by the infra/chaos AZ-kill experiment).
+  vpc_id     = local.vpc_id
+  subnet_ids = local.private_subnet_ids
 
   # Private API endpoint by default; expose publicly only with an explicit,
   # reviewed change (this is a government system).
@@ -22,9 +25,11 @@ module "eks" {
   eks_managed_node_groups = {
     default = {
       instance_types = var.node_instance_types
-      min_size       = var.node_min_size
-      max_size       = var.node_max_size
-      desired_size   = var.node_min_size
+      # Keep >= the AZ count so a node can live in each AZ; the ASG balances
+      # across the multi-AZ subnet set above.
+      min_size     = var.node_min_size
+      max_size     = var.node_max_size
+      desired_size = var.node_min_size
     }
   }
 }

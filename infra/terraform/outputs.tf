@@ -41,3 +41,19 @@ output "redis_broker_endpoint" {
   description = "Primary endpoint for the arq broker Redis (CHOS-202)."
   value       = aws_elasticache_replication_group.broker.primary_endpoint_address
 }
+
+# CHOS-502: resolved multi-AZ network (managed VPC or passed-in).
+output "vpc_id" {
+  description = "VPC the platform runs in (managed or provided)."
+  value       = local.vpc_id
+}
+
+output "private_subnet_ids" {
+  description = "Private subnets backing the cluster + data stores (one per AZ)."
+  value       = local.private_subnet_ids
+}
+
+output "availability_zone_count" {
+  description = "Number of AZs the system spans (>=2 enforced by the multi_az_minimum check)."
+  value       = local.az_count
+}

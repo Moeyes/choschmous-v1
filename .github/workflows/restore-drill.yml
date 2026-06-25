@@ -1,0 +1,67 @@
+name: Restore Drill
+
+# CHOS-502 — automated quarterly DR restore drill. Restores the latest production
+# backup into a throwaway instance, validates it, and gates on the RPO/RTO targets
+# (an untested backup is not a backup). The drill output feeds the validated
+# RPO/RTO table in docs/DR_RUNBOOK.md.
+#
+# Runs unattended quarterly + on demand. It is a NO-OP dry-run until the AWS OIDC
+# role + secrets are wired (RUN_DRILL stays 0 without them), so enabling this
+# workflow before the cred work lands cannot touch real infra.
+
+on:
+  schedule:
+    # 02:00 UTC on the 1st of Jan/Apr/Jul/Oct — quarterly.
+    - cron: "0 2 1 1,4,7,10 *"
+  workflow_dispatch:
+    inputs:
+      run_drill:
+        description: "Set to 1 to perform a real restore (requires AWS creds). 0 = dry-run."
+        default: "0"
+        required: false
+
+permissions:
+  contents: read
+  id-token: write # for AWS OIDC role assumption (no long-lived keys)
+
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+
+jobs:
+  restore-drill:
+    name: Quarterly restore drill
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO(infra/cred): provision the AWS OIDC role + set vars.AWS_ROLE_ARN /
+      # vars.AWS_REGION. Until then the step is skipped and the drill runs dry.
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Run restore drill
+        env:
+          # Real restore only when creds are present AND the operator opted in.
+          RUN_DRILL: ${{ (vars.AWS_ROLE_ARN != '' && github.event.inputs.run_drill == '1') && '1' || '0' }}
+          RESTORE_ENGINE: rds
+          SOURCE_DB: ${{ vars.DR_SOURCE_DB || 'moeys-prod-pg' }}
+          SUMMARY_FILE: restore_drill.json
+        run: bash infra/backup/restore_drill.sh
+
+      - name: Upload drill summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-drill-summary
+          path: restore_drill.json
+
+      - name: Surface result
+        if: always()
+        run: |
+          echo "### Restore drill" >> "$GITHUB_STEP_SUMMARY"
+          cat restore_drill.json >> "$GITHUB_STEP_SUMMARY" || true

@@ -22,13 +22,30 @@ variable "region" {
 
 # --- Networking (reference existing network; this scaffold does not build a VPC)
 variable "vpc_id" {
-  description = "TODO(infra): existing VPC id the platform deploys into."
+  description = "Existing VPC id to deploy into. Ignored when create_vpc=true."
   type        = string
+  default     = "" # set when bringing-your-own VPC (create_vpc=false)
 }
 
 variable "private_subnet_ids" {
-  description = "TODO(infra): private subnet ids for the cluster + data stores."
+  description = "Private subnet ids (must span >=2 AZs). Ignored when create_vpc=true."
   type        = list(string)
+  default     = [] # set when bringing-your-own VPC (create_vpc=false)
+}
+
+# CHOS-502: let Terraform own a fresh multi-AZ VPC instead of consuming an
+# existing one. Default false keeps every current environment on its passed-in
+# vpc_id/private_subnet_ids unchanged.
+variable "create_vpc" {
+  description = "Create a managed multi-AZ VPC (infra/terraform/vpc.tf) instead of using vpc_id/private_subnet_ids."
+  type        = bool
+  default     = false
+}
+
+variable "availability_zones" {
+  description = "AZs to spread the VPC across when create_vpc=true (>=3 recommended for prod)."
+  type        = list(string)
+  default     = [] # e.g. ["ap-southeast-1a","ap-southeast-1b","ap-southeast-1c"]
 }
 
 # --- Kubernetes cluster -------------------------------------------------------

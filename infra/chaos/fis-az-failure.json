@@ -1,0 +1,45 @@
+{
+  "_comment": "CHOS-502 — AWS FIS experiment template: simulate the loss of one Availability Zone and force the managed-DB failover. FIS (not Chaos Mesh) is the right tool for cloud-tier faults: it can stop every EC2/EKS node in an AZ and reboot RDS with failover. Create with: aws fis create-experiment-template --cli-input-json file://fis-az-failure.json. TODO(infra): replace ACCOUNT_ID, the resource tags, and the CloudWatch stop-condition ARN.",
+  "description": "moeys: lose one AZ (stop its nodes) + force RDS Multi-AZ failover",
+  "roleArn": "arn:aws:iam::ACCOUNT_ID:role/moeys-fis",
+  "stopConditions": [
+    {
+      "source": "aws:cloudwatch:alarm",
+      "value": "arn:aws:cloudwatch:REGION:ACCOUNT_ID:alarm:moeys-slo-error-budget-fast-burn"
+    }
+  ],
+  "targets": {
+    "nodesInOneAz": {
+      "resourceType": "aws:ec2:instance",
+      "selectionMode": "ALL",
+      "resourceTags": {
+        "kubernetes.io/cluster/moeys-prod": "owned"
+      },
+      "filters": [
+        { "path": "Placement.AvailabilityZone", "values": ["ap-southeast-1a"] },
+        { "path": "State.Name", "values": ["running"] }
+      ]
+    },
+    "primaryDb": {
+      "resourceType": "aws:rds:db",
+      "selectionMode": "ALL",
+      "resourceTags": { "Name": "moeys-prod-pg" }
+    }
+  },
+  "actions": {
+    "stopAzNodes": {
+      "actionId": "aws:ec2:stop-instances",
+      "description": "Stop all EKS nodes in AZ ap-southeast-1a for 10 minutes",
+      "parameters": { "startInstancesAfterDuration": "PT10M" },
+      "targets": { "Instances": "nodesInOneAz" }
+    },
+    "failoverDb": {
+      "actionId": "aws:rds:reboot-db-instances",
+      "description": "Reboot RDS with failover to the standby in another AZ",
+      "parameters": { "forceFailover": "true" },
+      "targets": { "DBInstances": "primaryDb" },
+      "startAfter": ["stopAzNodes"]
+    }
+  },
+  "tags": { "Project": "moeys", "Experiment": "az-failure" }
+}

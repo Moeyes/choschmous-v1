@@ -7,12 +7,12 @@
 
 resource "aws_db_subnet_group" "postgres" {
   name       = "${local.name}-pg"
-  subnet_ids = var.private_subnet_ids
+  subnet_ids = local.private_subnet_ids # CHOS-502: multi-AZ for RDS Multi-AZ failover
 }
 
 resource "aws_security_group" "postgres" {
   name   = "${local.name}-pg"
-  vpc_id = var.vpc_id
+  vpc_id = local.vpc_id
 
   # TODO(infra): restrict ingress to the EKS node security group only.
   ingress {

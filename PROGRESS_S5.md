@@ -19,7 +19,7 @@ Environment notes (this machine):
 ## Checklist
 - [x] CHOS-501 — retention purge worker (per-data-class) + audited subject-erasure + minors' PII
       consent (model + enforced in registration) + docs/DATA_GOVERNANCE.md
-- [ ] CHOS-502 — infra/terraform multi-AZ + infra/chaos experiments + quarterly restore drill +
+- [x] CHOS-502 — infra/terraform multi-AZ + infra/chaos experiments + quarterly restore drill +
       docs/DR_RUNBOOK.md (validated RPO/RTO)
 - [ ] CHOS-503 — backend/tests/contract (Schemathesis/Pact vs OpenAPI) + mutation testing
       (>=70% killed) + coverage gate >=85% blocking in CI
@@ -53,3 +53,23 @@ Environment notes (this machine):
   minors' consent, prod-enable checklist.
 - Tests: `tests/test_minor_consent.py` (5) + `tests/test_retention.py` (7). Full suite
   **250 passed** (was 238). No behaviour change with flags at defaults.
+
+### CHOS-502 (done)
+- **Multi-AZ terraform** `infra/terraform/`: new `vpc.tf` = optional managed multi-AZ VPC
+  (`create_vpc`, default **false** → existing var-driven envs unchanged) spanning
+  `availability_zones`, NAT-per-AZ in prod; `locals.{vpc_id,private_subnet_ids,az_count}`
+  selected from module-or-vars; `check "multi_az_minimum"` asserts ≥2 AZs. Rewired
+  cluster/database/redis to the locals. **Hardened the broker Redis** (was the only data
+  store without failover) → `automatic_failover_enabled`/`multi_az_enabled` in prod. New
+  outputs (vpc/subnets/az_count). No `terraform` binary on this box → validated by careful
+  inspection; `required_version >= 1.6` supports the `check` block + `one()`.
+- **Chaos** `infra/chaos/`: Chaos Mesh `pod-kill.yaml` (+weekly Schedule), `redis-kill.yaml`
+  (PodChaos + broker NetworkChaos partition), AWS `fis-az-failure.json` (stop one AZ's nodes
+  + force RDS failover — FIS is the only tool that can fail a real AZ), `run_experiment.sh`
+  steady-state guard (aborts if `/health/ready` stays down past grace), README w/ hypothesis.
+- **Restore drill** `infra/backup/restore_drill.sh` (RDS snapshot restore → validate → measure
+  RPO/RTO → teardown; **dry-run unless RUN_DRILL=1** so it's safe pre-creds) + quarterly CI
+  `.github/workflows/restore-drill.yml` (cron + dispatch, AWS OIDC, gated on creds).
+- **docs/DR_RUNBOOK.md** = new canonical runbook (validated RPO≤15m / AZ-RTO≤5m / restore-RTO≤2h,
+  multi-AZ topology, drill+chaos verification, failover checklist); old
+  `infra/backup/docs/DR_RUNBOOK.md` → pointer. bash -n / JSON / YAML all parse clean.

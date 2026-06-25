@@ -1,0 +1,42 @@
+# CHOS-502 — Chaos Mesh PodChaos: randomly kill a backend API pod.
+#
+# Validates that killing one replica does not drop service: the PodDisruptionBudget
+# keeps a quorum serving while the Deployment reschedules the pod (topology-spread
+# lands it in another AZ). Apply against STAGING only (namespace selector below).
+#
+# Requires Chaos Mesh installed in the cluster (see README "Prerequisites").
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: backend-pod-kill
+  namespace: chaos-mesh
+spec:
+  action: pod-kill
+  mode: one # kill exactly one matching pod per run
+  selector:
+    namespaces:
+      - moeys-staging
+    labelSelectors:
+      app.kubernetes.io/name: moeys-backend
+  # One-shot when applied manually; the Schedule resource below drives the
+  # recurring staging game-day.
+---
+# Recurring weekly run on staging (App-tier schedule, see README "Schedule").
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Schedule
+metadata:
+  name: backend-pod-kill-weekly
+  namespace: chaos-mesh
+spec:
+  schedule: "17 3 * * 1" # 03:17 every Monday, off-peak
+  type: PodChaos
+  historyLimit: 5
+  concurrencyPolicy: Forbid
+  podChaos:
+    action: pod-kill
+    mode: one
+    selector:
+      namespaces:
+        - moeys-staging
+      labelSelectors:
+        app.kubernetes.io/name: moeys-backend

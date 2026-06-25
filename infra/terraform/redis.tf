@@ -7,12 +7,12 @@
 
 resource "aws_elasticache_subnet_group" "redis" {
   name       = "${local.name}-redis"
-  subnet_ids = var.private_subnet_ids
+  subnet_ids = local.private_subnet_ids # CHOS-502: multi-AZ for ElastiCache Multi-AZ
 }
 
 resource "aws_security_group" "redis" {
   name   = "${local.name}-redis"
-  vpc_id = var.vpc_id
+  vpc_id = local.vpc_id
 
   # TODO(infra): restrict ingress to the EKS node security group only.
   ingress {
@@ -62,6 +62,13 @@ resource "aws_elasticache_replication_group" "broker" {
   node_type            = var.broker_node_type
   num_cache_clusters   = var.environment == "prod" ? 2 : 1
   port                 = 6379
+
+  # CHOS-502: the broker is now multi-AZ in prod — a primary + replica in
+  # separate AZs with automatic failover, so an AZ loss promotes the replica and
+  # the arq queue keeps draining. Single-node (no failover) outside prod, where a
+  # second node would just add cost. (The cache group above is already Multi-AZ.)
+  automatic_failover_enabled = var.environment == "prod"
+  multi_az_enabled           = var.environment == "prod"
 
   subnet_group_name          = aws_elasticache_subnet_group.redis.name
   security_group_ids         = [aws_security_group.redis.id]

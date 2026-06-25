@@ -1,0 +1,45 @@
+# CHOS-502 — Redis fault injection.
+#
+# Two variants:
+#   1) PodChaos — kill the in-cluster Redis pod (dev/staging, where Redis runs in
+#      the cluster). Validates the app degrades gracefully: cache/idempotency miss
+#      → fall through to Postgres; rate-limit fails open per its configured policy.
+#   2) NetworkChaos — blackhole the MANAGED broker endpoint (prod-like), proving
+#      the arq queue tolerates a broker blip and resumes after failover.
+#
+# Requires Chaos Mesh (see README). Apply against STAGING only.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: redis-pod-kill
+  namespace: chaos-mesh
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces:
+      - moeys-staging
+    labelSelectors:
+      app.kubernetes.io/name: redis
+---
+# Partition the app from the managed broker endpoint for 60s to exercise the
+# enqueue retry/back-off path and the prod Multi-AZ replica promotion.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: broker-partition
+  namespace: chaos-mesh
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - moeys-staging
+    labelSelectors:
+      app.kubernetes.io/name: moeys-backend
+  direction: to
+  # TODO(infra): set to the broker's ElastiCache CIDR/IP. externalTargets accepts
+  # hostnames; the managed broker endpoint goes here.
+  externalTargets:
+    - "PLACEHOLDER-broker.cache.amazonaws.com"
+  duration: "60s"
