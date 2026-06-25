@@ -25,6 +25,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.search.base import SearchHit, SearchProvider, SearchScope
+from src.models.athlete_participation import AthleteParticipation
+from src.models.athletes import Athlete
+from src.models.enroll import Enroll
 from src.models.events import Events
 from src.models.organization import Organization
 
@@ -79,26 +82,76 @@ class OpenSearchProvider(SearchProvider):
     # -- indexing ------------------------------------------------------------
     async def bulk_reindex(self, db: AsyncSession) -> int:
         """(Re)build the index from Postgres. Called by an indexing job, not the
-        request path. Athletes are indexed by a separate PII-aware job — TODO."""
+        request path.
+
+        Athletes are indexed with the SAME minimized projection
+        ``DbSearchProvider._athletes`` returns: NAME + organisation only, plus
+        ``org_id``/``sport_id`` for scope filtering. No phone/DOB/ID-doc ever
+        reaches the index (CHOS-304 PII minimization)."""
         await self.ensure_index()
         client = self._get_client()
         actions: list[dict] = []
 
         for ev in (await db.execute(select(Events))).scalars():
-            actions.append({"index": {"_index": self._index(), "_id": f"event:{ev.id}"}})
             actions.append(
-                {"type": "event", "entity_id": ev.id, "title": ev.name_kh,
-                 "subtitle": ev.location}
+                {"index": {"_index": self._index(), "_id": f"event:{ev.id}"}}
+            )
+            actions.append(
+                {
+                    "type": "event",
+                    "entity_id": ev.id,
+                    "title": ev.name_kh,
+                    "subtitle": ev.location,
+                }
             )
         for org in (await db.execute(select(Organization))).scalars():
             actions.append({"index": {"_index": self._index(), "_id": f"org:{org.id}"}})
             actions.append(
-                {"type": "organization", "entity_id": org.id, "title": org.name_kh,
-                 "subtitle": org.name_en}
+                {
+                    "type": "organization",
+                    "entity_id": org.id,
+                    "title": org.name_kh,
+                    "subtitle": org.name_en,
+                }
             )
-        # TODO(CHOS-304): index athletes via a PII-reviewed job that stores ONLY
-        # name + org_id/sport_id (the same minimized projection DbSearchProvider
-        # returns), never phone/DOB/ID-doc.
+        # CHOS-304: athletes — minimized projection only (name + org + scope ids).
+        # One doc per (athlete, org, sport) participation so org/sport scope
+        # filters in search() match precisely. _id is deterministic so a reindex
+        # is idempotent. Mirrors DbSearchProvider._athletes (the tested path):
+        # NAME columns + joined org name only; never search_text/phone/DOB/ID-doc.
+        athlete_stmt = (
+            select(
+                Enroll.id.label("enroll_id"),
+                Enroll.kh_family_name,
+                Enroll.kh_given_name,
+                Organization.name_kh.label("org_name"),
+                AthleteParticipation.organization_id,
+                AthleteParticipation.sports_id,
+            )
+            .join(Athlete, Athlete.enroll_id == Enroll.id)
+            .join(AthleteParticipation, AthleteParticipation.athletes_id == Athlete.id)
+            .join(Organization, Organization.id == AthleteParticipation.organization_id)
+        )
+        for r in (await db.execute(athlete_stmt)).all():
+            name = f"{r.kh_family_name or ''} {r.kh_given_name or ''}".strip()
+            actions.append(
+                {
+                    "index": {
+                        "_index": self._index(),
+                        "_id": f"athlete:{r.enroll_id}:{r.organization_id}:{r.sports_id}",
+                    }
+                }
+            )
+            actions.append(
+                {
+                    "type": "athlete",
+                    "entity_id": r.enroll_id,
+                    "title": name,
+                    "subtitle": r.org_name,
+                    "org_id": r.organization_id,
+                    "sport_id": r.sports_id,
+                }
+            )
 
         if actions:
             await client.bulk(body=actions, refresh=True)
@@ -128,7 +181,10 @@ class OpenSearchProvider(SearchProvider):
         if scope.sport_id is not None:
             scope_filter.append({"term": {"sport_id": scope.sport_id}})
 
-        body: dict = {"size": limit * len(effective_types), "query": {"bool": {"must": must}}}
+        body: dict = {
+            "size": limit * len(effective_types),
+            "query": {"bool": {"must": must}},
+        }
         if scope_filter:
             body["query"]["bool"]["should"] = [
                 {"bool": {"must_not": {"term": {"type": "athlete"}}}},
