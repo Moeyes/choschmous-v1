@@ -26,6 +26,10 @@ overrides:
   'undici@<7.28.0': '>=7.28.0'
   'esbuild@<0.25.0': '>=0.25.0'
   'vite@<6.4.3': '>=6.4.3'
+  # CHOS-407 security: postcss XSS via unescaped </style> in stringify output
+  # (GHSA-qx2v-qp2m-jg93 / CVE-2026-41305). Pulled in transitively by next;
+  # force the patched line. Patch-level bump, no behaviour change.
+  'postcss@<8.5.10': '>=8.5.10'
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true
