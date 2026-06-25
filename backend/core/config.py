@@ -177,6 +177,38 @@ class Settings(BaseSettings):
     # the review page). Falls back to a relative path when unset.
     PUBLIC_APP_URL: str | None = None
 
+    # ── Data governance: retention purge worker (CHOS-501) ──────────────────
+    # The retention worker (app/workers/retention) purges/anonymises records once
+    # their per-data-class retention window elapses. RETENTION_ENABLED gates the
+    # *destructive* delete: when False (default for local/CI) the worker runs in
+    # dry-run mode — it reports what WOULD be purged but deletes nothing. Windows
+    # are in days, per data class; 0 disables purge for that class entirely.
+    # TODO(ops/legal): confirm the statutory retention windows with the MoEYS data
+    # protection officer and flip RETENTION_ENABLED=1 in production only after the
+    # restore drill (CHOS-502) has validated backups.
+    RETENTION_ENABLED: bool = False
+    RETENTION_RESTRICTED_PII_DAYS: int = 1825  # 5y — athlete/citizen PII
+    RETENTION_CONFIDENTIAL_DAYS: int = 1825  # 5y
+    RETENTION_INTERNAL_DAYS: int = 2555  # 7y — operational records
+    RETENTION_AUDIT_LOG_DAYS: int = 3650  # 10y — keep the audit chain the longest
+    # When the purge worker runs (arq cron). Default 03:15 daily, off-peak.
+    RETENTION_PURGE_HOUR: int = 3
+    RETENTION_PURGE_MINUTE: int = 15
+
+    # ── Minors' PII consent (CHOS-501) ──────────────────────────────────────
+    # An under-18's PII may only be collected with a recorded guardian consent.
+    # When True the registration flow rejects a minor without guardian consent
+    # (GUARDIAN_CONSENT_REQUIRED). Default False — mirroring MFA_ENFORCED — so the
+    # enforcement ships dark and pre-existing clients/tests are not broken; the
+    # MinorConsent model + the enforcement path are always active when consent IS
+    # supplied. TODO(ops): flip MINOR_CONSENT_ENFORCED=1 once the registration UI
+    # captures guardian consent for minors.
+    MINOR_CONSENT_ENFORCED: bool = False
+    MINOR_AGE_THRESHOLD: int = 18
+    # Version stamped onto each consent record so a future policy/text change is
+    # auditable (which wording the guardian agreed to).
+    MINOR_CONSENT_POLICY_VERSION: str = "2026-v1"
+
     @property
     def mfa_required_roles(self) -> set[str]:
         return {

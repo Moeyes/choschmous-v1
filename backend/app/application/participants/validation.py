@@ -27,6 +27,7 @@ from src.models.enum.event import AgeMode
 
 from src.schemas.registration import FullRegistrationRequest
 
+from core.config import settings
 from app.application.participants.errors import raise_localized, age_on
 
 logger = logging.getLogger(__name__)
@@ -197,6 +198,10 @@ async def validate_registration(db, data: FullRegistrationRequest):
     # Rule 3 — document requirement (all participants).
     validate_documents(event, data)
 
+    # Rule 3b (CHOS-501) — a minor's PII may only be collected with a recorded
+    # guardian consent. Gated by MINOR_CONSENT_ENFORCED (ships dark by default).
+    validate_minor_consent(event, data)
+
     # Rule 5 — soft duplicate (all participants), overridable with force.
     if not data.force:
         await check_duplicate(db, data)
@@ -254,6 +259,38 @@ def validate_documents(event: Events, data: FullRegistrationRequest):
                 requires="national_id_or_passport",
                 age=age,
             )
+
+
+def validate_minor_consent(event: Events, data: FullRegistrationRequest):
+    """A minor's PII may only be collected with a recorded guardian consent.
+
+    Gated by ``settings.MINOR_CONSENT_ENFORCED`` (ships dark by default, mirroring
+    MFA_ENFORCED) so pre-existing clients/tests are not broken until the
+    registration UI captures consent. The age basis matches ``validate_documents``:
+    the event start date, else today. When enforced, a participant under
+    ``MINOR_AGE_THRESHOLD`` is rejected unless guardianConsent is True and a
+    guardian name + relationship are supplied (the lawful basis recorded by
+    ``MinorConsent`` in the register use-case).
+    """
+    if not settings.MINOR_CONSENT_ENFORCED:
+        return
+    basis = event.start_date or date.today()
+    age = age_on(data.date_of_birth, basis)
+    if age >= settings.MINOR_AGE_THRESHOLD:
+        return
+    if not (
+        data.guardianConsent
+        and (data.guardianName or "").strip()
+        and (data.guardianRelationship or "").strip()
+    ):
+        raise_localized(
+            422,
+            "GUARDIAN_CONSENT_REQUIRED",
+            "A parent or guardian's recorded consent is required to register a "
+            "participant under 18.",
+            age=age,
+            threshold=settings.MINOR_AGE_THRESHOLD,
+        )
 
 
 async def check_duplicate(db, data: FullRegistrationRequest):

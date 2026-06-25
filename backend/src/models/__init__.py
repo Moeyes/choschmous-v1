@@ -23,6 +23,7 @@ from .organizer_participation import OrganizerParticipation
 from .open_survey import OpenSurveyField, OpenSurveyResponse
 from .category_survey_review import category_survey_review
 from .notification import Notification
+from .minor_consent import MinorConsent
 
 __all__ = [
     "User",
@@ -51,4 +52,5 @@ __all__ = [
     "OpenSurveyResponse",
     "category_survey_review",
     "Notification",
+    "MinorConsent",
 ]

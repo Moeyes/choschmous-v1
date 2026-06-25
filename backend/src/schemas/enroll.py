@@ -39,6 +39,14 @@ class FullRegistrationRequest(BaseModel):
     # Set true to override the soft-duplicate (name + DoB) warning and register anyway.
     force: bool = False
 
+    # CHOS-501 — guardian consent for a minor's PII. Required (when
+    # MINOR_CONSENT_ENFORCED) only for participants under MINOR_AGE_THRESHOLD;
+    # ignored for adults.
+    guardianConsent: bool = Field(False, alias="guardianConsent")
+    guardianName: Optional[str] = Field(None, alias="guardianName")
+    guardianRelationship: Optional[str] = Field(None, alias="guardianRelationship")
+    guardianPhone: Optional[str] = Field(None, alias="guardianPhone")
+
     # Address
     address: Optional[str] = None
 

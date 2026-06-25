@@ -5,6 +5,7 @@ Extracted verbatim from ParticipantService.register_participant / _create_athlet
 """
 
 import logging
+from datetime import date
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,11 +17,15 @@ from src.models.athlete_participation import (
 )
 from src.models.leader import leader as Leader
 from src.models.leader_participation import leader_participation as LeaderParticipation
+from src.models.events import Events
+from src.models.minor_consent import MinorConsent
 from src.models.user import User
 
 from src.schemas.registration import FullRegistrationRequest
 from src.services.file_access import assert_can_reference_files
 
+from core.config import settings
+from app.application.participants.errors import age_on
 from app.application.participants.validation import validate_registration
 
 logger = logging.getLogger(__name__)
@@ -69,6 +74,11 @@ class RegisterParticipant:
             self.db.add(new_enroll)
             await self.db.flush()
 
+            # CHOS-501: persist the guardian-consent record for a minor when the
+            # caller supplied it (lawful-basis evidence). validate_registration has
+            # already enforced its presence when MINOR_CONSENT_ENFORCED is on.
+            await self._record_minor_consent(new_enroll.id, data)
+
             if data.role.lower() == "athlete":
                 await self._create_athlete(new_enroll.id, data)
             elif data.role.lower() == "leader":
@@ -91,6 +101,33 @@ class RegisterParticipant:
             raise HTTPException(
                 status_code=500, detail="Registration failed due to a server error"
             )
+
+    async def _record_minor_consent(
+        self, enroll_id: int, data: FullRegistrationRequest
+    ):
+        """Record guardian consent for an under-18 when supplied (CHOS-501).
+
+        The age basis matches ``validate_minor_consent`` (event start date, else
+        today). ``db.get(Events)`` is an identity-map hit here — the event was
+        already loaded during validation, so this adds no extra query. Nothing is
+        written for adults or for minors registered without supplied consent.
+        """
+        if not (data.guardianConsent and (data.guardianName or "").strip()):
+            return
+        event = await self.db.get(Events, data.eventId)
+        basis = (event.start_date if event else None) or date.today()
+        if age_on(data.date_of_birth, basis) >= settings.MINOR_AGE_THRESHOLD:
+            return
+        self.db.add(
+            MinorConsent(
+                enroll_id=enroll_id,
+                guardian_name=data.guardianName.strip(),
+                guardian_relationship=(data.guardianRelationship or "").strip()
+                or "guardian",
+                guardian_phone=data.guardianPhone,
+                consent_version=settings.MINOR_CONSENT_POLICY_VERSION,
+            )
+        )
 
     async def _create_athlete(self, enroll_id: int, data: FullRegistrationRequest):
         athlete = Athlete(enroll_id=enroll_id)
