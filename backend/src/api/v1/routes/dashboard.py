@@ -6,6 +6,8 @@ from src.schemas.dashboard import (
     DashboardData,
     DashboardResponse,
     GenderDistribution,
+    RegistrationWindow,
+    RegistrationWindowResponse,
     ReviewPendingCount,
     ReviewPendingCountResponse,
     StatsResponse,
@@ -79,3 +81,18 @@ async def get_review_pending_count(
     is_reviewer = current_user.role in _REVIEWER_ROLES
     data = await dashboard_service.get_review_pending_count(db, is_reviewer=is_reviewer)
     return ReviewPendingCountResponse(success=True, data=ReviewPendingCount(**data))
+
+
+@router.get("/registration-window", response_model=RegistrationWindowResponse)
+async def get_registration_window(
+    db: AsyncSession = Depends(get_read_db),
+    _current_user: User = Depends(get_current_user),
+) -> RegistrationWindowResponse:
+    """System-wide registration-window status for the dashboard status line.
+
+    Aggregates the per-event registration phases into one headline
+    (open / scheduled / closed / unknown). Public scheduling data — available to
+    any authenticated user, no scoping, no PII.
+    """
+    data = await dashboard_service.get_registration_window(db)
+    return RegistrationWindowResponse(success=True, data=RegistrationWindow(**data))

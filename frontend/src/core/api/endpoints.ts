@@ -110,6 +110,7 @@ export const API = {
   dashboard: {
     data: '/api/v1/dashboard',
     reviewPendingCount: '/api/v1/dashboard/review-pending-count',
+    registrationWindow: '/api/v1/dashboard/registration-window',
   },
   reports: {
     generate: (key: string) => `/api/v1/reports/${key}`,

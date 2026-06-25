@@ -5,3 +5,8 @@ export async function apiGetDashboardData(params?: Record<string, unknown>) {
     const response = await apiClient.get(API.dashboard.data, { params });
     return response.data;
 }
+
+export async function apiGetRegistrationWindow() {
+    const response = await apiClient.get(API.dashboard.registrationWindow);
+    return response.data;
+}

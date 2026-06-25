@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Dict, List, Optional
 from sqlalchemy import func, select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +8,7 @@ from src.models.athletes import Athlete
 from src.models.athlete_participation import AthleteParticipation
 from src.models.enroll import Enroll
 from src.models.events import Events
+from src.models.enum.event import PhaseStatus
 from src.models.organization import Organization
 from src.models.sport import Sport
 from src.models.leader import Leader
@@ -17,6 +19,52 @@ DASHBOARD_CACHE_TTL = 120  # 2 minutes
 
 # Review FSM "awaiting admin action" state (shared by both review surfaces).
 _REVIEW_PENDING_STATUS = "SUBMITTED"
+
+
+async def get_registration_window(db: AsyncSession) -> dict:
+    """System-wide registration-window status for the dashboard status line.
+
+    Registration windows are per-event; this aggregates them into one headline:
+
+    * ``open``      — at least one event's registration is open right now;
+                      ``closesOn`` is the soonest upcoming close date among them.
+    * ``scheduled`` — none open now, but an AUTO-status event opens in the
+                      future; ``opensOn`` is the nearest such date.
+    * ``closed``    — events exist but none are open or upcoming.
+    * ``unknown``   — no events at all (neutral state, no fabricated dates).
+
+    Dates only (Public scheduling data — no PII). Events is a small reference
+    table, so reading them all is fine here.
+    """
+    events = (await db.execute(select(Events))).scalars().all()
+    if not events:
+        return {"status": "unknown", "opensOn": None, "closesOn": None}
+
+    today = date.today()
+    open_close_dates: list[date] = []
+    upcoming_open_dates: list[date] = []
+    for ev in events:
+        if ev.registration_is_open:
+            if ev.registration_close_date is not None:
+                open_close_dates.append(ev.registration_close_date)
+        elif (
+            ev.registration_status == PhaseStatus.AUTO
+            and ev.registration_open_date is not None
+            and ev.registration_open_date > today
+        ):
+            upcoming_open_dates.append(ev.registration_open_date)
+
+    # An event can be open with no close date set (manual OPEN) — still "open".
+    if any(ev.registration_is_open for ev in events):
+        closes = min(open_close_dates).isoformat() if open_close_dates else None
+        return {"status": "open", "opensOn": None, "closesOn": closes}
+    if upcoming_open_dates:
+        return {
+            "status": "scheduled",
+            "opensOn": min(upcoming_open_dates).isoformat(),
+            "closesOn": None,
+        }
+    return {"status": "closed", "opensOn": None, "closesOn": None}
 
 
 async def get_review_pending_count(db: AsyncSession, *, is_reviewer: bool) -> dict:

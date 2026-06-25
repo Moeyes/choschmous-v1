@@ -73,6 +73,7 @@ export const queryKeys = {
     all: ['dashboard'] as const,
     scoped: (role: string | null | undefined, orgId: number | null | undefined) => ['dashboard', role, orgId] as const,
     reviewPendingCount: (role: string | null | undefined) => ['dashboard', 'review-pending-count', role] as const,
+    registrationWindow: ['dashboard', 'registration-window'] as const,
   },
   organizerRoles: {
     all: ['organizer-roles'] as const,

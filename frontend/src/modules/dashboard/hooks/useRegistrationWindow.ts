@@ -1,22 +1,35 @@
 'use client';
 
-export type RegistrationWindowStatus = 'open' | 'closed' | 'scheduled' | 'unknown';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/core/api/queryKeys';
+import { dashboardHttpAdapter } from '../adapters/dashboardHttpAdapter';
+import type {
+    RegistrationWindow,
+    RegistrationWindowStatus,
+} from '../schema/registrationWindow.schema';
 
-export interface RegistrationWindow {
-    status: RegistrationWindowStatus;
-    opensOn?: string;
-    closesOn?: string;
-}
+export type { RegistrationWindow, RegistrationWindowStatus };
+
+const NEUTRAL: RegistrationWindow = { status: 'unknown' };
 
 /**
- * Current registration-window status for the dashboard status line.
+ * System-wide registration-window status for the dashboard status line
+ * (registration-window). Backed by GET /api/v1/dashboard/registration-window
+ * through the dashboard port/adapter + React Query.
  *
- * TODO(registration-window): registration windows are currently per-event
- * (resolved via eventsRepository.getById in the registration flow); there is no
- * system-wide "current window" endpoint. When one exists, wire it here through a
- * port/adapter + React Query. Until then we report 'unknown' so the dashboard
- * shows a neutral state instead of fabricated dates.
+ * Public scheduling data (no PII). While loading or on error we report the
+ * neutral 'unknown' state instead of fabricated dates. Returns the same
+ * `{ data, isLoading }` shape the status line already consumes.
  */
-export function useRegistrationWindow(): { data: RegistrationWindow; isLoading: boolean } {
-    return { data: { status: 'unknown' }, isLoading: false };
+export function useRegistrationWindow(): {
+    data: RegistrationWindow;
+    isLoading: boolean;
+} {
+    const { data, isLoading } = useQuery({
+        queryKey: queryKeys.dashboard.registrationWindow,
+        queryFn: () => dashboardHttpAdapter.getRegistrationWindow(),
+        staleTime: 5 * 60_000,
+    });
+
+    return { data: data ?? NEUTRAL, isLoading };
 }

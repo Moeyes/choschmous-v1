@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -76,6 +76,19 @@ class ReviewPendingCount(BaseModel):
 class ReviewPendingCountResponse(BaseModel):
     success: bool = True
     data: ReviewPendingCount
+
+
+class RegistrationWindow(BaseModel):
+    """System-wide registration-window headline for the dashboard status line."""
+
+    status: Literal["open", "closed", "scheduled", "unknown"]
+    opensOn: Optional[str] = None
+    closesOn: Optional[str] = None
+
+
+class RegistrationWindowResponse(BaseModel):
+    success: bool = True
+    data: RegistrationWindow
 
 
 def format_events(events: list) -> List[EventDashboard]:
