@@ -7,7 +7,9 @@ three pillars (metrics, traces, logs) correlated by `trace_id`.
 | ---- | ------- |
 | `docker-compose.observability.yml` | Prometheus, Alertmanager, Grafana, Tempo, Loki, Promtail |
 | `prometheus/prometheus.yml` | scrape targets (incl. backend `/metrics`) + alerting |
-| `prometheus/alerts.yml` | starter alert rules (down / 5xx / latency) |
+| `prometheus/alerts.yml` | alert rules: app (down / 5xx / latency) + DB / Redis / host (CHOS-105) |
+| `grafana/dashboards/` | starter dashboards: API RED, infra (PG/Redis/host), SLO burn (CHOS-105) |
+| postgres-/redis-/node-exporter | DB / cache / host metrics, scraped by Prometheus (CHOS-105) |
 | `alertmanager/alertmanager.yml` | routing + PagerDuty receiver (key is a TODO) |
 | `tempo/tempo.yaml` | Tempo trace backend (OTLP receiver on 4317/4318) — CHOS-204 |
 | `loki/loki-config.yaml` | Loki log backend — CHOS-204 |

@@ -30,5 +30,15 @@ scrape_configs:
     static_configs:
       - targets: ["alertmanager:9093"]
 
-  # TODO(CHOS-105): add postgres-exporter, redis-exporter, and node-exporter
-  # targets for DB/cache/host metrics.
+  # CHOS-105: DB / cache / host exporters (see docker-compose.observability.yml).
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]

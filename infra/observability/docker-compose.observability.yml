@@ -54,6 +54,8 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      # CHOS-105: starter dashboards auto-loaded by the file provider.
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     ports:
       - "127.0.0.1:3001:3000"
@@ -96,6 +98,38 @@ services:
       - /var/log:/var/log:ro
     depends_on:
       - loki
+
+  # CHOS-105: DB metrics. Connects to the `db` service from docker-compose.yml
+  # (run both files together). Uses the same creds as the app; in prod inject
+  # DATA_SOURCE_NAME from the secret store, not the shell.
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${DB_USER:-postgres}:${DB_PASS:-moeys_dev_pass}@db:5432/${DB_NAME:-moeys}?sslmode=disable
+    expose:
+      - "9187"
+
+  # CHOS-105: cache metrics for the `redis` service.
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    expose:
+      - "9121"
+
+  # CHOS-105: host/node metrics (CPU, memory, disk, filesystem).
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    expose:
+      - "9100"
 
 volumes:
   prometheus_data:
