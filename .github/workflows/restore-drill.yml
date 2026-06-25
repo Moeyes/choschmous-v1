@@ -33,13 +33,13 @@ jobs:
     name: Quarterly restore drill
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # TODO(infra/cred): provision the AWS OIDC role + set vars.AWS_ROLE_ARN /
       # vars.AWS_REGION. Until then the step is skipped and the drill runs dry.
       - name: Configure AWS credentials (OIDC)
         if: ${{ vars.AWS_ROLE_ARN != '' }}
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -55,7 +55,7 @@ jobs:
 
       - name: Upload drill summary
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: restore-drill-summary
           path: restore_drill.json
