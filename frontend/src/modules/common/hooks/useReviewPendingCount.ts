@@ -1,14 +1,29 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/core/api/queryKeys';
+import { useAuth, UserRole } from '@/core/auth';
+import { reviewQueueHttpAdapter } from '../adapters/reviewQueueHttpAdapter';
+
 /**
- * Pending-review count for the "Review queue" nav badge.
+ * Pending-review count for the "Review queue" nav badge (CHOS-506).
  *
- * TODO(review-count): there is no aggregate pending-count endpoint yet. When the
- * backend exposes one (e.g. a count across participation + sport/category
- * submissions awaiting review), wire it here through a port/adapter + React
- * Query and return the live number. Until then this returns 0 so the badge
- * renders nothing while the call site stays ready.
+ * Backed by GET /api/v1/dashboard/review-pending-count through a port/adapter +
+ * React Query. Only reviewers (ADMIN / SUPER_ADMIN) have a review queue, so the
+ * query is disabled for everyone else and the hook returns 0 (badge renders
+ * nothing). Returns a plain number to keep the call sites unchanged.
  */
 export function useReviewPendingCount(): number {
-    return 0;
+    const { role } = useAuth();
+    const isReviewer = role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
+
+    const { data } = useQuery({
+        queryKey: queryKeys.dashboard.reviewPendingCount(role),
+        queryFn: () => reviewQueueHttpAdapter.getPendingCount(),
+        enabled: isReviewer,
+        staleTime: 60_000,
+        refetchInterval: 60_000,
+    });
+
+    return data?.pending ?? 0;
 }

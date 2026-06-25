@@ -65,6 +65,19 @@ class DashboardResponse(BaseModel):
     data: DashboardData
 
 
+class ReviewPendingCount(BaseModel):
+    """Aggregate count of submissions awaiting admin review (nav badge)."""
+
+    pending: int
+    byNumber: int
+    byCategory: int
+
+
+class ReviewPendingCountResponse(BaseModel):
+    success: bool = True
+    data: ReviewPendingCount
+
+
 def format_events(events: list) -> List[EventDashboard]:
     return [
         EventDashboard(

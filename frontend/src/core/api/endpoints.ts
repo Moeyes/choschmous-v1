@@ -109,6 +109,7 @@ export const API = {
   },
   dashboard: {
     data: '/api/v1/dashboard',
+    reviewPendingCount: '/api/v1/dashboard/review-pending-count',
   },
   reports: {
     generate: (key: string) => `/api/v1/reports/${key}`,

@@ -10,8 +10,44 @@ from src.models.events import Events
 from src.models.organization import Organization
 from src.models.sport import Sport
 from src.models.leader import Leader
+from src.models.participation_per_sport import ParticipationPerSport
+from src.models.category_survey_review import CategorySurveyReview
 
 DASHBOARD_CACHE_TTL = 120  # 2 minutes
+
+# Review FSM "awaiting admin action" state (shared by both review surfaces).
+_REVIEW_PENDING_STATUS = "SUBMITTED"
+
+
+async def get_review_pending_count(db: AsyncSession, *, is_reviewer: bool) -> dict:
+    """Count submissions awaiting admin review (by-number + by-category).
+
+    Only reviewers (ADMIN / SUPER_ADMIN) have a review queue; everyone else gets
+    zero so the nav badge simply renders nothing without a 403. Counted in SQL,
+    never load-all-then-len.
+    """
+    if not is_reviewer:
+        return {"pending": 0, "byNumber": 0, "byCategory": 0}
+
+    by_number = (
+        await db.execute(
+            select(func.count(ParticipationPerSport.id)).where(
+                ParticipationPerSport.status == _REVIEW_PENDING_STATUS
+            )
+        )
+    ).scalar() or 0
+    by_category = (
+        await db.execute(
+            select(func.count(CategorySurveyReview.id)).where(
+                CategorySurveyReview.status == _REVIEW_PENDING_STATUS
+            )
+        )
+    ).scalar() or 0
+    return {
+        "pending": by_number + by_category,
+        "byNumber": by_number,
+        "byCategory": by_category,
+    }
 
 
 def _scope(org_id: Optional[int]) -> str:

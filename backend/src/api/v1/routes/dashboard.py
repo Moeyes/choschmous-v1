@@ -6,6 +6,8 @@ from src.schemas.dashboard import (
     DashboardData,
     DashboardResponse,
     GenderDistribution,
+    ReviewPendingCount,
+    ReviewPendingCountResponse,
     StatsResponse,
     format_events,
     format_recent_enrollments,
@@ -14,9 +16,12 @@ from src.schemas.dashboard import (
 )
 from src.database.deps import get_read_db, get_current_user, get_effective_org_id
 from src.models.user import User
+from src.models.enum.user import UserRole
 from src.services import dashboard_service
 
 router = APIRouter()
+
+_REVIEWER_ROLES = {UserRole.ADMIN, UserRole.SUPER_ADMIN}
 
 
 @router.get("", response_model=DashboardResponse)
@@ -58,3 +63,19 @@ async def get_dashboard(
     )
 
     return DashboardResponse(success=True, data=dashboard_data)
+
+
+@router.get("/review-pending-count", response_model=ReviewPendingCountResponse)
+async def get_review_pending_count(
+    db: AsyncSession = Depends(get_read_db),
+    current_user: User = Depends(get_current_user),
+) -> ReviewPendingCountResponse:
+    """Count of submissions awaiting admin review, for the "Review queue" badge.
+
+    Reviewers (ADMIN / SUPER_ADMIN) get the live count across the by-number and
+    by-category review surfaces; other roles get 0 (they have no review queue),
+    so the endpoint is safe to call from the shared nav without a 403.
+    """
+    is_reviewer = current_user.role in _REVIEWER_ROLES
+    data = await dashboard_service.get_review_pending_count(db, is_reviewer=is_reviewer)
+    return ReviewPendingCountResponse(success=True, data=ReviewPendingCount(**data))
