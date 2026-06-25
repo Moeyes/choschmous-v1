@@ -1,3 +1,4 @@
+import logging
 import re
 from passlib.context import CryptContext
 import hashlib
@@ -6,8 +7,11 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
+import httpx
 import jwt
 from core.config import settings
+
+logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
@@ -138,6 +142,80 @@ def validate_password_strength(password: str) -> None:
         raise ValueError("password must contain at least one digit")
     if password.lower() in _COMMON_WEAK_PASSWORDS:
         raise ValueError("password is too common; choose a less predictable password")
+
+
+# ── CHOS-505: breached-password screening (HaveIBeenPwned, k-anonymity) ──────
+# The small denylist above only catches a handful of obvious passwords. ASVS 5.0
+# (V2) wants new passwords checked against a real breach corpus. HIBP's Pwned
+# Passwords range API lets us do that WITHOUT sending the password (or its full
+# hash) anywhere: we SHA-1 the password, send only the first 5 hex chars of the
+# digest, and HIBP returns every breached-hash suffix sharing that prefix. We
+# match the suffix locally. The server never learns which password we asked
+# about (k-anonymity).
+_HIBP_RANGE_PADDING_HEADER = {"Add-Padding": "true"}  # mask response size
+
+
+def _password_breach_count(password: str, range_text: str) -> int:
+    """Pure matcher: given an HIBP range response, how many breaches contain it.
+
+    ``range_text`` is the body returned by ``GET /range/<prefix>`` — newline-
+    separated ``HASH_SUFFIX:COUNT`` lines. With Add-Padding on, HIBP injects
+    decoy lines with ``COUNT == 0`` which we ignore. Matching is the full SHA-1:
+    prefix (first 5 hex chars) is implied by the endpoint, suffix is the rest.
+    """
+    digest = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
+    suffix = digest[5:]
+    for line in range_text.splitlines():
+        line = line.strip()
+        if not line or ":" not in line:
+            continue
+        candidate, _, count_str = line.partition(":")
+        if candidate.strip().upper() == suffix:
+            try:
+                return int(count_str.strip())
+            except ValueError:
+                return 0
+    return 0
+
+
+async def screen_breached_password(
+    password: str, *, client: httpx.AsyncClient | None = None
+) -> None:
+    """Raise ``ValueError`` if a password appears in the HIBP breach corpus.
+
+    No-op unless ``HIBP_ENABLED`` (default False) — so local/CI and offline
+    environments are unaffected, mirroring MFA_ENFORCED / MINOR_CONSENT_ENFORCED.
+
+    **Fails open**: if HIBP is unreachable or errors, we log and return without
+    raising. A breach-corpus check is a hardening control, not an availability-
+    critical one — an outage at HIBP must not block citizens from registering.
+    """
+    if not settings.HIBP_ENABLED:
+        return
+
+    digest = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
+    prefix = digest[:5]
+    url = f"{settings.HIBP_API_URL.rstrip('/')}/{prefix}"
+
+    owns_client = client is None
+    if client is None:
+        client = httpx.AsyncClient(timeout=settings.HIBP_TIMEOUT_SECONDS)
+    try:
+        resp = await client.get(url, headers=_HIBP_RANGE_PADDING_HEADER)
+        resp.raise_for_status()
+        range_text = resp.text
+    except (httpx.HTTPError, httpx.InvalidURL) as exc:  # network / 5xx / timeout
+        logger.warning("HIBP breach screening unavailable, failing open: %s", exc)
+        return
+    finally:
+        if owns_client:
+            await client.aclose()
+
+    if _password_breach_count(password, range_text) > settings.HIBP_MAX_BREACH_COUNT:
+        # Never log the password; the message must not echo it either.
+        raise ValueError(
+            "password has appeared in a known data breach; choose a different one"
+        )
 
 
 def generate_csrf_token() -> str:

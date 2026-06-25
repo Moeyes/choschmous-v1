@@ -5,7 +5,11 @@ from typing import Optional, List
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import hash_password, validate_password_strength
+from core.security import (
+    hash_password,
+    screen_breached_password,
+    validate_password_strength,
+)
 from src.database.base_repository import BaseRepository
 from src.models.user import User
 from src.schemas.user import UserCreate, UserUpdate
@@ -39,6 +43,7 @@ class UserService:
 
         try:
             validate_password_strength(payload.password)
+            await screen_breached_password(payload.password)
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
 
@@ -66,6 +71,7 @@ class UserService:
             if pw is not None:
                 try:
                     validate_password_strength(pw)
+                    await screen_breached_password(pw)
                 except ValueError as e:
                     raise HTTPException(status_code=422, detail=str(e))
                 data["hashed_password"] = hash_password(pw)

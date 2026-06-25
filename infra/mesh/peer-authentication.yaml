@@ -1,0 +1,54 @@
+# CHOS-505: STRICT mutual TLS between tiers via Istio.
+#
+# PeerAuthentication in STRICT mode makes every pod-to-pod call inside the mesh
+# use mTLS — each side presents a SPIFFE identity cert minted by Istio, and
+# plaintext is refused. This secures the api <-> bff <-> workers traffic so an
+# attacker with a foothold on the pod network still cannot read or spoof
+# inter-tier calls.
+#
+# Applied to each per-env namespace (mirrors argocd/appproject.yaml). A
+# mesh-wide STRICT policy in the istio-system root namespace is the belt; these
+# per-namespace policies are the braces and make intent explicit per env.
+#
+# DB/Redis live OUTSIDE the mesh (managed RDS/ElastiCache); those connections
+# are secured with TLS at the client (terraform enforces in-transit encryption).
+# See README.md.
+#
+# TODO(infra): install Istio (or swap to Linkerd) and label the moeys-* namespaces
+# for sidecar injection (istio-injection=enabled) before these take effect.
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: moeys-prod
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: moeys-staging
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: moeys-uat
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: moeys-dev
+spec:
+  mtls:
+    mode: STRICT

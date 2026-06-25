@@ -1,0 +1,60 @@
+# CHOS-505: deny-by-default L7 authorization between tiers (Istio).
+#
+# mTLS (peer-authentication.yaml) proves WHO is calling; these AuthorizationPolicies
+# decide WHAT each identity may call. The first (empty-spec) policy denies all
+# traffic in the namespace; the rest re-allow only the legitimate tier paths:
+#
+#   ingress-gateway  ->  bff        (public web traffic)
+#   ingress-gateway  ->  api        (public API traffic)
+#   bff              ->  api        (server-side data fetches)
+#   (workers reach the DB/Redis directly, not via mesh services, so need no
+#    in-mesh allow rule; they are not callable by other tiers.)
+#
+# Identities are SPIFFE principals derived from the pods' ServiceAccounts
+# (moeys-api / moeys-bff), so a compromised pod cannot assume another tier's id.
+#
+# Shown for moeys-prod; replicate per env. TODO(infra): set the real
+# ingress-gateway namespace/SA and apply once Istio is installed.
+---
+# 1. Default deny: a namespace AuthorizationPolicy with no rules denies everything.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all
+  namespace: moeys-prod
+spec: {}
+---
+# 2. Allow the ingress gateway to reach the BFF.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress-to-bff
+  namespace: moeys-prod
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: moeys-bff
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            # TODO(infra): real ingress-gateway SA principal.
+            principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway"]
+---
+# 3. Allow the ingress gateway AND the BFF to reach the API.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress-and-bff-to-api
+  namespace: moeys-prod
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: moeys-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/istio-system/sa/istio-ingressgateway"
+              - "cluster.local/ns/moeys-prod/sa/moeys-bff"

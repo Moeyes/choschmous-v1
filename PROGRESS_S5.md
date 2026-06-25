@@ -25,13 +25,35 @@ Environment notes (this machine):
       (>=70% killed) + coverage gate >=85% blocking in CI
 - [x] CHOS-504 — argocd/rollouts canary/blue-green + infra/observability/slo + auto-rollback on
       SLO breach + error-budget policy + status page config
-- [ ] CHOS-505 — docs/THREAT_MODEL.md (STRIDE) + HIBP breached-password screening in
+- [x] CHOS-505 — docs/THREAT_MODEL.md (STRIDE) + HIBP breached-password screening in
       core/security.py + cosign image signing + mTLS between tiers + SECURITY.md
 - [ ] CHOS-506 — docs/adr ADR log + docs/runbooks per-alert + rename SQLAlchemy models to
       PascalCase (keep __tablename__) migration-safe + delete raw backend/migrations/*.sql +
       update all imports; tests green
 
 ## Notes per ticket
+
+### CHOS-505 (done)
+- **HIBP screening** `core/security.py::screen_breached_password` (+ pure
+  `_password_breach_count`): k-anonymity range API (only 5-char SHA-1 prefix leaves), matches
+  suffix locally, Add-Padding decoys ignored. **Gated by `HIBP_ENABLED` (default False** — offline/
+  CI safe, mirrors MFA_ENFORCED) and **FAILS OPEN** on any httpx error (outage must not block
+  registration). Config: HIBP_ENABLED/_API_URL/_TIMEOUT_SECONDS/_MAX_BREACH_COUNT. Wired into BOTH
+  `UserService.create_user` + `update_user` password paths (await, maps ValueError→422).
+  `client=` param injectable for tests. `tests/test_breached_password.py` (8) uses httpx.MockTransport.
+- **cosign** `.github/workflows/docker.yml`: added `id-token: write`, `id: build`, cosign-installer +
+  **keyless sign by digest** (`cosign sign --yes IMAGE@DIGEST`) on push only. Verification half =
+  `infra/admission/cosign-verify-policy.yaml` (sigstore policy-controller ClusterImagePolicy: Fulcio
+  issuer + GH workflow subjectRegExp + Rekor). REPLACE_ME for org/repo.
+- **mTLS** `infra/mesh/`: Istio `peer-authentication.yaml` (STRICT per moeys-* ns) +
+  `authorization-policy.yaml` (deny-all + ingress→bff, ingress/bff→api SPIFFE allows) + README
+  (DB/Redis = TLS-in-transit outside mesh). Not applied (no cluster).
+- **docs/THREAT_MODEL.md** = STRIDE per component/trust-boundary (auth, ABAC, PII, edge/net,
+  supply-chain, availability) + top-risks + external-pentest as out-of-scope TODO.
+- **SECURITY.md** = coordinated-disclosure policy (report channels, response SLAs, safe harbor,
+  scope), TODO(security) for the real mailbox/PGP/pentest.
+- Full suite **268 passed** (was 260); ruff clean; new YAML parses (4/4). HIBP off by default → no
+  behaviour change. pentest = external TODO (per brief).
 
 ### CHOS-504 (done)
 - **SLO source of truth** `infra/observability/slo/slo.yaml` (Sloth-compatible

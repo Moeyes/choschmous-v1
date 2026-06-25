@@ -100,6 +100,18 @@ class Settings(BaseSettings):
     # human-readable logs in local dev.
     LOG_JSON: bool = True
 
+    # ── Breached-password screening (CHOS-505, HaveIBeenPwned) ──────────────
+    # Screen new/changed passwords against the HIBP Pwned Passwords corpus using
+    # the k-anonymity range API (only a 5-char SHA-1 prefix leaves the system).
+    # Default False so local/CI/offline are unaffected (mirrors MFA_ENFORCED);
+    # screening fails OPEN if HIBP is unreachable — see core.security.
+    # TODO(ops): set HIBP_ENABLED=1 in deployed environments.
+    HIBP_ENABLED: bool = False
+    HIBP_API_URL: str = "https://api.pwnedpasswords.com/range"
+    HIBP_TIMEOUT_SECONDS: float = 2.0
+    # Reject a password seen in MORE than this many breaches (0 → reject any hit).
+    HIBP_MAX_BREACH_COUNT: int = 0
+
     # ── Multi-factor authentication (CHOS-401) ──────────────────────────────
     # Issuer label shown in the authenticator app (the "Account" prefix in the
     # otpauth:// provisioning URI / QR code).
