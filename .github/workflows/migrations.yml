@@ -67,7 +67,7 @@ jobs:
       # here (alembic/bootstrap never connect to it); this just satisfies config.
       REDIS_URL: redis://localhost:6379/0
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Sync dependencies

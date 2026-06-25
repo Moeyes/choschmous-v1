@@ -31,11 +31,11 @@ jobs:
       # satisfies the rewrite config so the server starts.
       API_PROXY_TARGET: http://localhost:8000
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
           package_json_file: frontend/package.json
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -67,7 +67,7 @@ jobs:
 
       - name: Install Chrome
         id: setup-chrome
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v2
 
       - name: Lighthouse CI (LCP/TBT budgets)
         run: pnpm exec lhci autorun
