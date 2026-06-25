@@ -74,7 +74,10 @@ jobs:
       - name: Build production backend image
         run: docker build --target production -t moeys-backend:scan ./backend
       - name: Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@0.28.0
+        # >=0.35.0 — earlier tags are flagged by the trivy supply-chain compromise
+        # advisory (GHSA-69fq-xp46-6x23, critical) and the composite-action script
+        # injection (GHSA-9p44-j4g5-cfx5).
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: moeys-backend:scan
           format: table
