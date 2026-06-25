@@ -17,3 +17,12 @@ create_superadmin.py
 
 # CHOS-202: locally-stored report artifacts (used when no S3 bucket is configured)
 var/
+# CHOS-503: test tooling artifacts (mutation/coverage/hypothesis)
+mutants/
+.mutmut-cache
+mutmut-stats.json
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/

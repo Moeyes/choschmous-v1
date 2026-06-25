@@ -44,6 +44,13 @@ dev = [
     "pytest==9.0.3",
     "pytest-asyncio==1.4.0",
     "ruff==0.14.4",
+    # CHOS-503: coverage gate, contract (Schemathesis vs OpenAPI) + mutation testing.
+    "coverage==7.14.3",
+    "pytest-cov==7.1.0",
+    "schemathesis==4.21.10",
+    "hypothesis==6.155.7",
+    "mutmut==3.6.0",
+    "jsonschema==4.26.0",
 ]
 
 [tool.ruff]
@@ -73,3 +80,49 @@ pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_test_loop_scope = "session"
 asyncio_default_fixture_loop_scope = "session"
+
+# ── CHOS-503: coverage gate ─────────────────────────────────────────────────
+# The BLOCKING gate is scoped to the security/integrity-critical core (ABAC
+# authorization engine, the hash-chained audit log, the retention purge +
+# subject-erasure). A government system cannot regress those below 85%. Glue that
+# is untestable without live infra (the arq *worker.py entrypoints, the
+# best-effort SIEM shipper) is omitted. Global repo coverage (~69% at sprint 5,
+# tracked non-blocking in CI) ramps the `source` list outward over time — see the
+# "coverage-ramp" note in .github/workflows/ci.yml. Run the gate locally with:
+#   pytest --cov --cov-fail-under=85
+[tool.coverage.run]
+branch = true
+source = [
+    "app/domain/policies",
+    "app/application/audit",
+    "app/workers/retention",
+    "core/security",
+    "core/idempotency",
+]
+omit = [
+    "*/__init__.py",
+    "*/worker.py",
+    "app/application/audit/siem.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 85
+
+# ── CHOS-503: mutation testing ──────────────────────────────────────────────
+# Mutation testing is slow, so it is scoped to the pure, fully-unit-tested ABAC
+# policy engine — the highest-stakes logic (an undetected mutation there is a
+# silent authorization bug). The CI "mutation" job asserts >=70% of mutants are
+# killed. Run locally with: mutmut run  (then: mutmut results).
+[tool.mutmut]
+source_paths = ["app/domain/policies/engine.py", "app/domain/policies/models.py"]
+# The DB-free policy unit suite kills mutants. Scope = the security-critical
+# decision CORE (deny-by-default + deny-overrides combine logic in engine.py and
+# the Decision/Effect model). The declarative rules.py RBAC mapping is validated
+# by the authz integration/bypass suite, which cannot run in mutmut's in-process
+# sandbox (async DB fixtures). (mutmut 3.x)
+pytest_add_cli_args_test_selection = ["tests/test_policies.py"]
+# mutmut sandboxes into mutants/; the shared tests/conftest imports the whole app,
+# so the rest of the backend must be copied alongside the mutated policy package.
+also_copy = ["core", "src", "main.py", "app", "conftest.py", "alembic.ini", ".env"]

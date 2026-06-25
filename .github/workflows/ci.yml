@@ -76,8 +76,76 @@ jobs:
         run: uv sync --frozen
       - name: Bootstrap database schema
         run: uv run python scripts/init_db_schema.py
-      - name: Run tests
-        run: uv run pytest -q
+      # CHOS-503: tests + BLOCKING coverage gate. The gate is scoped to the
+      # security/integrity-critical core (ABAC engine, audit chain, retention
+      # purge/erasure) and configured in pyproject ([tool.coverage] fail_under=85).
+      # The contract tests (tests/contract/, Schemathesis vs OpenAPI) run here too.
+      - name: Run tests + coverage gate (>=85% on critical core)
+        run: uv run pytest -q --cov
+
+  # CHOS-503: mutation-testing gate. Mutates the ABAC decision core and fails if
+  # the mutant kill rate < 70% (currently ~95%). Separate job — slower than unit
+  # tests, runs in parallel.
+  mutation:
+    name: Backend (mutation >=70%)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: moeys_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: moeys_test
+      REDIS_URL: redis://localhost:6379/0
+      ENVIRONMENT: local
+      JWT_SECRET_KEY: ci-test-secret-key-not-for-production-0001
+      JWT_REFRESH_SECRET_KEY: ci-test-refresh-secret-not-for-prod-0002
+      MUTATION_THRESHOLD: "70"
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Sync dependencies
+        run: uv sync --frozen
+      - name: Bootstrap database schema
+        run: uv run python scripts/init_db_schema.py
+      # mutmut sandboxes into mutants/ and also_copies .env so the copied
+      # core.database can resolve creds in that CWD. CI has no .env (it uses real
+      # env vars), so synthesize one from the job env.
+      - name: Materialize .env for the mutmut sandbox
+        run: |
+          {
+            echo "DB_USER=$DB_USER"
+            echo "DB_PASS=$DB_PASS"
+            echo "DB_HOST=$DB_HOST"
+            echo "DB_PORT=$DB_PORT"
+            echo "DB_NAME=$DB_NAME"
+            echo "REDIS_URL=$REDIS_URL"
+            echo "ENVIRONMENT=local"
+            echo "JWT_SECRET_KEY=$JWT_SECRET_KEY"
+            echo "JWT_REFRESH_SECRET_KEY=$JWT_REFRESH_SECRET_KEY"
+          } > .env
+      - name: Mutation gate
+        run: uv run python scripts/mutation_gate.py
 
   openapi-contract:
     name: Backend (OpenAPI contract)

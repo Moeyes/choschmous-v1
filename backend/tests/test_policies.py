@@ -47,9 +47,7 @@ def test_deny_overrides_any_allow():
     [(SUPER, True), (ADMIN, True), (FED, False), (ORG, False)],
 )
 def test_manage_global_matches_require_admin(subject, expected):
-    assert (
-        policy.can(subject, Action.MANAGE_GLOBAL, Resource(kind="admin")) is expected
-    )
+    assert policy.can(subject, Action.MANAGE_GLOBAL, Resource(kind="admin")) is expected
 
 
 # ── require_superadmin equivalence (ADMINISTER) ──────────────────────────────
@@ -59,8 +57,7 @@ def test_manage_global_matches_require_admin(subject, expected):
 )
 def test_administer_matches_require_superadmin(subject, expected):
     assert (
-        policy.can(subject, Action.ADMINISTER, Resource(kind="superadmin"))
-        is expected
+        policy.can(subject, Action.ADMINISTER, Resource(kind="superadmin")) is expected
     )
 
 
@@ -124,3 +121,60 @@ def test_organization_cannot_manage_sport_level_resources():
 def test_organization_can_read_but_not_write_global_resources():
     assert policy.can(ORG, Action.READ, Resource(kind="event"))
     assert not policy.can(ORG, Action.CREATE, Resource(kind="event"))
+
+
+# ── engine-core unit tests (CHOS-503 mutation coverage) ──────────────────────
+# These pin the deny-by-default / deny-overrides CORE precisely (independent of
+# the DEFAULT_RULES set) so a mutation in engine.py / models.py breaks a test.
+from app.domain.policies.engine import PolicyEngine  # noqa: E402
+from app.domain.policies.models import allow, deny  # noqa: E402
+
+
+def test_allow_and_deny_helpers_carry_their_reason():
+    a = allow("granted-because")
+    assert a.allowed is True and a.reason == "granted-because" and bool(a) is True
+    d = deny("nope")
+    assert d.allowed is False and d.reason == "nope" and bool(d) is False
+
+
+def test_engine_honours_provided_rules_not_the_defaults():
+    # Empty rule set → deny-by-default for everything (no fallback to DEFAULT_RULES).
+    empty = PolicyEngine([])
+    dec = empty.authorize(SUPER, Action.READ, Resource(kind="event"))
+    assert dec.allowed is False
+    assert "deny-by-default" in dec.reason
+
+    # A provided always-allow rule is actually used.
+    def always_allow(s, a, r):
+        return allow("yes")
+
+    assert PolicyEngine([always_allow]).can(ORG, Action.READ, Resource(kind="event"))
+
+
+def test_explicit_deny_overrides_allow_regardless_of_order():
+    def allow_rule(s, a, r):
+        return allow("ok")
+
+    def deny_rule(s, a, r):
+        return deny("blocked")
+
+    def abstain(s, a, r):
+        return None
+
+    # allow alone → allow (and the reason is the rule's).
+    d = PolicyEngine([allow_rule]).authorize(ORG, Action.READ, Resource(kind="e"))
+    assert d.allowed is True and d.reason == "ok"
+    # a deny anywhere (before OR after an allow) wins.
+    assert not PolicyEngine([allow_rule, deny_rule]).can(ORG, Action.READ, Resource(kind="e"))
+    assert not PolicyEngine([deny_rule, allow_rule]).can(ORG, Action.READ, Resource(kind="e"))
+    # abstaining rules are skipped; the first allow is returned.
+    d2 = PolicyEngine([abstain, allow_rule]).authorize(ORG, Action.READ, Resource(kind="e"))
+    assert d2.allowed is True and d2.reason == "ok"
+
+
+def test_deny_by_default_reason_names_action_and_kind():
+    d = PolicyEngine([]).authorize(ORG, Action.MANAGE_GLOBAL, Resource(kind="widget"))
+    assert d.allowed is False
+    assert "widget" in d.reason
+    assert getattr(Action.MANAGE_GLOBAL, "value", "") in d.reason
+    assert "deny-by-default" in d.reason
