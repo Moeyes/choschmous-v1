@@ -5,15 +5,15 @@ from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.category import category
+from src.models.category import Category
 from src.models.enum.event import AgeMode, PhaseStatus, SportMode, eventType
 from src.models.enum.org import instituteType
 from src.models.enum.user import genderEnum
 from src.models.events import Events
 from src.models.organization import Organization
 from src.models.sport import Sport
-from src.models.sports_event import sports_event
-from src.models.sports_event_org import sports_event_org
+from src.models.sports_event import SportsEvent
+from src.models.sports_event_org import SportsEventOrg
 
 _org_seq = 0
 
@@ -69,8 +69,8 @@ async def make_sports_event(
     quota_teams_per_org: int | None = None,
     team_size_min: int | None = None,
     team_size_max: int | None = None,
-) -> sports_event:
-    se = sports_event(
+) -> SportsEvent:
+    se = SportsEvent(
         events_id=event.id,
         sports_id=sport.id,
         mode=mode,
@@ -91,8 +91,8 @@ async def link_org_sport(
     org: Organization,
     *,
     status: str = "SUBMITTED",
-) -> sports_event_org:
-    link = sports_event_org(
+) -> SportsEventOrg:
+    link = SportsEventOrg(
         events_id=event.id,
         sports_id=sport.id,
         organization_id=org.id,
@@ -110,8 +110,8 @@ async def make_category(
     *,
     name: str = "U18 បុរស",
     gender: genderEnum = genderEnum.MALE,
-) -> category:
-    cat = category(events_id=event.id, sports_id=sport.id, category=name, gender=gender)
+) -> Category:
+    cat = Category(events_id=event.id, sports_id=sport.id, category=name, gender=gender)
     db.add(cat)
     await db.flush()
     return cat

@@ -3,8 +3,8 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete as sa_delete, func
 
-from src.models.category import category
-from src.models.category_survey_review import category_survey_review
+from src.models.category import Category
+from src.models.category_survey_review import CategorySurveyReview
 from src.models.events import Events
 from src.models.sport import Sport
 from src.schemas.category_survey import CategorySurveyUpsert
@@ -41,16 +41,16 @@ class CategorySurveyService:
         """Fetch event; returns None if not found."""
         return await self.db.get(Events, event_id)
 
-    async def upsert_categories(self, payload: CategorySurveyUpsert) -> list[category]:
+    async def upsert_categories(self, payload: CategorySurveyUpsert) -> list[Category]:
         event_id = payload.event_id
         sport_id = payload.sport_id
 
         incoming_names = {c.name for c in payload.categories}
 
         existing_q = await self.db.execute(
-            select(category).where(
-                category.events_id == event_id,
-                category.sports_id == sport_id,
+            select(Category).where(
+                Category.events_id == event_id,
+                Category.sports_id == sport_id,
             )
         )
         existing_rows = existing_q.scalars().all()
@@ -60,10 +60,10 @@ class CategorySurveyService:
         names_to_delete = existing_names - incoming_names
         if names_to_delete:
             await self.db.execute(
-                sa_delete(category).where(
-                    category.events_id == event_id,
-                    category.sports_id == sport_id,
-                    category.category.in_(names_to_delete),
+                sa_delete(Category).where(
+                    Category.events_id == event_id,
+                    Category.sports_id == sport_id,
+                    Category.category.in_(names_to_delete),
                 )
             )
 
@@ -74,7 +74,7 @@ class CategorySurveyService:
                     existing.gender = item.gender
                     self.db.add(existing)
             else:
-                new_cat = category(
+                new_cat = Category(
                     sports_id=sport_id,
                     category=item.name,
                     gender=item.gender,
@@ -87,34 +87,34 @@ class CategorySurveyService:
         # carries the review FSM. Created with the default SUBMITTED status; an
         # existing header is left as-is on re-submit (status is NOT reset).
         existing_review = await self.db.execute(
-            select(category_survey_review).where(
-                category_survey_review.events_id == event_id,
-                category_survey_review.sports_id == sport_id,
+            select(CategorySurveyReview).where(
+                CategorySurveyReview.events_id == event_id,
+                CategorySurveyReview.sports_id == sport_id,
             )
         )
         if existing_review.scalar_one_or_none() is None:
-            self.db.add(category_survey_review(events_id=event_id, sports_id=sport_id))
+            self.db.add(CategorySurveyReview(events_id=event_id, sports_id=sport_id))
 
         await self.db.commit()
 
         result = await self.db.execute(
-            select(category)
+            select(Category)
             .where(
-                category.events_id == event_id,
-                category.sports_id == sport_id,
+                Category.events_id == event_id,
+                Category.sports_id == sport_id,
             )
-            .order_by(category.id)
+            .order_by(Category.id)
         )
         return result.scalars().all()
 
-    async def list_categories(self, event_id: int, sport_id: int) -> list[category]:
+    async def list_categories(self, event_id: int, sport_id: int) -> list[Category]:
         result = await self.db.execute(
-            select(category)
+            select(Category)
             .where(
-                category.events_id == event_id,
-                category.sports_id == sport_id,
+                Category.events_id == event_id,
+                Category.sports_id == sport_id,
             )
-            .order_by(category.id)
+            .order_by(Category.id)
         )
         return result.scalars().all()
 
@@ -126,12 +126,12 @@ class CategorySurveyService:
     def _category_count_subquery():
         """Correlated COUNT of categories for a review header's (event, sport)."""
         return (
-            select(func.count(category.id))
+            select(func.count(Category.id))
             .where(
-                category.events_id == category_survey_review.events_id,
-                category.sports_id == category_survey_review.sports_id,
+                Category.events_id == CategorySurveyReview.events_id,
+                Category.sports_id == CategorySurveyReview.sports_id,
             )
-            .correlate(category_survey_review)
+            .correlate(CategorySurveyReview)
             .scalar_subquery()
         )
 
@@ -144,25 +144,25 @@ class CategorySurveyService:
     ) -> list[dict]:
         q = (
             select(
-                category_survey_review,
+                CategorySurveyReview,
                 Events.name_kh.label("event_name"),
                 Sport.name_kh.label("sport_name"),
                 self._category_count_subquery().label("category_count"),
             )
-            .outerjoin(Events, category_survey_review.events_id == Events.id)
-            .outerjoin(Sport, category_survey_review.sports_id == Sport.id)
+            .outerjoin(Events, CategorySurveyReview.events_id == Events.id)
+            .outerjoin(Sport, CategorySurveyReview.sports_id == Sport.id)
         )
         if event_id is not None:
-            q = q.where(category_survey_review.events_id == event_id)
+            q = q.where(CategorySurveyReview.events_id == event_id)
         if status is not None:
-            q = q.where(category_survey_review.status == status)
+            q = q.where(CategorySurveyReview.status == status)
         # Deterministic ordering so OFFSET/LIMIT pages are stable across requests.
-        q = q.order_by(category_survey_review.id).offset(skip).limit(limit)
+        q = q.order_by(CategorySurveyReview.id).offset(skip).limit(limit)
         result = await self.db.execute(q)
         rows = result.mappings().all()
         return [
             {
-                **row["category_survey_review"].__dict__,
+                **row["CategorySurveyReview"].__dict__,
                 "event_name": row["event_name"],
                 "sport_name": row["sport_name"],
                 "category_count": row["category_count"] or 0,
@@ -171,7 +171,7 @@ class CategorySurveyService:
         ]
 
     async def _enrich_submission(
-        self, item: category_survey_review, with_categories: bool = False
+        self, item: CategorySurveyReview, with_categories: bool = False
     ) -> dict:
         """Add event/sport names (+ category count, + the categories themselves)
         to a loaded review header — the by-category analogue of by-number's
@@ -181,20 +181,20 @@ class CategorySurveyService:
                 Events.name_kh.label("event_name"),
                 Sport.name_kh.label("sport_name"),
             )
-            .select_from(category_survey_review)
-            .outerjoin(Events, category_survey_review.events_id == Events.id)
-            .outerjoin(Sport, category_survey_review.sports_id == Sport.id)
-            .where(category_survey_review.id == item.id)
+            .select_from(CategorySurveyReview)
+            .outerjoin(Events, CategorySurveyReview.events_id == Events.id)
+            .outerjoin(Sport, CategorySurveyReview.sports_id == Sport.id)
+            .where(CategorySurveyReview.id == item.id)
         )
         row = result.mappings().first()
 
         cats = await self.db.execute(
-            select(category)
+            select(Category)
             .where(
-                category.events_id == item.events_id,
-                category.sports_id == item.sports_id,
+                Category.events_id == item.events_id,
+                Category.sports_id == item.sports_id,
             )
-            .order_by(category.id)
+            .order_by(Category.id)
         )
         category_rows = cats.scalars().all()
 
@@ -209,7 +209,7 @@ class CategorySurveyService:
         return enriched
 
     async def get_submission(self, id: int) -> dict | None:
-        item = await self.db.get(category_survey_review, id)
+        item = await self.db.get(CategorySurveyReview, id)
         if not item:
             return None
         return await self._enrich_submission(item, with_categories=True)
@@ -231,12 +231,12 @@ class CategorySurveyService:
                 f"Bulk action must be approve or reject, got '{action}'.", code=400
             )
         target = "APPROVED" if action == "approve" else "REJECTED"
-        q = select(category_survey_review).where(
-            category_survey_review.sports_id == sports_id,
-            category_survey_review.status == "SUBMITTED",
+        q = select(CategorySurveyReview).where(
+            CategorySurveyReview.sports_id == sports_id,
+            CategorySurveyReview.status == "SUBMITTED",
         )
         if event_id is not None:
-            q = q.where(category_survey_review.events_id == event_id)
+            q = q.where(CategorySurveyReview.events_id == event_id)
         rows = (await self.db.execute(q)).scalars().all()
         now = datetime.utcnow()
         for item in rows:
@@ -259,7 +259,7 @@ class CategorySurveyService:
             raise CategoryReviewError(f"Unknown action '{action}'", code=400)
         allowed_from, target, needs_note = rule
 
-        item = await self.db.get(category_survey_review, id)
+        item = await self.db.get(CategorySurveyReview, id)
         if not item:
             return None
 

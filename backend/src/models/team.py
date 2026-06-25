@@ -4,7 +4,7 @@ from datetime import datetime
 from core.database import Base
 
 
-class team(Base):
+class Team(Base):
     __tablename__ = "teams"
 
     id: Mapped[int] = mapped_column(
@@ -30,4 +30,4 @@ class team(Base):
     event = relationship("Events", lazy="joined")
     sport = relationship("Sport", lazy="joined")
     organization = relationship("Organization", lazy="joined")
-    category_obj = relationship("category", lazy="joined")
+    category_obj = relationship("Category", lazy="joined")

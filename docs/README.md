@@ -19,4 +19,6 @@ directory focused on docs that stay useful during development.
 - Root [README.md](../README.md) — project overview & setup
 - [backend/README.md](../backend/README.md) — backend dev guide
 - [frontend/README.md](../frontend/README.md) — frontend dev guide
-- `backend/migrations/002_alembic_setup.md` — Alembic setup notes
+- [runbooks/db-migrations.md](runbooks/db-migrations.md) — Alembic migration workflow (CHOS-506)
+- [adr/](adr/) — Architecture Decision Records (CHOS-506)
+- [runbooks/](runbooks/) — per-alert + operational runbooks (CHOS-506)

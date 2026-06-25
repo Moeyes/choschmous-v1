@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from src.models.athlete_participation import athlete_participation
+    from src.models.athlete_participation import AthleteParticipation
 
 if TYPE_CHECKING:
     from src.models.enroll import Enroll
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 from core.database import Base
 
 
-class athletes(Base):
+class Athlete(Base):
     __tablename__ = "athletes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -32,6 +32,6 @@ class athletes(Base):
 
     enroll: Mapped["Enroll"] = relationship("Enroll", back_populates="athlete")
 
-    participations: Mapped[list["athlete_participation"]] = relationship(
-        "athlete_participation", back_populates="athlete", cascade="all, delete-orphan"
+    participations: Mapped[list["AthleteParticipation"]] = relationship(
+        "AthleteParticipation", back_populates="athlete", cascade="all, delete-orphan"
     )

@@ -373,7 +373,7 @@ async def list_sport_org_submissions(
 ):
     """List all org sport selections for admin review."""
     from sqlalchemy import select as sa_select
-    from src.models.sports_event_org import sports_event_org as SeoModel
+    from src.models.sports_event_org import SportsEventOrg as SeoModel
     from src.models.organization import Organization
     from src.models.sport import Sport
     from src.models.events import Events
@@ -418,7 +418,7 @@ async def review_sport_org(
     """Approve or reject an org sport selection (admin only).
     action: approve | reject
     """
-    from src.models.sports_event_org import sports_event_org as SeoModel
+    from src.models.sports_event_org import SportsEventOrg as SeoModel
     from datetime import datetime as dt
 
     if action not in ("approve", "reject"):
@@ -450,7 +450,7 @@ async def review_sport_org_bulk(
     individual decision. action: approve | reject.
     """
     from sqlalchemy import select as sa_select
-    from src.models.sports_event_org import sports_event_org as SeoModel
+    from src.models.sports_event_org import SportsEventOrg as SeoModel
     from datetime import datetime as dt
 
     if action not in ("approve", "reject"):

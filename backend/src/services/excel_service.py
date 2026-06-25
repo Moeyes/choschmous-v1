@@ -20,9 +20,9 @@ class ExcelService:
         event_name = event_result.scalar() or ""
 
         # Get attended sport categories for this org/event
-        from src.models.category import category as Category
+        from src.models.category import Category
         from src.models.sport import Sport
-        from src.models.sports_event_org import sports_event_org
+        from src.models.sports_event_org import SportsEventOrg
 
         query = (
             select(
@@ -34,10 +34,10 @@ class ExcelService:
             )
             .join(Sport, Category.sports_id == Sport.id)
             .join(
-                sports_event_org,
-                (sports_event_org.sports_id == Category.sports_id)
-                & (sports_event_org.organization_id == org_id)
-                & (sports_event_org.events_id == events_id),
+                SportsEventOrg,
+                (SportsEventOrg.sports_id == Category.sports_id)
+                & (SportsEventOrg.organization_id == org_id)
+                & (SportsEventOrg.events_id == events_id),
             )
             .where(Category.events_id == events_id)
         )
@@ -71,21 +71,21 @@ class ExcelService:
         event_name = event_result.scalar() or ""
 
         from src.models.sport import Sport
-        from src.models.athlete_participation import athlete_participation
-        from src.models.leader_participation import leader_participation
-        from src.models.leader import leader as Leader
-        from src.models.athletes import athletes as Athletes
+        from src.models.athlete_participation import AthleteParticipation
+        from src.models.leader_participation import LeaderParticipation
+        from src.models.leader import Leader
+        from src.models.athletes import Athlete as Athletes
         from src.models.enroll import Enroll
         from src.models.enum.user import LeaderRole
-        from src.models.sports_event_org import sports_event_org
+        from src.models.sports_event_org import SportsEventOrg
 
         # 1. Get all sports for the event that org is attending
         sport_query = (
             select(Sport.id, Sport.name_kh)
-            .join(sports_event_org, sports_event_org.sports_id == Sport.id)
+            .join(SportsEventOrg, SportsEventOrg.sports_id == Sport.id)
             .where(
-                sports_event_org.organization_id == org_id,
-                sports_event_org.events_id == events_id,
+                SportsEventOrg.organization_id == org_id,
+                SportsEventOrg.events_id == events_id,
             )
         )
         sports = {s.id: s.name_kh for s in (await self.db.execute(sport_query)).all()}
@@ -93,37 +93,37 @@ class ExcelService:
         # 2. Aggregated athlete counts — one query, all sports
         athlete_query = (
             select(
-                athlete_participation.sports_id,
+                AthleteParticipation.sports_id,
                 Enroll.gender,
                 func.count().label("cnt"),
             )
-            .join(Athletes, athlete_participation.athletes_id == Athletes.id)
+            .join(Athletes, AthleteParticipation.athletes_id == Athletes.id)
             .join(Enroll, Athletes.enroll_id == Enroll.id)
             .where(
-                athlete_participation.organization_id == org_id,
-                athlete_participation.events_id == events_id,
-                athlete_participation.sports_id.in_(sports.keys()),
+                AthleteParticipation.organization_id == org_id,
+                AthleteParticipation.events_id == events_id,
+                AthleteParticipation.sports_id.in_(sports.keys()),
             )
-            .group_by(athlete_participation.sports_id, Enroll.gender)
+            .group_by(AthleteParticipation.sports_id, Enroll.gender)
         )
         athlete_rows = (await self.db.execute(athlete_query)).all()
 
         # 3. Aggregated leader counts — one query, all sports
         leader_query = (
             select(
-                leader_participation.sports_id,
+                LeaderParticipation.sports_id,
                 Leader.LeaderRole,
                 Enroll.gender,
                 func.count().label("cnt"),
             )
-            .join(Leader, leader_participation.leaders_id == Leader.id)
+            .join(Leader, LeaderParticipation.leaders_id == Leader.id)
             .join(Enroll, Leader.enroll_id == Enroll.id)
             .where(
-                leader_participation.organization_id == org_id,
-                leader_participation.events_id == events_id,
-                leader_participation.sports_id.in_(sports.keys()),
+                LeaderParticipation.organization_id == org_id,
+                LeaderParticipation.events_id == events_id,
+                LeaderParticipation.sports_id.in_(sports.keys()),
             )
-            .group_by(leader_participation.sports_id, Leader.LeaderRole, Enroll.gender)
+            .group_by(LeaderParticipation.sports_id, Leader.LeaderRole, Enroll.gender)
         )
         leader_rows = (await self.db.execute(leader_query)).all()
 

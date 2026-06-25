@@ -6,14 +6,14 @@ from core.database import Base
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.models.athletes import athletes
-    from src.models.team import team
+    from src.models.athletes import Athlete
+    from src.models.team import Team
 from src.models.sport import Sport
-from src.models.category import category
+from src.models.category import Category
 from src.models.organization import Organization
 
 
-class athlete_participation(Base):
+class AthleteParticipation(Base):
     __tablename__ = "athlete_participation"
 
     # CHOS-305: the enrollment "natural key" that is genuinely unique. The same
@@ -65,14 +65,14 @@ class athlete_participation(Base):
         server_default=func.now(), nullable=False
     )
 
-    athlete: Mapped["athletes"] = relationship(
-        "athletes", back_populates="participations"
+    athlete: Mapped["Athlete"] = relationship(
+        "Athlete", back_populates="participations"
     )
 
     sport: Mapped["Sport"] = relationship("Sport")
 
-    category: Mapped["category"] = relationship("category")
+    category: Mapped["Category"] = relationship("Category")
 
     organization: Mapped["Organization"] = relationship("Organization")
 
-    team: Mapped["team | None"] = relationship("team", backref="members")
+    team: Mapped["Team | None"] = relationship("Team", backref="members")

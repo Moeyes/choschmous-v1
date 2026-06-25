@@ -17,11 +17,11 @@ from datetime import datetime, date
 from core.database import Base
 from app.infrastructure.db.encrypted_types import EncryptedString
 
-from src.models.athletes import athletes
+from src.models.athletes import Athlete
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.models.leader import leader
+    from src.models.leader import Leader
 from src.models.enum.user import IdDocumentType, genderEnum
 
 
@@ -75,7 +75,9 @@ class Enroll(Base):  # haven't add phone number yet (check later)
     # non-empty). NB: phone was removed from the search_text index below — PII
     # must not sit in a plaintext, searchable column.
     phonenumber: Mapped[str] = mapped_column(
-        EncryptedString(255), nullable=False, comment="Phone number (PII, encrypted at rest)"
+        EncryptedString(255),
+        nullable=False,
+        comment="Phone number (PII, encrypted at rest)",
     )
 
     # CHOS-403: national-id NUMBER (distinct from national_id_path, the document
@@ -160,9 +162,9 @@ class Enroll(Base):  # haven't add phone number yet (check later)
         comment="Which staff/admin created this enrollment",
     )
 
-    athlete: Mapped["athletes"] = relationship(
-        "athletes", back_populates="enroll", uselist=False
+    athlete: Mapped["Athlete"] = relationship(
+        "Athlete", back_populates="enroll", uselist=False
     )
-    leader: Mapped["leader"] = relationship(
-        "leader", back_populates="enroll", uselist=False
+    leader: Mapped["Leader"] = relationship(
+        "Leader", back_populates="enroll", uselist=False
     )

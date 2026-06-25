@@ -7,7 +7,7 @@ from src.database.base_repository import BaseRepository
 from src.models.sport import Sport
 from src.models.events import Events
 from src.schemas.sport import SportCreate, SportUpdate
-from src.models.category import category as CategoryModel
+from src.models.category import Category as CategoryModel
 
 
 class SportService:

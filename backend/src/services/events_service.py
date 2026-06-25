@@ -17,13 +17,13 @@ from sqlalchemy import (
 
 from src.database.base_repository import BaseRepository
 from src.models.organization import Organization
-from src.models.sports_event import sports_event
+from src.models.sports_event import SportsEvent
 from src.models.events import Events, PHASES
 from src.models.enum.event import PhaseStatus
 from src.models.sport import Sport
-from src.models.category import category as Category
-from src.models.sports_event_org import sports_event_org
-from src.models.participation_per_sport import participation_per_sport
+from src.models.category import Category
+from src.models.sports_event_org import SportsEventOrg
+from src.models.participation_per_sport import ParticipationPerSport
 from src.schemas.event import EventCreate, EventUpdate
 from src.schemas.sports_event import SportsEventPublic
 from src.schemas.report import (
@@ -38,8 +38,8 @@ class EventService:
         self.db = db
         self.repo = BaseRepository(db, Events)
         # Fix: Initialize se_repo so it can be used in other methods
-        self.se_repo = BaseRepository(db, sports_event)
-        self.seo_repo = BaseRepository(db, sports_event_org)
+        self.se_repo = BaseRepository(db, SportsEvent)
+        self.seo_repo = BaseRepository(db, SportsEventOrg)
 
     async def get_event(self, event_id: int) -> Optional[Events]:
         return await self.repo.get(event_id)
@@ -132,14 +132,14 @@ class EventService:
 
         query = (
             select(
-                sports_event.id.label("id"),
+                SportsEvent.id.label("id"),
                 Events.name_kh.label("event_name"),
                 Sport.name_kh.label("sport_name"),
-                sports_event.created_at,
+                SportsEvent.created_at,
             )
-            .join(Events, sports_event.events_id == Events.id)
-            .join(Sport, sports_event.sports_id == Sport.id)
-            .where(sports_event.id == new_link.id)
+            .join(Events, SportsEvent.events_id == Events.id)
+            .join(Sport, SportsEvent.sports_id == Sport.id)
+            .where(SportsEvent.id == new_link.id)
         )
         result = await self.db.execute(query)
         return result.mappings().first()
@@ -147,30 +147,30 @@ class EventService:
     async def get_event_sports(self, event_id: int) -> SportsEventPublic:
         query = (
             select(
-                sports_event.id.label("id"),
-                sports_event.sports_id.label("sports_id"),
+                SportsEvent.id.label("id"),
+                SportsEvent.sports_id.label("sports_id"),
                 Events.name_kh.label("event_name"),
                 Sport.name_kh.label("sport_name"),
-                sports_event.created_at,
-                sports_event.mode,
-                sports_event.team_size_min,
-                sports_event.team_size_max,
-                sports_event.quota_athletes_per_org,
-                sports_event.quota_teams_per_org,
+                SportsEvent.created_at,
+                SportsEvent.mode,
+                SportsEvent.team_size_min,
+                SportsEvent.team_size_max,
+                SportsEvent.quota_athletes_per_org,
+                SportsEvent.quota_teams_per_org,
             )
-            .join(Events, sports_event.events_id == Events.id)
-            .join(Sport, sports_event.sports_id == Sport.id)
-            .where(sports_event.events_id == event_id)
+            .join(Events, SportsEvent.events_id == Events.id)
+            .join(Sport, SportsEvent.sports_id == Sport.id)
+            .where(SportsEvent.events_id == event_id)
         )
         result = await self.db.execute(query)
         return result.mappings().all()
 
     async def update_sport_event_config(
         self, sports_event_id: int, config
-    ) -> sports_event:
+    ) -> SportsEvent:
         """Set per-sport competition config on a sports_event link. Only fields
         present in ``config`` (exclude_unset) are written."""
-        se = await self.db.get(sports_event, sports_event_id)
+        se = await self.db.get(SportsEvent, sports_event_id)
         if not se:
             raise HTTPException(status_code=404, detail="Sport-event link not found.")
 
@@ -191,44 +191,44 @@ class EventService:
     async def get_my_eligible_sports(self, event_id: int, org_id: int):
         """Sports the org selected in survey ② (sports_event_org) for this event,
         with the per-sport config and the org's current athlete count attached."""
-        from src.models.athlete_participation import athlete_participation
+        from src.models.athlete_participation import AthleteParticipation
 
         used_subq = (
             select(
-                athlete_participation.sports_id.label("sid"),
+                AthleteParticipation.sports_id.label("sid"),
                 func.count().label("used"),
             )
             .where(
-                athlete_participation.events_id == event_id,
-                athlete_participation.organization_id == org_id,
+                AthleteParticipation.events_id == event_id,
+                AthleteParticipation.organization_id == org_id,
             )
-            .group_by(athlete_participation.sports_id)
+            .group_by(AthleteParticipation.sports_id)
             .subquery()
         )
 
         query = (
             select(
-                sports_event.id.label("sports_event_id"),
-                sports_event.sports_id.label("sports_id"),
+                SportsEvent.id.label("sports_event_id"),
+                SportsEvent.sports_id.label("sports_id"),
                 Sport.name_kh.label("name_kh"),
-                sports_event.mode,
-                sports_event.team_size_min,
-                sports_event.team_size_max,
-                sports_event.quota_athletes_per_org,
-                sports_event.quota_teams_per_org,
+                SportsEvent.mode,
+                SportsEvent.team_size_min,
+                SportsEvent.team_size_max,
+                SportsEvent.quota_athletes_per_org,
+                SportsEvent.quota_teams_per_org,
                 func.coalesce(used_subq.c.used, 0).label("athletes_used"),
             )
             .join(
-                sports_event_org,
-                (sports_event_org.events_id == sports_event.events_id)
-                & (sports_event_org.sports_id == sports_event.sports_id),
+                SportsEventOrg,
+                (SportsEventOrg.events_id == SportsEvent.events_id)
+                & (SportsEventOrg.sports_id == SportsEvent.sports_id),
             )
-            .join(Sport, Sport.id == sports_event.sports_id)
-            .outerjoin(used_subq, used_subq.c.sid == sports_event.sports_id)
+            .join(Sport, Sport.id == SportsEvent.sports_id)
+            .outerjoin(used_subq, used_subq.c.sid == SportsEvent.sports_id)
             .where(
-                sports_event_org.events_id == event_id,
-                sports_event_org.organization_id == org_id,
-                sports_event_org.status == "APPROVED",
+                SportsEventOrg.events_id == event_id,
+                SportsEventOrg.organization_id == org_id,
+                SportsEventOrg.status == "APPROVED",
             )
             .order_by(Sport.name_kh.asc())
         )
@@ -257,16 +257,16 @@ class EventService:
 
         query = (
             select(
-                sports_event_org.id,
+                SportsEventOrg.id,
                 Events.name_kh.label("event_name"),
                 Sport.name_kh.label("sport_name"),
                 Organization.name_kh.label("organization_name"),
-                sports_event_org.created_at,
+                SportsEventOrg.created_at,
             )
-            .join(Events, sports_event_org.events_id == Events.id)
-            .join(Sport, sports_event_org.sports_id == Sport.id)
-            .join(Organization, sports_event_org.organization_id == Organization.id)
-            .where(sports_event_org.id == new_link.id)
+            .join(Events, SportsEventOrg.events_id == Events.id)
+            .join(Sport, SportsEventOrg.sports_id == Sport.id)
+            .join(Organization, SportsEventOrg.organization_id == Organization.id)
+            .where(SportsEventOrg.id == new_link.id)
         )
         result = await self.db.execute(query)
         return result.mappings().first()
@@ -274,15 +274,15 @@ class EventService:
     async def get_event_sport_orgs(self, event_id: int, sport_id: int):
         query = (
             select(
-                sports_event_org.id,
+                SportsEventOrg.id,
                 Organization.id.label("organization_id"),
                 Organization.name_kh.label("organization_name"),
-                sports_event_org.created_at,
+                SportsEventOrg.created_at,
             )
-            .join(Organization, sports_event_org.organization_id == Organization.id)
+            .join(Organization, SportsEventOrg.organization_id == Organization.id)
             .where(
-                sports_event_org.events_id == event_id,
-                sports_event_org.sports_id == sport_id,
+                SportsEventOrg.events_id == event_id,
+                SportsEventOrg.sports_id == sport_id,
             )
             .order_by(Organization.name_kh.asc())
         )
@@ -292,25 +292,25 @@ class EventService:
     async def get_org_event_sports(self, event_id: int, org_id: int):
         query = (
             select(
-                sports_event_org.id,
-                sports_event_org.sports_id,
-                sports_event_org.events_id,
-                sports_event_org.organization_id,
-                sports_event_org.created_at,
+                SportsEventOrg.id,
+                SportsEventOrg.sports_id,
+                SportsEventOrg.events_id,
+                SportsEventOrg.organization_id,
+                SportsEventOrg.created_at,
             )
             .where(
-                sports_event_org.events_id == event_id,
-                sports_event_org.organization_id == org_id,
-                sports_event_org.status == "APPROVED",
+                SportsEventOrg.events_id == event_id,
+                SportsEventOrg.organization_id == org_id,
+                SportsEventOrg.status == "APPROVED",
             )
-            .order_by(sports_event_org.created_at.asc())
+            .order_by(SportsEventOrg.created_at.asc())
         )
         result = await self.db.execute(query)
         return result.mappings().all()
 
     async def get_event_sport_org_link(
         self, association_id: int
-    ) -> Optional[sports_event_org]:
+    ) -> Optional[SportsEventOrg]:
         return await self.seo_repo.get(association_id)
 
     async def remove_org_from_event_sport(self, association_id: int) -> bool:
@@ -322,17 +322,17 @@ class EventService:
                 distinct(Organization.name_kh).label("organization_name"),
                 Organization.id.label("organization_id"),
             )
-            .join(sports_event_org, Organization.id == sports_event_org.organization_id)
-            .where(sports_event_org.events_id == event_id)
+            .join(SportsEventOrg, Organization.id == SportsEventOrg.organization_id)
+            .where(SportsEventOrg.events_id == event_id)
         )
 
         result = await self.db.execute(query)
         return result.mappings().all()
 
     async def remove_org_from_entire_event(self, event_id: int, org_id: int) -> bool:
-        query = delete(sports_event_org).where(
-            sports_event_org.events_id == event_id,
-            sports_event_org.organization_id == org_id,
+        query = delete(SportsEventOrg).where(
+            SportsEventOrg.events_id == event_id,
+            SportsEventOrg.organization_id == org_id,
         )
 
         result = await self.db.execute(query)
@@ -348,30 +348,30 @@ class EventService:
         org_q = (
             select(Organization.id, Organization.name_kh, Organization.name_en)
             .distinct()
-            .join(sports_event_org, sports_event_org.organization_id == Organization.id)
-            .where(sports_event_org.events_id == event_id)
+            .join(SportsEventOrg, SportsEventOrg.organization_id == Organization.id)
+            .where(SportsEventOrg.events_id == event_id)
             .order_by(Organization.name_kh)
         )
         org_rows = (await self.db.execute(org_q)).mappings().all()
 
         org_statuses: list[SurveyStatusOrgRow] = []
         for o in org_rows:
-            seo_q = select(sports_event_org.id).where(
-                sports_event_org.events_id == event_id,
-                sports_event_org.organization_id == o.id,
+            seo_q = select(SportsEventOrg.id).where(
+                SportsEventOrg.events_id == event_id,
+                SportsEventOrg.organization_id == o.id,
             )
             seo_r = await self.db.execute(seo_q)
             survey_sport_submitted = len(seo_r.scalars().all()) > 0
 
             pps_q = (
-                select(participation_per_sport.status)
+                select(ParticipationPerSport.status)
                 .join(
-                    sports_event_org,
-                    participation_per_sport.sports_Events_id == sports_event_org.id,
+                    SportsEventOrg,
+                    ParticipationPerSport.sports_Events_id == SportsEventOrg.id,
                 )
                 .where(
-                    sports_event_org.events_id == event_id,
-                    sports_event_org.organization_id == o.id,
+                    SportsEventOrg.events_id == event_id,
+                    SportsEventOrg.organization_id == o.id,
                 )
                 .limit(1)
             )
@@ -394,7 +394,7 @@ class EventService:
                 Sport.name_kh,
                 func.count(Category.id).label("cat_count"),
             )
-            .join(sports_event, sports_event.sports_id == Sport.id)
+            .join(SportsEvent, SportsEvent.sports_id == Sport.id)
             .outerjoin(
                 Category,
                 and_(
@@ -402,7 +402,7 @@ class EventService:
                     Category.events_id == event_id,
                 ),
             )
-            .where(sports_event.events_id == event_id)
+            .where(SportsEvent.events_id == event_id)
             .group_by(Sport.id, Sport.name_kh)
             .order_by(Sport.name_kh)
         )

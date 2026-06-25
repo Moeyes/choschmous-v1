@@ -41,19 +41,19 @@ from src.models.organization import Organization  # noqa: E402
 from src.models.sport import Sport  # noqa: E402
 from src.models.user import User  # noqa: E402
 from src.models.events import Events  # noqa: E402
-from src.models.category import category as Category  # noqa: E402
-from src.models.sports_event import sports_event as SportsEvent  # noqa: E402
-from src.models.sports_event_org import sports_event_org as SportsEventOrg  # noqa: E402
+from src.models.category import Category  # noqa: E402
+from src.models.sports_event import SportsEvent  # noqa: E402
+from src.models.sports_event_org import SportsEventOrg  # noqa: E402
 from src.models.participation_per_sport import (  # noqa: E402
     participation_per_sport as ParticipationPerSport,
 )
 from src.models.category_survey_review import (  # noqa: E402
     category_survey_review as CategorySurveyReview,
 )
-from src.models.team import team as Team  # noqa: E402
+from src.models.team import Team  # noqa: E402
 from src.models.enroll import Enroll  # noqa: E402
-from src.models.athletes import athletes as Athlete  # noqa: E402
-from src.models.leader import leader as Leader  # noqa: E402
+from src.models.athletes import Athlete  # noqa: E402
+from src.models.leader import Leader  # noqa: E402
 from src.models.athlete_participation import (  # noqa: E402
     athlete_participation as AthleteParticipation,
 )

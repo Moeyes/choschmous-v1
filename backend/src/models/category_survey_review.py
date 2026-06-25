@@ -5,7 +5,7 @@ from datetime import datetime
 from core.database import Base
 
 
-class category_survey_review(Base):
+class CategorySurveyReview(Base):
     """Review-state header for a by-category submission.
 
     A by-category submission is the *set* of ``categories`` rows a federation

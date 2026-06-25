@@ -3,10 +3,10 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Dict, Any, Optional
 
-from src.models.athletes import athletes
-from src.models.leader import leader
-from src.models.athlete_participation import athlete_participation
-from src.models.leader_participation import leader_participation
+from src.models.athletes import Athlete
+from src.models.leader import Leader
+from src.models.athlete_participation import AthleteParticipation
+from src.models.leader_participation import LeaderParticipation
 
 
 async def get_card_by_p_id(
@@ -16,16 +16,16 @@ async def get_card_by_p_id(
         return None
 
     athlete_part_stmt = (
-        select(athlete_participation)
+        select(AthleteParticipation)
         .options(
-            selectinload(athlete_participation.athlete).selectinload(athletes.enroll),
-            selectinload(athlete_participation.sport),
-            selectinload(athlete_participation.organization),
+            selectinload(AthleteParticipation.athlete).selectinload(Athlete.enroll),
+            selectinload(AthleteParticipation.sport),
+            selectinload(AthleteParticipation.organization),
         )
         .where(
-            athlete_participation.athletes_id == int(p_id),
-            athlete_participation.organization_id == org_id,
-            athlete_participation.events_id == event_id,
+            AthleteParticipation.athletes_id == int(p_id),
+            AthleteParticipation.organization_id == org_id,
+            AthleteParticipation.events_id == event_id,
         )
     )
     athlete_part_result = await db.execute(athlete_part_stmt)
@@ -52,16 +52,16 @@ async def get_card_by_p_id(
         }
 
     leader_part_stmt = (
-        select(leader_participation)
+        select(LeaderParticipation)
         .options(
-            selectinload(leader_participation.leader_obj).selectinload(leader.enroll),
-            selectinload(leader_participation.sport),
-            selectinload(leader_participation.organization),
+            selectinload(LeaderParticipation.leader_obj).selectinload(Leader.enroll),
+            selectinload(LeaderParticipation.sport),
+            selectinload(LeaderParticipation.organization),
         )
         .where(
-            leader_participation.leaders_id == int(p_id),
-            leader_participation.organization_id == org_id,
-            leader_participation.events_id == event_id,
+            LeaderParticipation.leaders_id == int(p_id),
+            LeaderParticipation.organization_id == org_id,
+            LeaderParticipation.events_id == event_id,
         )
     )
     leader_part_result = await db.execute(leader_part_stmt)
@@ -91,18 +91,18 @@ async def get_card_by_p_id(
 async def get_cards_by_org_event(org_id: int, event_id: int, db: AsyncSession) -> dict:
     athlete_count_stmt = (
         select(func.count())
-        .select_from(athlete_participation)
+        .select_from(AthleteParticipation)
         .where(
-            athlete_participation.organization_id == org_id,
-            athlete_participation.events_id == event_id,
+            AthleteParticipation.organization_id == org_id,
+            AthleteParticipation.events_id == event_id,
         )
     )
     leader_count_stmt = (
         select(func.count())
-        .select_from(leader_participation)
+        .select_from(LeaderParticipation)
         .where(
-            leader_participation.organization_id == org_id,
-            leader_participation.events_id == event_id,
+            LeaderParticipation.organization_id == org_id,
+            LeaderParticipation.events_id == event_id,
         )
     )
 
@@ -114,15 +114,15 @@ async def get_cards_by_org_event(org_id: int, event_id: int, db: AsyncSession) -
     total = total_athletes + total_leaders
 
     athlete_part_stmt = (
-        select(athlete_participation)
+        select(AthleteParticipation)
         .options(
-            selectinload(athlete_participation.athlete).selectinload(athletes.enroll),
-            selectinload(athlete_participation.sport),
-            selectinload(athlete_participation.organization),
+            selectinload(AthleteParticipation.athlete).selectinload(Athlete.enroll),
+            selectinload(AthleteParticipation.sport),
+            selectinload(AthleteParticipation.organization),
         )
         .where(
-            athlete_participation.organization_id == org_id,
-            athlete_participation.events_id == event_id,
+            AthleteParticipation.organization_id == org_id,
+            AthleteParticipation.events_id == event_id,
         )
     )
     athlete_part_results = await db.execute(athlete_part_stmt)
@@ -152,15 +152,15 @@ async def get_cards_by_org_event(org_id: int, event_id: int, db: AsyncSession) -
             )
 
     leader_part_stmt = (
-        select(leader_participation)
+        select(LeaderParticipation)
         .options(
-            selectinload(leader_participation.leader_obj).selectinload(leader.enroll),
-            selectinload(leader_participation.sport),
-            selectinload(leader_participation.organization),
+            selectinload(LeaderParticipation.leader_obj).selectinload(Leader.enroll),
+            selectinload(LeaderParticipation.sport),
+            selectinload(LeaderParticipation.organization),
         )
         .where(
-            leader_participation.organization_id == org_id,
-            leader_participation.events_id == event_id,
+            LeaderParticipation.organization_id == org_id,
+            LeaderParticipation.events_id == event_id,
         )
     )
     leader_part_results = await db.execute(leader_part_stmt)

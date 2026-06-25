@@ -3,13 +3,13 @@ from sqlalchemy import func, select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.cache import cache_get, cache_set
-from src.models.athletes import athletes
-from src.models.athlete_participation import athlete_participation
+from src.models.athletes import Athlete
+from src.models.athlete_participation import AthleteParticipation
 from src.models.enroll import Enroll
 from src.models.events import Events
 from src.models.organization import Organization
 from src.models.sport import Sport
-from src.models.leader import leader
+from src.models.leader import Leader
 
 DASHBOARD_CACHE_TTL = 120  # 2 minutes
 
@@ -21,7 +21,7 @@ def _scope(org_id: Optional[int]) -> str:
 async def get_dashboard_stats(db: AsyncSession, org_id: Optional[int] = None) -> dict:
     """Exact dashboard counts.
 
-    `participants` and `athletes` are scoped to ``org_id`` when provided
+    `participants` and `Athlete` are scoped to ``org_id`` when provided
     (organization-role users); the remaining figures are global. Both the
     global (admin) and org-scoped paths run real ``COUNT`` queries — never
     ``pg_class.reltuples`` estimates, which read 0 until autovacuum ANALYZEs a
@@ -33,13 +33,13 @@ async def get_dashboard_stats(db: AsyncSession, org_id: Optional[int] = None) ->
     if cached is not None:
         return cached
 
-    participants_q = select(func.count(athlete_participation.id))
-    athletes_q = select(func.count(func.distinct(athlete_participation.athletes_id)))
+    participants_q = select(func.count(AthleteParticipation.id))
+    athletes_q = select(func.count(func.distinct(AthleteParticipation.athletes_id)))
     if org_id is not None:
         participants_q = participants_q.where(
-            athlete_participation.organization_id == org_id
+            AthleteParticipation.organization_id == org_id
         )
-        athletes_q = athletes_q.where(athlete_participation.organization_id == org_id)
+        athletes_q = athletes_q.where(AthleteParticipation.organization_id == org_id)
 
     stmt = select(
         (select(func.count(Events.id)).scalar_subquery()).label("events"),
@@ -48,7 +48,7 @@ async def get_dashboard_stats(db: AsyncSession, org_id: Optional[int] = None) ->
         (select(func.count(Enroll.id)).scalar_subquery()).label("registrations"),
         (select(func.count(Organization.id)).scalar_subquery()).label("organizations"),
         athletes_q.scalar_subquery().label("athletes"),
-        (select(func.count(leader.id)).scalar_subquery()).label("leaders"),
+        (select(func.count(Leader.id)).scalar_subquery()).label("leaders"),
     )
     row = await db.execute(stmt)
     result = dict(row.first()._mapping)
@@ -87,11 +87,11 @@ async def get_dashboard_top_organizations(
         select(
             Organization.name_kh,
             Organization.type,
-            func.count(athlete_participation.id).label("participant_count"),
+            func.count(AthleteParticipation.id).label("participant_count"),
         )
         .outerjoin(
-            athlete_participation,
-            athlete_participation.organization_id == Organization.id,
+            AthleteParticipation,
+            AthleteParticipation.organization_id == Organization.id,
         )
         .group_by(Organization.id, Organization.name_kh, Organization.type)
         .order_by(desc("participant_count"), desc(Organization.id))
@@ -126,11 +126,11 @@ async def get_dashboard_gender_distribution(
     if org_id is not None:
         stmt = (
             select(Enroll.gender, func.count(Enroll.id))
-            .join(athletes, athletes.enroll_id == Enroll.id)
+            .join(Athlete, Athlete.enroll_id == Enroll.id)
             .join(
-                athlete_participation, athlete_participation.athletes_id == athletes.id
+                AthleteParticipation, AthleteParticipation.athletes_id == Athlete.id
             )
-            .where(athlete_participation.organization_id == org_id)
+            .where(AthleteParticipation.organization_id == org_id)
             .group_by(Enroll.gender)
         )
     else:

@@ -27,11 +27,36 @@ Environment notes (this machine):
       SLO breach + error-budget policy + status page config
 - [x] CHOS-505 — docs/THREAT_MODEL.md (STRIDE) + HIBP breached-password screening in
       core/security.py + cosign image signing + mTLS between tiers + SECURITY.md
-- [ ] CHOS-506 — docs/adr ADR log + docs/runbooks per-alert + rename SQLAlchemy models to
+- [x] CHOS-506 — docs/adr ADR log + docs/runbooks per-alert + rename SQLAlchemy models to
       PascalCase (keep __tablename__) migration-safe + delete raw backend/migrations/*.sql +
       update all imports; tests green
 
 ## Notes per ticket
+
+### CHOS-506 (done)
+- **Model rename → PascalCase** (10 classes, `__tablename__` UNCHANGED → migration-safe, no
+  Alembic rev): athletes→Athlete, athlete_participation→AthleteParticipation, category→Category,
+  category_survey_review→CategorySurveyReview, leader→Leader, leader_participation→
+  LeaderParticipation, participation_per_sport→ParticipationPerSport, sports_event→SportsEvent,
+  sports_event_org→SportsEventOrg, team→Team. (Events/User/etc already PascalCase, untouched.)
+  Updated: 12 model files (incl. relationship()/Mapped[] string forward-refs + `__init__` exports,
+  KEEPING back_populates/backref attr-names + FK/table strings), all importers (aliased→import-line
+  only; direct→bodies). **Landmines handled**: `.mappings()` row keys are class `__name__` →
+  fixed `row["category_survey_review"]`→`["CategorySurveyReview"]`, `["participation_per_sport"]`→
+  `["ParticipationPerSport"]`; column attr `Category.category` + kwarg `category=` + var `team`
+  preserved (regex skipped `.`-prefixed/`=`-suffixed/quoted); multi-line `as AthleteParticipation`
+  imports collapsed; prose in comments/docstrings restored (script over-capitalized "by-category").
+- **Raw SQL retired** (Alembic-only): `git rm` migrations/{001_add_indexes.sql,
+  002_add_token_valid_from.sql,002_alembic_setup.md} (all already in initial Alembic rev
+  425f25068de6). Updated that rev's COMMENTS only (dangling refs). CONCURRENTLY prod-index DDL +
+  Alembic workflow preserved in `docs/runbooks/db-migrations.md`. Fixed docs/README dangling link.
+- **docs/adr/**: README index + template + ADR-0001 (record decisions) + 0002 (Alembic SSOT) +
+  0003 (PascalCase models); index links prior CHOS decisions to their docs.
+- **docs/runbooks/**: README + per-alert (backend-down, high-5xx-rate, high-latency-p95,
+  slo-availability-burn, slo-latency-burn — last two satisfy CHOS-504's runbook refs) + db-migrations.
+- alembic single head intact (`d501a1b2c3d4`); ruff clean; full suite **268 passed** (unchanged →
+  proves zero behaviour drift). NOTE: 5 rename files (db_provider, enroll, test_file_access,
+  test_reports, test_search) also carried a pre-existing ruff-format reflow that rode along.
 
 ### CHOS-505 (done)
 - **HIBP screening** `core/security.py::screen_breached_password` (+ pure

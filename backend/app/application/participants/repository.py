@@ -18,16 +18,16 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.enroll import Enroll
-from src.models.athletes import athletes as Athlete
+from src.models.athletes import Athlete
 from src.models.athlete_participation import (
-    athlete_participation as AthleteParticipation,
+    AthleteParticipation,
 )
-from src.models.leader import leader as Leader
-from src.models.leader_participation import leader_participation as LeaderParticipation
+from src.models.leader import Leader
+from src.models.leader_participation import LeaderParticipation
 from src.models.sport import Sport
 from src.models.events import Events
 from src.models.organization import Organization
-from src.models.category import category as CategoryModel
+from src.models.category import Category as CategoryModel
 
 from src.schemas.enroll import ParticipantFilterParams
 

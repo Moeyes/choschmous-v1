@@ -2,8 +2,8 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.models.participation_per_sport import participation_per_sport
-from src.models.sports_event_org import sports_event_org
+from src.models.participation_per_sport import ParticipationPerSport
+from src.models.sports_event_org import SportsEventOrg
 from src.models.organization import Organization
 from src.models.events import Events
 from src.models.sport import Sport
@@ -41,15 +41,15 @@ class ParticipationPerSportService:
 
     async def create(self, obj_in: ParticipationPerSportCreate):
         # Find or create sports_event_org
-        q = select(sports_event_org).where(
-            sports_event_org.events_id == obj_in.events_id,
-            sports_event_org.sports_id == obj_in.sports_id,
-            sports_event_org.organization_id == obj_in.organization_id,
+        q = select(SportsEventOrg).where(
+            SportsEventOrg.events_id == obj_in.events_id,
+            SportsEventOrg.sports_id == obj_in.sports_id,
+            SportsEventOrg.organization_id == obj_in.organization_id,
         )
         result = await self.db.execute(q)
         seo = result.scalar_one_or_none()
         if not seo:
-            seo = sports_event_org(
+            seo = SportsEventOrg(
                 events_id=obj_in.events_id,
                 sports_id=obj_in.sports_id,
                 organization_id=obj_in.organization_id,
@@ -58,9 +58,9 @@ class ParticipationPerSportService:
             await self.db.commit()
             await self.db.refresh(seo)
         # Upsert participation_per_sport (update if exists for same org+sport_event)
-        existing_q = select(participation_per_sport).where(
-            participation_per_sport.sports_Events_id == seo.id,
-            participation_per_sport.org_id == obj_in.org_id,
+        existing_q = select(ParticipationPerSport).where(
+            ParticipationPerSport.sports_Events_id == seo.id,
+            ParticipationPerSport.org_id == obj_in.org_id,
         )
         existing_result = await self.db.execute(existing_q)
         obj = existing_result.scalar_one_or_none()
@@ -70,7 +70,7 @@ class ParticipationPerSportService:
             obj.athlete_male_count = obj_in.athlete_male_count
             obj.leader_male_count = obj_in.leader_male_count
         else:
-            obj = participation_per_sport(
+            obj = ParticipationPerSport(
                 org_id=obj_in.org_id,
                 sports_Events_id=seo.id,
                 athlete_female_count=obj_in.athlete_female_count,
@@ -86,23 +86,23 @@ class ParticipationPerSportService:
     async def get(self, id: int):
         query = (
             select(
-                participation_per_sport,
+                ParticipationPerSport,
                 Organization.name_kh.label("org_name"),
                 Events.name_kh.label("event_name"),
             )
-            .outerjoin(Organization, participation_per_sport.org_id == Organization.id)
+            .outerjoin(Organization, ParticipationPerSport.org_id == Organization.id)
             .outerjoin(
-                sports_event_org,
-                participation_per_sport.sports_Events_id == sports_event_org.id,
+                SportsEventOrg,
+                ParticipationPerSport.sports_Events_id == SportsEventOrg.id,
             )
-            .outerjoin(Events, sports_event_org.events_id == Events.id)
-            .where(participation_per_sport.id == id)
+            .outerjoin(Events, SportsEventOrg.events_id == Events.id)
+            .where(ParticipationPerSport.id == id)
         )
         result = await self.db.execute(query)
         row = result.mappings().first()
         if not row:
             return None
-        item = row["participation_per_sport"]
+        item = row["ParticipationPerSport"]
         enriched = {
             **item.__dict__,
             "org_name": row["org_name"],
@@ -116,10 +116,10 @@ class ParticipationPerSportService:
         or None if the record does not exist. Used for per-org access control on
         the by-id get/patch/delete endpoints (prevents cross-org IDOR).
         """
-        item = await self.db.get(participation_per_sport, id)
+        item = await self.db.get(ParticipationPerSport, id)
         return item.org_id if item else None
 
-    async def _enrich(self, item: participation_per_sport) -> dict:
+    async def _enrich(self, item: ParticipationPerSport) -> dict:
         """One lightweight query to add org/event names to a loaded item
         (avoids re-fetching the full row via ``self.get()``)."""
         result = await self.db.execute(
@@ -127,14 +127,14 @@ class ParticipationPerSportService:
                 Organization.name_kh.label("org_name"),
                 Events.name_kh.label("event_name"),
             )
-            .select_from(participation_per_sport)
-            .outerjoin(Organization, participation_per_sport.org_id == Organization.id)
+            .select_from(ParticipationPerSport)
+            .outerjoin(Organization, ParticipationPerSport.org_id == Organization.id)
             .outerjoin(
-                sports_event_org,
-                participation_per_sport.sports_Events_id == sports_event_org.id,
+                SportsEventOrg,
+                ParticipationPerSport.sports_Events_id == SportsEventOrg.id,
             )
-            .outerjoin(Events, sports_event_org.events_id == Events.id)
-            .where(participation_per_sport.id == item.id)
+            .outerjoin(Events, SportsEventOrg.events_id == Events.id)
+            .where(ParticipationPerSport.id == item.id)
         )
         row = result.mappings().first()
         return {
@@ -144,7 +144,7 @@ class ParticipationPerSportService:
         }
 
     async def patch(self, id: int, obj_in: ParticipationPerSportUpdate):
-        obj = await self.db.get(participation_per_sport, id)
+        obj = await self.db.get(ParticipationPerSport, id)
         if not obj:
             return None
         for field, value in obj_in.model_dump(
@@ -157,7 +157,7 @@ class ParticipationPerSportService:
         return await self._enrich(obj)
 
     async def delete(self, id: int):
-        obj = await self.db.get(participation_per_sport, id)
+        obj = await self.db.get(ParticipationPerSport, id)
         if not obj:
             return None
         await self.db.delete(obj)
@@ -173,7 +173,7 @@ class ParticipationPerSportService:
             raise ParticipationReviewError(f"Unknown action '{action}'", code=400)
         allowed_from, target, needs_note = rule
 
-        item = await self.db.get(participation_per_sport, id)
+        item = await self.db.get(ParticipationPerSport, id)
         if not item:
             return None
 
@@ -209,9 +209,9 @@ class ParticipationPerSportService:
             )
         target = "APPROVED" if action == "approve" else "REJECTED"
         result = await self.db.execute(
-            select(participation_per_sport).where(
-                participation_per_sport.org_id == org_id,
-                participation_per_sport.status == "SUBMITTED",
+            select(ParticipationPerSport).where(
+                ParticipationPerSport.org_id == org_id,
+                ParticipationPerSport.status == "SUBMITTED",
             )
         )
         rows = result.scalars().all()
@@ -227,31 +227,31 @@ class ParticipationPerSportService:
     async def list(self, skip: int = 0, limit: int = 100, org_id: int | None = None):
         q = (
             select(
-                participation_per_sport,
+                ParticipationPerSport,
                 Organization.name_kh.label("org_name"),
                 Events.name_kh.label("event_name"),
                 Sport.name_kh.label("sport_name"),
-                sports_event_org.events_id.label("event_id"),
-                sports_event_org.sports_id.label("sport_id"),
+                SportsEventOrg.events_id.label("event_id"),
+                SportsEventOrg.sports_id.label("sport_id"),
             )
-            .outerjoin(Organization, participation_per_sport.org_id == Organization.id)
+            .outerjoin(Organization, ParticipationPerSport.org_id == Organization.id)
             .outerjoin(
-                sports_event_org,
-                participation_per_sport.sports_Events_id == sports_event_org.id,
+                SportsEventOrg,
+                ParticipationPerSport.sports_Events_id == SportsEventOrg.id,
             )
-            .outerjoin(Events, sports_event_org.events_id == Events.id)
-            .outerjoin(Sport, sports_event_org.sports_id == Sport.id)
+            .outerjoin(Events, SportsEventOrg.events_id == Events.id)
+            .outerjoin(Sport, SportsEventOrg.sports_id == Sport.id)
         )
         if org_id is not None:
-            q = q.where(participation_per_sport.org_id == org_id)
+            q = q.where(ParticipationPerSport.org_id == org_id)
         # Deterministic ordering so OFFSET/LIMIT pages are stable across requests
         # (perf report Fix #3). Ordering by the PK lets the planner walk it cheaply.
-        q = q.order_by(participation_per_sport.id).offset(skip).limit(limit)
+        q = q.order_by(ParticipationPerSport.id).offset(skip).limit(limit)
         result = await self.db.execute(q)
         rows = result.mappings().all()
         enriched = []
         for row in rows:
-            item = row["participation_per_sport"]
+            item = row["ParticipationPerSport"]
             enriched.append(
                 {
                     **item.__dict__,

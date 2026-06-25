@@ -1,7 +1,7 @@
 """Tests for the Phase-2 server-side registration validation rules in
 ParticipantService.register_participant (POST /api/v1/registration)."""
 
-from src.models.athlete_participation import athlete_participation
+from src.models.athlete_participation import AthleteParticipation
 from src.models.enroll import Enroll
 from src.models.enum.event import AgeMode, PhaseStatus
 from src.models.enum.user import IdDocumentType, UserRole
@@ -170,7 +170,7 @@ async def test_quota_full(client, db_session, as_user):
 
     # one athlete already registered for (org, event, sport) → quota of 1 is full
     db_session.add(
-        athlete_participation(
+        AthleteParticipation(
             events_id=event.id,
             sports_id=sport.id,
             organization_id=org.id,

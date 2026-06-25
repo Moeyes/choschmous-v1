@@ -19,8 +19,10 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.search.base import SearchHit, SearchProvider, SearchScope
-from src.models.athlete_participation import athlete_participation as AthleteParticipation
-from src.models.athletes import athletes as Athlete
+from src.models.athlete_participation import (
+    AthleteParticipation,
+)
+from src.models.athletes import Athlete
 from src.models.enroll import Enroll
 from src.models.events import Events
 from src.models.organization import Organization
@@ -83,9 +85,7 @@ class DbSearchProvider(SearchProvider):
         )
         rows = (await self.db.execute(stmt)).all()
         return [
-            SearchHit(
-                type="organization", id=r.id, title=r.name_kh, subtitle=r.name_en
-            )
+            SearchHit(type="organization", id=r.id, title=r.name_kh, subtitle=r.name_en)
             for r in rows
         ]
 

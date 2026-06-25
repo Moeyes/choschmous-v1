@@ -7,10 +7,10 @@ if TYPE_CHECKING:
     from src.models.enroll import Enroll
 from src.models.enum.user import LeaderRole
 from core.database import Base
-from src.models.leader_participation import leader_participation
+from src.models.leader_participation import LeaderParticipation
 
 
-class leader(Base):
+class Leader(Base):
     __tablename__ = "leaders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -34,6 +34,6 @@ class leader(Base):
     )
 
     enroll: Mapped["Enroll"] = relationship("Enroll", back_populates="leader")
-    participations: Mapped[list["leader_participation"]] = relationship(
-        "leader_participation", back_populates="leader_obj"
+    participations: Mapped[list["LeaderParticipation"]] = relationship(
+        "LeaderParticipation", back_populates="leader_obj"
     )

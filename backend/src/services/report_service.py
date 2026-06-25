@@ -6,16 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.organization import Organization
 from src.models.events import Events
 from src.models.sport import Sport
-from src.models.category import category as Category
-from src.models.sports_event_org import sports_event_org
+from src.models.category import Category
+from src.models.sports_event_org import SportsEventOrg
 from src.models.enroll import Enroll
-from src.models.athletes import athletes as Athletes
-from src.models.athlete_participation import athlete_participation
-from src.models.leader import leader as Leader
-from src.models.leader_participation import leader_participation
+from src.models.athletes import Athlete as Athletes
+from src.models.athlete_participation import AthleteParticipation
+from src.models.leader import Leader
+from src.models.leader_participation import LeaderParticipation
 from src.models.organizer_participation import OrganizerParticipation
 from src.models.organizer_role import OrganizerRole
-from src.models.participation_per_sport import participation_per_sport
+from src.models.participation_per_sport import ParticipationPerSport
 from src.models.enum.user import LeaderRole, genderEnum
 
 
@@ -40,20 +40,20 @@ class ReportService:
         q = (
             select(Organization)
             .distinct()
-            .join(sports_event_org, sports_event_org.organization_id == Organization.id)
-            .where(sports_event_org.events_id == event_id)
+            .join(SportsEventOrg, SportsEventOrg.organization_id == Organization.id)
+            .where(SportsEventOrg.events_id == event_id)
             .order_by(Organization.name_kh)
         )
         r = await self.db.execute(q)
         return list(r.scalars().all())
 
     async def _get_sports_in_event(self, event_id: int) -> list[Sport]:
-        from src.models.sports_event import sports_event
+        from src.models.sports_event import SportsEvent
 
         q = (
             select(Sport)
-            .join(sports_event, sports_event.sports_id == Sport.id)
-            .where(sports_event.events_id == event_id)
+            .join(SportsEvent, SportsEvent.sports_id == Sport.id)
+            .where(SportsEvent.events_id == event_id)
             .order_by(Sport.name_kh)
         )
         r = await self.db.execute(q)
@@ -70,9 +70,9 @@ class ReportService:
         rows: ReportRows = []
         for idx, s in enumerate(sports, 1):
             # survey ② - how many orgs selected this sport
-            org_q = select(sports_event_org).where(
-                sports_event_org.events_id == event_id,
-                sports_event_org.sports_id == s.id,
+            org_q = select(SportsEventOrg).where(
+                SportsEventOrg.events_id == event_id,
+                SportsEventOrg.sports_id == s.id,
             )
             org_r = await self.db.execute(org_q)
             org_count = len(org_r.scalars().all())
@@ -81,20 +81,20 @@ class ReportService:
             pps_q = (
                 select(
                     func.coalesce(
-                        func.sum(participation_per_sport.athlete_male_count), 0
+                        func.sum(ParticipationPerSport.athlete_male_count), 0
                     ),
                     func.coalesce(
-                        func.sum(participation_per_sport.athlete_female_count), 0
+                        func.sum(ParticipationPerSport.athlete_female_count), 0
                     ),
                 )
-                .select_from(participation_per_sport)
+                .select_from(ParticipationPerSport)
                 .join(
-                    sports_event_org,
-                    participation_per_sport.sports_Events_id == sports_event_org.id,
+                    SportsEventOrg,
+                    ParticipationPerSport.sports_Events_id == SportsEventOrg.id,
                 )
                 .where(
-                    sports_event_org.events_id == event_id,
-                    sports_event_org.sports_id == s.id,
+                    SportsEventOrg.events_id == event_id,
+                    SportsEventOrg.sports_id == s.id,
                 )
             )
             pps_r = await self.db.execute(pps_q)
@@ -168,20 +168,20 @@ class ReportService:
     ) -> tuple[int, int]:
         q = (
             select(
-                func.coalesce(func.sum(participation_per_sport.athlete_male_count), 0),
+                func.coalesce(func.sum(ParticipationPerSport.athlete_male_count), 0),
                 func.coalesce(
-                    func.sum(participation_per_sport.athlete_female_count), 0
+                    func.sum(ParticipationPerSport.athlete_female_count), 0
                 ),
             )
-            .select_from(participation_per_sport)
+            .select_from(ParticipationPerSport)
             .join(
-                sports_event_org,
-                participation_per_sport.sports_Events_id == sports_event_org.id,
+                SportsEventOrg,
+                ParticipationPerSport.sports_Events_id == SportsEventOrg.id,
             )
             .where(
-                sports_event_org.events_id == event_id,
-                sports_event_org.sports_id == sport_id,
-                sports_event_org.organization_id == org_id,
+                SportsEventOrg.events_id == event_id,
+                SportsEventOrg.sports_id == sport_id,
+                SportsEventOrg.organization_id == org_id,
             )
         )
         r = await self.db.execute(q)
@@ -196,13 +196,13 @@ class ReportService:
                 func.count().filter(Enroll.gender == genderEnum.MALE),
                 func.count().filter(Enroll.gender == genderEnum.FEMALE),
             )
-            .select_from(athlete_participation)
-            .join(Athletes, athlete_participation.athletes_id == Athletes.id)
+            .select_from(AthleteParticipation)
+            .join(Athletes, AthleteParticipation.athletes_id == Athletes.id)
             .join(Enroll, Athletes.enroll_id == Enroll.id)
             .where(
-                athlete_participation.events_id == event_id,
-                athlete_participation.sports_id == sport_id,
-                athlete_participation.organization_id == org_id,
+                AthleteParticipation.events_id == event_id,
+                AthleteParticipation.sports_id == sport_id,
+                AthleteParticipation.organization_id == org_id,
             )
         )
         r = await self.db.execute(q)
@@ -215,12 +215,12 @@ class ReportService:
                 func.count().filter(Enroll.gender == genderEnum.MALE),
                 func.count().filter(Enroll.gender == genderEnum.FEMALE),
             )
-            .select_from(leader_participation)
-            .join(Leader, leader_participation.leaders_id == Leader.id)
+            .select_from(LeaderParticipation)
+            .join(Leader, LeaderParticipation.leaders_id == Leader.id)
             .join(Enroll, Leader.enroll_id == Enroll.id)
             .where(
-                leader_participation.events_id == event_id,
-                leader_participation.organization_id == org_id,
+                LeaderParticipation.events_id == event_id,
+                LeaderParticipation.organization_id == org_id,
             )
         )
         r = await self.db.execute(q)
@@ -235,12 +235,12 @@ class ReportService:
                 func.count().filter(Enroll.gender == genderEnum.MALE),
                 func.count().filter(Enroll.gender == genderEnum.FEMALE),
             )
-            .select_from(leader_participation)
-            .join(Leader, leader_participation.leaders_id == Leader.id)
+            .select_from(LeaderParticipation)
+            .join(Leader, LeaderParticipation.leaders_id == Leader.id)
             .join(Enroll, Leader.enroll_id == Enroll.id)
             .where(
-                leader_participation.events_id == event_id,
-                leader_participation.organization_id == org_id,
+                LeaderParticipation.events_id == event_id,
+                LeaderParticipation.organization_id == org_id,
                 Leader.LeaderRole == role,
             )
         )
@@ -321,10 +321,10 @@ class ReportService:
     ) -> list[Organization]:
         q = (
             select(Organization)
-            .join(sports_event_org, sports_event_org.organization_id == Organization.id)
+            .join(SportsEventOrg, SportsEventOrg.organization_id == Organization.id)
             .where(
-                sports_event_org.events_id == event_id,
-                sports_event_org.sports_id == sport_id,
+                SportsEventOrg.events_id == event_id,
+                SportsEventOrg.sports_id == sport_id,
             )
             .order_by(Organization.name_kh)
         )
@@ -359,12 +359,12 @@ class ReportService:
                 Enroll.phonenumber,
                 Enroll.photo_path,
             )
-            .select_from(athlete_participation)
-            .join(Athletes, athlete_participation.athletes_id == Athletes.id)
+            .select_from(AthleteParticipation)
+            .join(Athletes, AthleteParticipation.athletes_id == Athletes.id)
             .join(Enroll, Athletes.enroll_id == Enroll.id)
             .where(
-                athlete_participation.events_id == event_id,
-                athlete_participation.organization_id == org_id,
+                AthleteParticipation.events_id == event_id,
+                AthleteParticipation.organization_id == org_id,
             )
             .distinct()
             .order_by(Enroll.kh_family_name, Enroll.kh_given_name)
@@ -396,12 +396,12 @@ class ReportService:
                 Enroll.photo_path,
                 Leader.LeaderRole,
             )
-            .select_from(leader_participation)
-            .join(Leader, leader_participation.leaders_id == Leader.id)
+            .select_from(LeaderParticipation)
+            .join(Leader, LeaderParticipation.leaders_id == Leader.id)
             .join(Enroll, Leader.enroll_id == Enroll.id)
             .where(
-                leader_participation.events_id == event_id,
-                leader_participation.organization_id == org_id,
+                LeaderParticipation.events_id == event_id,
+                LeaderParticipation.organization_id == org_id,
             )
             .distinct()
             .order_by(Enroll.kh_family_name, Enroll.kh_given_name)
@@ -452,14 +452,14 @@ class ReportService:
                 Sport.name_kh,
                 Category.category,
             )
-            .select_from(athlete_participation)
-            .join(Athletes, athlete_participation.athletes_id == Athletes.id)
+            .select_from(AthleteParticipation)
+            .join(Athletes, AthleteParticipation.athletes_id == Athletes.id)
             .join(Enroll, Athletes.enroll_id == Enroll.id)
-            .join(Sport, athlete_participation.sports_id == Sport.id)
-            .join(Category, athlete_participation.category_id == Category.id)
+            .join(Sport, AthleteParticipation.sports_id == Sport.id)
+            .join(Category, AthleteParticipation.category_id == Category.id)
             .where(
-                athlete_participation.events_id == event_id,
-                athlete_participation.organization_id == org_id,
+                AthleteParticipation.events_id == event_id,
+                AthleteParticipation.organization_id == org_id,
                 Enroll.en_family_name == en_family,
                 Enroll.en_given_name == en_given,
             )
@@ -504,10 +504,10 @@ class ReportService:
     async def _get_sports_for_org(self, event_id: int, org_id: int) -> list[Sport]:
         q = (
             select(Sport)
-            .join(sports_event_org, sports_event_org.sports_id == Sport.id)
+            .join(SportsEventOrg, SportsEventOrg.sports_id == Sport.id)
             .where(
-                sports_event_org.events_id == event_id,
-                sports_event_org.organization_id == org_id,
+                SportsEventOrg.events_id == event_id,
+                SportsEventOrg.organization_id == org_id,
             )
             .order_by(Sport.name_kh)
         )
@@ -527,13 +527,13 @@ class ReportService:
                 Enroll.en_given_name,
                 Leader.LeaderRole.label("role"),
             )
-            .select_from(leader_participation)
-            .join(Leader, leader_participation.leaders_id == Leader.id)
+            .select_from(LeaderParticipation)
+            .join(Leader, LeaderParticipation.leaders_id == Leader.id)
             .join(Enroll, Leader.enroll_id == Enroll.id)
             .where(
-                leader_participation.events_id == event_id,
-                leader_participation.sports_id == sport_id,
-                leader_participation.organization_id == org_id,
+                LeaderParticipation.events_id == event_id,
+                LeaderParticipation.sports_id == sport_id,
+                LeaderParticipation.organization_id == org_id,
                 Leader.LeaderRole.in_([LeaderRole.COACH, LeaderRole.COACH_TRAINER]),
             )
             .distinct()
@@ -563,14 +563,14 @@ class ReportService:
                 Enroll.en_given_name,
                 Category.category,
             )
-            .select_from(athlete_participation)
-            .join(Athletes, athlete_participation.athletes_id == Athletes.id)
+            .select_from(AthleteParticipation)
+            .join(Athletes, AthleteParticipation.athletes_id == Athletes.id)
             .join(Enroll, Athletes.enroll_id == Enroll.id)
-            .outerjoin(Category, athlete_participation.category_id == Category.id)
+            .outerjoin(Category, AthleteParticipation.category_id == Category.id)
             .where(
-                athlete_participation.events_id == event_id,
-                athlete_participation.sports_id == sport_id,
-                athlete_participation.organization_id == org_id,
+                AthleteParticipation.events_id == event_id,
+                AthleteParticipation.sports_id == sport_id,
+                AthleteParticipation.organization_id == org_id,
             )
             .distinct()
         )
@@ -615,14 +615,14 @@ class ReportService:
                 Organization, OrganizerParticipation.organization_id == Organization.id
             )
             .outerjoin(
-                sports_event_org,
+                SportsEventOrg,
                 and_(
-                    sports_event_org.events_id == OrganizerParticipation.event_id,
-                    sports_event_org.organization_id
+                    SportsEventOrg.events_id == OrganizerParticipation.event_id,
+                    SportsEventOrg.organization_id
                     == OrganizerParticipation.organization_id,
                 ),
             )
-            .outerjoin(Sport, sports_event_org.sports_id == Sport.id)
+            .outerjoin(Sport, SportsEventOrg.sports_id == Sport.id)
             .where(OrganizerParticipation.event_id == event_id)
             .order_by(Organization.name_kh, OrganizerRole.name_kh)
         )

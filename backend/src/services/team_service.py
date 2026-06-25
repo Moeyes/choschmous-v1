@@ -4,13 +4,13 @@ from fastapi import HTTPException
 from sqlalchemy import func, select, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.team import team as Team
+from src.models.team import Team
 from src.models.athlete_participation import (
-    athlete_participation as AthleteParticipation,
+    AthleteParticipation,
 )
-from src.models.athletes import athletes as Athlete
+from src.models.athletes import Athlete
 from src.models.enroll import Enroll
-from src.models.sports_event import sports_event as SportsEvent
+from src.models.sports_event import SportsEvent
 from src.models.events import Events
 from src.schemas.team import TeamCreate, TeamUpdate
 

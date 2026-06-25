@@ -6,7 +6,7 @@ from core.database import Base
 from src.models.enum.user import genderEnum
 
 
-class category(Base):
+class Category(Base):
     __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(

@@ -145,7 +145,7 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
     """End-to-end: seed an event with survey-③ counts, registered athletes, a
     coach, and an organizer (via the real registration routes), then render each
     report from the moved pipeline and assert it carries that real data."""
-    from src.models.participation_per_sport import participation_per_sport
+    from src.models.participation_per_sport import ParticipationPerSport
     from src.models.organizer_role import OrganizerRole
 
     event = await make_event(db_session)
@@ -157,7 +157,7 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
 
     # survey ③ — planned counts (drives sport-list / totals "planned")
     db_session.add(
-        participation_per_sport(
+        ParticipationPerSport(
             sports_Events_id=link.id,
             org_id=org.id,
             athlete_male_count=3,
@@ -194,7 +194,9 @@ async def test_reports_populated_with_real_participants(client, db_session, as_u
         "gender": "Female",
         "phone": "012111333",
     }
-    assert (await client.post("/api/v1/registration", json=athlete_f)).status_code == 201
+    assert (
+        await client.post("/api/v1/registration", json=athlete_f)
+    ).status_code == 201
 
     coach = {
         **athlete,
@@ -269,7 +271,9 @@ async def test_report_enqueue_returns_job_id(client, db_session, as_user):
     """The route enqueues and returns 202 + a job id without rendering inline."""
     event, _, _ = await _event_with_sport(db_session)
     as_user(make_user(UserRole.ADMIN))
-    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=xlsx")
+    resp = await client.get(
+        f"/api/v1/reports/sport-list?event_id={event.id}&format=xlsx"
+    )
     assert resp.status_code == 202, resp.text
     body = resp.json()
     assert body["status"] == "queued"
@@ -294,7 +298,9 @@ async def test_report_missing_event_404(client, db_session, as_user):
 async def test_report_bad_format_rejected(client, db_session, as_user):
     event, _, _ = await _event_with_sport(db_session)
     as_user(make_user(UserRole.ADMIN))
-    resp = await client.get(f"/api/v1/reports/sport-list?event_id={event.id}&format=docx")
+    resp = await client.get(
+        f"/api/v1/reports/sport-list?event_id={event.id}&format=docx"
+    )
     assert resp.status_code == 422, resp.text  # Query pattern validation
 
 

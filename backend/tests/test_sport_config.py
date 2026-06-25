@@ -2,7 +2,7 @@
 
 from src.models.enum.event import SportMode
 from src.models.enum.user import UserRole
-from src.models.sports_event import sports_event
+from src.models.sports_event import SportsEvent
 from tests.conftest import make_user
 from tests.factories import (
     link_org_sport,
@@ -36,7 +36,7 @@ async def test_staff_sets_sport_config(client, db_session, as_user):
     assert body["team_size_max"] == 18
     assert body["quota_athletes_per_org"] == 23
 
-    refreshed = await db_session.get(sports_event, se.id)
+    refreshed = await db_session.get(SportsEvent, se.id)
     await db_session.refresh(refreshed)
     assert refreshed.mode == SportMode.TEAM
     assert refreshed.team_size_min == 11

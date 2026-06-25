@@ -196,7 +196,9 @@ async def test_reference_validation_rejects_stolen_file(db_session):
     f = await _file(db_session, victim.id)
     attacker = _inmem_user(UserRole.ORGANIZATION, org_id=org_b.id)
     with pytest.raises(HTTPException) as e:
-        await assert_can_reference_files(db_session, attacker, [f"/api/v1/files/{f.id}"])
+        await assert_can_reference_files(
+            db_session, attacker, [f"/api/v1/files/{f.id}"]
+        )
     assert e.value.status_code == 403
 
 
@@ -367,9 +369,9 @@ async def test_self_reference_bypass_should_be_denied(db_session):
 
     # Create an enrollment in the attacker's org that references the victim's file.
     from src.models.enroll import Enroll
-    from src.models.athletes import athletes as Athlete
+    from src.models.athletes import Athlete
     from src.models.athlete_participation import (
-        athlete_participation as AthleteParticipation,
+        AthleteParticipation,
     )
     from src.models.enum.user import IdDocumentType, genderEnum
     from datetime import date

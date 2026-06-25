@@ -17,9 +17,9 @@ from core import ratelimit
 from core.ratelimit import RateLimiter
 from src.api.v1.routes import reports as reports_route
 from src.models.athlete_participation import (
-    athlete_participation as AthleteParticipation,
+    AthleteParticipation,
 )
-from src.models.athletes import athletes as Athlete
+from src.models.athletes import Athlete
 from src.models.enroll import Enroll
 from src.models.enum.user import IdDocumentType, UserRole, genderEnum
 from src.models.uploaded_file import UploadedFile

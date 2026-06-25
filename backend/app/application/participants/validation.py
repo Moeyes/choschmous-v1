@@ -13,16 +13,16 @@ from fastapi import HTTPException
 from datetime import date
 
 from src.models.enroll import Enroll
-from src.models.athletes import athletes as Athlete
+from src.models.athletes import Athlete
 from src.models.athlete_participation import (
-    athlete_participation as AthleteParticipation,
+    AthleteParticipation,
 )
-from src.models.leader import leader as Leader
-from src.models.leader_participation import leader_participation as LeaderParticipation
+from src.models.leader import Leader
+from src.models.leader_participation import LeaderParticipation
 from src.models.events import Events
-from src.models.category import category as CategoryModel
-from src.models.sports_event import sports_event as SportsEvent
-from src.models.sports_event_org import sports_event_org as SportsEventOrg
+from src.models.category import Category as CategoryModel
+from src.models.sports_event import SportsEvent
+from src.models.sports_event_org import SportsEventOrg
 from src.models.enum.event import AgeMode
 
 from src.schemas.registration import FullRegistrationRequest
@@ -157,7 +157,7 @@ async def validate_registration(db, data: FullRegistrationRequest):
                     "TEAM_MODE_DISALLOWED",
                     "This category does not allow team registration.",
                 )
-            from src.models.team import team as TeamModel
+            from src.models.team import Team as TeamModel
 
             team = await db.get(TeamModel, data.teamId)
             if not team:

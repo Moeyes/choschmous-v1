@@ -5,7 +5,7 @@ from datetime import datetime
 from core.database import Base
 
 
-class sports_event_org(Base):
+class SportsEventOrg(Base):
     __tablename__ = "sports_event_org"
 
     id: Mapped[int] = mapped_column(

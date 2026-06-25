@@ -12,12 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
 from src.models.enroll import Enroll
-from src.models.athletes import athletes as Athlete
+from src.models.athletes import Athlete
 from src.models.athlete_participation import (
-    athlete_participation as AthleteParticipation,
+    AthleteParticipation,
 )
-from src.models.leader import leader as Leader
-from src.models.leader_participation import leader_participation as LeaderParticipation
+from src.models.leader import Leader
+from src.models.leader_participation import LeaderParticipation
 from src.models.user import User
 
 from src.schemas.enroll import ParticipantUpdateRequest

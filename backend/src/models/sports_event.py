@@ -12,7 +12,7 @@ _sport_mode_enum = Enum(
 )
 
 
-class sports_event(Base):
+class SportsEvent(Base):
     __tablename__ = "sports_event"
 
     id: Mapped[int] = mapped_column(

@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.ratelimit import sports_event_write_limiter
 from src.database.deps import get_db, require_staff
-from src.models.sports_event import sports_event
+from src.models.sports_event import SportsEvent
 from src.models.user import User
 from src.schemas.sports_event import (
     SportsEventCreate,
@@ -31,7 +31,7 @@ async def list_sports_events(
     - **skip**: Number of items to skip.
     - **limit**: Maximum number of items to return.
     """
-    stmt = select(sports_event).offset(skip).limit(limit)
+    stmt = select(SportsEvent).offset(skip).limit(limit)
     result = await db.execute(stmt)
     items = result.scalars().all()
 

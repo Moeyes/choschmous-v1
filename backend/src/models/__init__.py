@@ -4,24 +4,24 @@ from .refresh_token import RefreshToken
 from .pii_access_log import PiiAccessLog
 from .audit_log import AuditLog
 from .enroll import Enroll
-from .athletes import athletes
-from .leader import leader
-from .athlete_participation import athlete_participation
-from .leader_participation import leader_participation
+from .athletes import Athlete
+from .leader import Leader
+from .athlete_participation import AthleteParticipation
+from .leader_participation import LeaderParticipation
 from .events import Events
 from .sport import Sport
-from .category import category
+from .category import Category
 from .organization import Organization
-from .participation_per_sport import participation_per_sport
-from .sports_event import sports_event
-from .sports_event_org import sports_event_org
+from .participation_per_sport import ParticipationPerSport
+from .sports_event import SportsEvent
+from .sports_event_org import SportsEventOrg
 from .medal import Medal
 from .uploaded_file import UploadedFile
-from .team import team
+from .team import Team
 from .organizer_role import OrganizerRole
 from .organizer_participation import OrganizerParticipation
 from .open_survey import OpenSurveyField, OpenSurveyResponse
-from .category_survey_review import category_survey_review
+from .category_survey_review import CategorySurveyReview
 from .notification import Notification
 from .minor_consent import MinorConsent
 
@@ -32,25 +32,25 @@ __all__ = [
     "PiiAccessLog",
     "AuditLog",
     "Enroll",
-    "athletes",
-    "leader",
-    "athlete_participation",
-    "leader_participation",
+    "Athlete",
+    "Leader",
+    "AthleteParticipation",
+    "LeaderParticipation",
     "Events",
     "Sport",
-    "category",
+    "Category",
     "Organization",
-    "participation_per_sport",
-    "sports_event",
-    "sports_event_org",
+    "ParticipationPerSport",
+    "SportsEvent",
+    "SportsEventOrg",
     "Medal",
     "UploadedFile",
-    "team",
+    "Team",
     "OrganizerRole",
     "OrganizerParticipation",
     "OpenSurveyField",
     "OpenSurveyResponse",
-    "category_survey_review",
+    "CategorySurveyReview",
     "Notification",
     "MinorConsent",
 ]

@@ -11,12 +11,14 @@ import pytest
 
 from app.infrastructure.search.db_provider import DbSearchProvider
 from app.infrastructure.search.factory import get_search_provider
-from src.models.athlete_participation import athlete_participation as AthleteParticipation
-from src.models.athletes import athletes as Athlete
+from src.models.athlete_participation import (
+    AthleteParticipation,
+)
+from src.models.athletes import Athlete
 from src.models.enroll import Enroll
 from src.models.enum.user import IdDocumentType, UserRole, genderEnum
 from tests.conftest import make_user
-from tests.factories import make_event, make_org, make_sport
+from tests.factories import make_event, make_org
 
 
 async def _make_athlete(db, org, *, family: str, given: str, event=None, sport=None):
