@@ -1,4 +1,17 @@
 confirmModulesPurge: false
+# CHOS-405: the design-system package lives at packages/ui (@moeys/ui). It is
+# deliberately NOT globbed in as a workspace member yet:
+#
+#   # packages:
+#   #   - 'packages/*'
+#
+# Folding it in would force this workspace's `pnpm install --frozen-lockfile`
+# (the main `frontend` CI job) to carry the heavy Storybook/Chromatic toolchain
+# and would require regenerating the committed root lockfile. Same offline-safe
+# constraint as CHOS-404's @axe-core/playwright. Until the toolchain can be added
+# to the root lockfile, packages/ui is installed on its own by the dedicated
+# `chromatic` CI job. Uncomment the `packages:` block above to promote it.
+#
 # Resilience for a slow / high-latency npm registry connection. pnpm 11 reads
 # these from pnpm-workspace.yaml (camelCase); the equivalents in .npmrc were
 # being ignored. Lower concurrency avoids saturating a weak link.

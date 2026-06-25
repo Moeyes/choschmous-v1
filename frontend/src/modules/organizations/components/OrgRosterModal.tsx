@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Eye, PersonStanding, UserCheck, UsersRound, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { ModalV2, Badge, DataTable } from '@/shared';
+import { Modal, Badge, DataTable } from '@/shared';
 import { ToggleGroup } from '@/shared/ui/toggle-group';
 import { usePermissions, CAPABILITIES } from '@/core/auth';
 import { useRegistrations, useRevealParticipantPhone } from '@/modules/registration';
@@ -81,7 +81,7 @@ export function OrgRosterModal({ orgId, target, onClose }: OrgRosterModalProps) 
     const rows = role === 'all' ? allRows : allRows.filter((r) => r.role === role);
 
     return (
-        <ModalV2
+        <Modal
             isOpen
             onClose={onClose}
             size="xl"
@@ -150,6 +150,6 @@ export function OrgRosterModal({ orgId, target, onClose }: OrgRosterModalProps) 
                     },
                 ]}
             />
-        </ModalV2>
+        </Modal>
     );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ModalV2 } from '@/shared/ui/ModalV2';
+import { Modal } from '@/shared/ui/Modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { useUpdateSportConfig } from '../hooks';
 import type { EventSportPublic } from '../schema/events.schema';
@@ -51,7 +51,7 @@ export function EventSportConfigDialog({ eventId, sport, isOpen, onClose }: Even
         'w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary';
 
     return (
-        <ModalV2
+        <Modal
             isOpen={isOpen}
             onClose={onClose}
             title={`${t('title')} — ${sport.name_kh}`}
@@ -108,6 +108,6 @@ export function EventSportConfigDialog({ eventId, sport, isOpen, onClose }: Even
                     )}
                 </div>
             </div>
-        </ModalV2>
+        </Modal>
     );
 }

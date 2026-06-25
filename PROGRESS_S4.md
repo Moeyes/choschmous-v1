@@ -19,7 +19,7 @@ Environment notes (this machine):
 - [x] CHOS-402 — ABAC policy engine (deny-by-default) wired into deps/services + unit tests
 - [x] CHOS-403 — field-level PII encryption (KMS envelope) + hash-chained append-only audit log + SIEM ship + tamper test
 - [x] CHOS-404 — Playwright a11y (@axe-core) zero criticals + a11y statement + e2e gate
-- [ ] CHOS-405 — packages/ui workspace pkg + Storybook (+axe) + Chromatic CI; unify Modal/ModalV2
+- [x] CHOS-405 — packages/ui workspace pkg + Storybook (+axe) + Chromatic CI; unify Modal/ModalV2
 - [ ] CHOS-406 — email worker (templates) + in-app notification inbox + bulk athlete import; FE modules/import + notifications UI
 - [ ] CHOS-407 — pin Next to stable GA; Lighthouse CI budgets + bundle-analyzer gate
 
@@ -102,8 +102,40 @@ Environment notes (this machine):
   linked from the home footer; added to the crawl + a11y route list).
 - tsc clean for my files (only the pre-existing proxy.ts error remains).
 
+### CHOS-405 (done)
+- **Unify Modal/ModalV2**: deleted `shared/ui/ModalV2.tsx`; folded its API
+  (sizes xs→xl, built-in `[Cancel][Primary]` confirm footer w/ loading +
+  `form`-submit, custom footer) into the single `shared/ui/Modal.tsx`. The
+  former Modal's simple `isOpen/onClose/title` call style still works; default
+  size `md`=max-w-lg preserves the old Modal default width (was `lg`=max-w-lg).
+  Migrated all 7 ModalV2 call sites to `Modal` (sizes preserved 1:1 since the
+  scale was inherited). `index.ts` exports `ModalSize` (was `ModalV2Size`). No
+  original-Modal call site passes `size`, so the renamed scale is invisible to
+  them. tsc clean (only the pre-existing proxy.ts error); vitest 99 pass / 2
+  pre-existing fails.
+- **packages/ui (@moeys/ui)**: Storybook-react-vite design-system package.
+  Stories import the real primitives from `../../src/shared/ui` via a `@/` vite
+  alias (no fork — can't drift). Stories for Button/Badge/Input/Modal/Select.
+  `addon-a11y` (`a11y.test:'error'`) + `.storybook/test-runner.ts` (axe-playwright,
+  WCAG 2.1 A/AA) = "stories+axe per component" as both a panel and a CI gate.
+  Tailwind v4 via `.storybook/storybook.css` (imports app globals + `@source`).
+- **Offline/lockfile handling** (same pattern as 404): packages/ui is a
+  stand-alone package, intentionally NOT in the root pnpm-workspace glob (kept
+  commented in `pnpm-workspace.yaml`), so the main `frontend` job's
+  `--frozen-lockfile` install is untouched. Its toolchain is installed only by
+  the new `chromatic` CI job (`cd packages/ui && pnpm install`). `packages/`
+  excluded from app `tsconfig` + `eslint` so `pnpm build`/`lint` ignore it.
+- **Chromatic CI** (`.github/workflows/chromatic.yml`): builds Storybook, runs
+  the axe a11y gate, then publishes to Chromatic — **no-op until
+  `CHROMATIC_PROJECT_TOKEN` secret is set** (logs a notice, exits 0). TODO(infra):
+  create the Chromatic project + add the token (see packages/ui/README.md).
+- Did NOT verify the Storybook/Chromatic build locally (heavy toolchain, offline
+  pattern) — like other CI gates it may need first-run tuning; structure + deps
+  are pinned to the app's versions.
+
 ### Pre-existing issues found (NOT mine — own under later tickets)
 - `frontend/src/proxy.ts:55` uses `request.ip` which Next 16 removed → tsc error.
-  Belongs to CHOS-303/407 (build green). Fix under **CHOS-407**.
+  Belongs to CHOS-303/407 (build green). Fix under **CHOS-407**. (next.config.ts
+  cleanup for this is staged-but-deferred to the 407 commit.)
 - `frontend/src/modules/sports/schema/sports.schema.test.ts` — 2 failing tests
   (`categoryFormSchema` gender) on baseline, untouched by me.

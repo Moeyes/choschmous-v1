@@ -1,0 +1,72 @@
+name: Chromatic (Storybook + a11y)
+
+# CHOS-405: builds the @moeys/ui Storybook, runs the per-component axe gate, and
+# publishes to Chromatic for visual regression.
+#
+# This lives in its own job (not the main `frontend` CI job) on purpose: the
+# Storybook/Chromatic toolchain is heavy and is intentionally kept OUT of the
+# root pnpm lockfile, so it is installed here with a normal networked install.
+# See frontend/packages/ui/README.md.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: chromatic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chromatic:
+    name: Storybook a11y + Chromatic
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/packages/ui
+    steps:
+      # Chromatic needs full git history to compute the baseline diff.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install design-system toolchain
+        run: pnpm install
+
+      - name: Build Storybook
+        run: pnpm build-storybook
+
+      # Component-level accessibility gate (axe over every story, WCAG 2.1 A/AA).
+      - name: Install Playwright chromium (for the a11y test-runner)
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Storybook a11y gate (axe, zero violations)
+        run: pnpm test-a11y:ci
+
+      # Visual regression. No-op until CHROMATIC_PROJECT_TOKEN is configured so
+      # the pipeline stays green before the Chromatic project exists.
+      - name: Publish to Chromatic
+        if: ${{ env.CHROMATIC_PROJECT_TOKEN != '' }}
+        env:
+          CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+        run: pnpm chromatic --storybook-build-dir storybook-static
+
+      - name: Chromatic skipped (no token)
+        if: ${{ env.CHROMATIC_PROJECT_TOKEN == '' }}
+        env:
+          CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+        run: echo "::notice::CHROMATIC_PROJECT_TOKEN not set — skipping Chromatic publish. See frontend/packages/ui/README.md."
+
+      - name: Upload Storybook build
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: storybook-static
+          path: frontend/packages/ui/storybook-static
+          retention-days: 7

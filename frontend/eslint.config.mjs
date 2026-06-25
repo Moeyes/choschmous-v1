@@ -27,6 +27,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // CHOS-405: @moeys/ui (Storybook) is a stand-alone package with its own
+    // toolchain installed only in the chromatic CI job — don't lint it here.
+    "packages/**",
   ]),
 ]);
 

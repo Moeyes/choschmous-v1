@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
-import { ModalV2 } from '@/shared/ui/ModalV2';
+import { Modal } from '@/shared/ui/Modal';
 import { Button } from '@/shared/ui/button';
 import { TextInputField, SelectField } from '@/shared/form';
 import { GENDER_OPTIONS, LEADER_ROLE_OPTIONS } from '@/core/config/constants';
@@ -78,7 +78,7 @@ export function ParticipantEditForm({ participant, isOpen, onClose }: Participan
     );
 
     return (
-        <ModalV2
+        <Modal
             isOpen={isOpen}
             onClose={onClose}
             title={tDetail('editTitle')}
@@ -126,6 +126,6 @@ export function ParticipantEditForm({ participant, isOpen, onClose }: Participan
                     </div>
                 </section>
             </form>
-        </ModalV2>
+        </Modal>
     );
 }

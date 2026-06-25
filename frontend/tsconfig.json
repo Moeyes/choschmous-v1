@@ -39,6 +39,7 @@
   ],
   "exclude": [
     "node_modules",
-    "playwright/a11y.spec.ts"
+    "playwright/a11y.spec.ts",
+    "packages"
   ]
 }

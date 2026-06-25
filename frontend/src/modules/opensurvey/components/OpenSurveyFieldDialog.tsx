@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ModalV2 } from '@/shared/ui/ModalV2';
+import { Modal } from '@/shared/ui/Modal';
 import { FormField } from '@/shared/form/FormField';
 import { Input } from '@/shared/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
@@ -87,7 +87,7 @@ export function OpenSurveyFieldDialog({
   };
 
   return (
-    <ModalV2
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={isEdit ? t('editTitle') : t('createTitle')}
@@ -163,7 +163,7 @@ export function OpenSurveyFieldDialog({
           )}
         </div>
       </div>
-    </ModalV2>
+    </Modal>
   );
 }
 

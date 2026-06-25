@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle } from 'lucide-react';
-import { ModalV2 } from '@/shared/ui/ModalV2';
+import { Modal } from '@/shared/ui/Modal';
 import { useTranslations } from 'next-intl';
 
 interface SubmissionReviewModalProps {
@@ -26,7 +26,7 @@ export function SubmissionReviewModal({
   if (!reasonAction) return null;
 
   return (
-    <ModalV2
+    <Modal
       isOpen={reasonAction !== null}
       onClose={onClose}
       title={reasonAction === 'reject' ? t('confirmReject') : t('confirmFlag')}
@@ -54,6 +54,6 @@ export function SubmissionReviewModal({
           />
         </div>
       </div>
-    </ModalV2>
+    </Modal>
   );
 }

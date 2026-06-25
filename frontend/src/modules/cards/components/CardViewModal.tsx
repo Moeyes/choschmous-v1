@@ -2,7 +2,7 @@
 
 import { CardData } from '../types';
 import CardIframe from './CardIframe';
-import { ModalV2 } from '@/shared/ui/ModalV2';
+import { Modal } from '@/shared/ui/Modal';
 
 interface CardViewModalProps {
   card: CardData | null;
@@ -13,7 +13,7 @@ const CardViewModal: React.FC<CardViewModalProps> = ({ card, onClose }) => {
   if (!card) return null;
 
   return (
-    <ModalV2
+    <Modal
       isOpen={card !== null}
       onClose={onClose}
       title={`${card.prefix ? `${card.prefix} ` : ''}${card.participantName}`}
@@ -27,7 +27,7 @@ const CardViewModal: React.FC<CardViewModalProps> = ({ card, onClose }) => {
       <div className="border border-border rounded-lg bg-muted/40 p-4">
         <CardIframe {...card} scale={1} />
       </div>
-    </ModalV2>
+    </Modal>
   );
 };
 

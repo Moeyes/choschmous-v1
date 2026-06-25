@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Calendar, Building2, CheckCircle2, Download, FileSpreadsheet, FileText, ToggleLeft, ToggleRight } from 'lucide-react';
-import { ModalV2 } from '@/shared/ui/ModalV2';
+import { Modal } from '@/shared/ui/Modal';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
 import { useTranslations } from 'next-intl';
@@ -97,7 +97,7 @@ export function ReportGenerateModal({
     );
 
     return (
-        <ModalV2
+        <Modal
             isOpen={isOpen}
             onClose={handleClose}
             title={reportTitle}
@@ -219,6 +219,6 @@ export function ReportGenerateModal({
                     )}
                 </div>
             )}
-        </ModalV2>
+        </Modal>
     );
 }
